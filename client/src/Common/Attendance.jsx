@@ -1,47 +1,23 @@
 import React, { useState, useEffect } from "react";
+import { USERS_DUMMYDATA } from "../Data/UserData";
 
 const Attendance = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Javaid Memon",
-      email: "javaidmemon24@gmail.com",
-      salary: 50000,
-      role: "Backend Developer",
-      checkedIn: false,
-      checkInTime: null,
-    },
-    {
-      id: 2,
-      name: "Ahtisham",
-      email: "ahtisham@gmail.com",
-      salary: 50000,
-      role: "Frontend Developer",
-      checkedIn: false,
-      checkInTime: null,
-    },
-  ]);
-
-  const [dailyAttendance, setDailyAttendance] = useState([]);
-
+  const [users, setUsers] = useState([...USERS_DUMMYDATA]);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
 
-  // Function to check if the current time is between 7 PM and 4 AM
+  // Check if the current time is within allowed hours
   const checkAllowedTime = () => {
     const currentHour = new Date().getHours();
-    if (currentHour >= 19 || currentHour < 4) {
-      setIsAllowedTime(true);
-    } else {
-      setIsAllowedTime(false);
-    }
+    setIsAllowedTime(currentHour >= 19 || currentHour < 4);
   };
 
   useEffect(() => {
     checkAllowedTime();
-    const interval = setInterval(checkAllowedTime, 60000);
+    const interval = setInterval(checkAllowedTime, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
 
+  // Handle check-in
   const handleCheckIn = (id) => {
     const currentTime = new Date();
     setUsers((prevUsers) =>
@@ -53,42 +29,59 @@ const Attendance = () => {
     );
   };
 
+  // Handle check-out
   const handleCheckOut = (id) => {
     const currentTime = new Date();
     setUsers((prevUsers) =>
       prevUsers.map((user) => {
         if (user.id === id && user.checkedIn) {
-          // Add attendance entry only for user ID 1
-          if (user.id === 1) {
-            setDailyAttendance((prevAttendance) => {
-              // Prevent duplicate entries
-              const lastEntry =
-                prevAttendance.length > 0
-                  ? prevAttendance[prevAttendance.length - 1]
-                  : null;
-              const isDuplicate =
-                lastEntry &&
-                lastEntry.date === user.checkInTime.toLocaleDateString() &&
-                lastEntry.checkInTime === user.checkInTime.toLocaleTimeString();
+          const checkInTime = user.checkInTime;
+          const isHalfLeave = calculateHalfLeave(checkInTime);
 
-              if (!isDuplicate) {
-                return [
-                  ...prevAttendance,
-                  {
-                    date: user.checkInTime.toLocaleDateString(),
-                    checkInTime: user.checkInTime.toLocaleTimeString(),
-                    checkOutTime: currentTime.toLocaleTimeString(),
-                  },
-                ];
-              }
-              return prevAttendance;
-            });
+          // Update attendance record
+          const updatedAttendance = [
+            ...user.dailyAttendance,
+            {
+              date: checkInTime.toLocaleDateString(),
+              checkInTime: checkInTime.toLocaleTimeString(),
+              checkOutTime: currentTime.toLocaleTimeString(),
+              halfLeave: isHalfLeave,
+            },
+          ];
+
+          // Handle salary and half-leave adjustments
+          let updatedHalfLeaveCount = user.halfLeaveCount;
+          let salaryThisMonth = user.salary; 
+
+          if (isHalfLeave) {
+            updatedHalfLeaveCount += 1;
+            if (updatedHalfLeaveCount === 3) {
+              salaryThisMonth -= user.salary / 30; // Deduct 1 day's salary
+              updatedHalfLeaveCount = 0; // Reset half-leave count
+            }
           }
-          return { ...user, checkedIn: false, checkInTime: null };
+
+          return {
+            ...user,
+            checkedIn: false,
+            checkInTime: null,
+            halfLeaveCount: updatedHalfLeaveCount,
+            dailyAttendance: updatedAttendance,
+            salaryThisMonth: Math.floor(salaryThisMonth), // Calculate salary this month
+          };
         }
         return user;
       })
     );
+  };
+
+  // Check if the check-in time qualifies as half-leave
+  const calculateHalfLeave = (checkInTime) => {
+    const checkInHour = checkInTime.getHours();
+    const checkInMinutes = checkInTime.getMinutes();
+    if (checkInHour > 19) return true;
+    if (checkInHour === 19 && checkInMinutes > 15) return true;
+    return false;
   };
 
   return (
@@ -99,6 +92,8 @@ const Attendance = () => {
           ? "Check-in and Check-out are enabled during allowed hours."
           : "Attendance is disabled outside allowed hours (7 PM - 4 AM)."}
       </p>
+
+      {/* User Table */}
       <table className="table-auto w-full border-collapse border border-gray-300 mb-6">
         <thead>
           <tr>
@@ -117,11 +112,13 @@ const Attendance = () => {
               <td className="border border-gray-300 px-4 py-2">{user.id}</td>
               <td className="border border-gray-300 px-4 py-2">{user.name}</td>
               <td className="border border-gray-300 px-4 py-2">{user.email}</td>
-              <td className="border border-gray-300 px-4 py-2">{user.salary}</td>
+              <td className="border border-gray-300 px-4 py-2">
+                {user.salary}
+              </td>
               <td className="border border-gray-300 px-4 py-2">{user.role}</td>
               <td className="border border-gray-300 px-4 py-2">
                 {user.checkInTime
-                  ? user.checkInTime.toLocaleString()
+                  ? user.checkInTime.toLocaleTimeString()
                   : "Not Checked In"}
               </td>
               <td className="border border-gray-300 px-4 py-2">
@@ -147,25 +144,50 @@ const Attendance = () => {
         </tbody>
       </table>
 
-      <h2 className="text-lg font-bold mb-4">Daily Attendance for User ID: 1</h2>
-      <table className="table-auto w-full border-collapse border border-gray-300">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">Date</th>
-            <th className="border border-gray-300 px-4 py-2">Check-In Time</th>
-            <th className="border border-gray-300 px-4 py-2">Check-Out Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dailyAttendance.map((entry, index) => (
-            <tr key={index}>
-              <td className="border border-gray-300 px-4 py-2">{entry.date}</td>
-              <td className="border border-gray-300 px-4 py-2">{entry.checkInTime}</td>
-              <td className="border border-gray-300 px-4 py-2">{entry.checkOutTime}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Attendance Records */}
+      {users.map((user) => (
+        <div key={user.id} className="mb-6">
+          <h2 className="text-lg font-bold mb-4">
+            Daily Attendance for User ID: {user.id}
+          </h2>
+          <table className="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+              <tr>
+                <th className="border border-gray-300 px-4 py-2">Date</th>
+                <th className="border border-gray-300 px-4 py-2">
+                  Check-In Time
+                </th>
+                <th className="border border-gray-300 px-4 py-2">
+                  Check-Out Time
+                </th>
+                <th className="border border-gray-300 px-4 py-2">Half Leave</th>
+                <th className="border border-gray-300 px-4 py-2">Salary This Month</th>
+              </tr>
+            </thead>
+            <tbody>
+              {user.dailyAttendance.map((entry, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {entry.date}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {entry.checkInTime}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {entry.checkOutTime}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {entry.halfLeave ? "Yes" : "No"}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {user.salaryThisMonth ? user.salaryThisMonth : user.salary} {/* Display adjusted salary */}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
   );
 };
