@@ -1,11 +1,17 @@
 import './App.css'
-
+// import LoginForm from './LoginForm'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from './Home';
+import AdminLogin from './AdminLogin';
 function App() {
 
   return (
-    <div className='bg-purple-100'>
-      
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<AdminLogin/>} />
+        <Route path="/home" element={<Home />} />
+      </Routes>
+    </Router>
   )
 }
 
