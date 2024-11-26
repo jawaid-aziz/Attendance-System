@@ -1,11 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-navigate=useNavigate();
+
 const Home = () => {
-  
+ const  navigate=useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/admin");
   };
   
   return (
