@@ -1,15 +1,15 @@
-const AdminModel = require("../models/Admin");
+const AdminModel = require("../models/User");
 const jwt = require('jsonwebtoken');
-
-exports.login= async (req, res) => {
-    const { email, password } = req.body;
+const EmployeeModel= require("../models/Employee");
+exports.login = async (req, res) => {
+    const { role,email, password } = req.body;
     //    const token= jwt.sign({id:user._id}, process.env.JWT_SECRET)
     const JWT_SECRET = process.env.JWT_SECRET;
 
     try {
-        console.log("Received credentials:", { email, password });
+        console.log("Received credentials:", { role,email, password });
 
-        const admin = await AdminModel.findOne({ email: email });
+        const admin = await AdminModel.findOne({ role:role, email: email });
         console.log("Query result:", admin);
 
         if (!admin) {

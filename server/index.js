@@ -17,6 +17,10 @@ app.use(bodyParser.json());
 // Routes
 app.use("/auth", require("./Routes/authRoutes"));
 
+// app.use("/users", require("./Routes/userR"));
+// console.log("File exists: ", require.resolve("./Routes/userR"));
+
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
