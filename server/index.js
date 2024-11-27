@@ -4,6 +4,9 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDB = require("./config/db");
+const authRoutes=require("./Routes/authRoutes")
+const employeeRoutes=require("./Routes/employeeRoutes")
+const adminRoutes=require("./Routes/adminRoutes")
 
 const app = express();
 
@@ -15,7 +18,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Routes
-app.use("/auth", require("./Routes/authRoutes"));
+app.use("/auth",authRoutes);
+app.use("/employee",employeeRoutes);
+// app.use("/admin",adminRoutes);
 
 // app.use("/users", require("./Routes/userR"));
 // console.log("File exists: ", require.resolve("./Routes/userR"));
