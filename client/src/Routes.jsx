@@ -1,16 +1,32 @@
-import Attendance from "./Common/Attendance";
-import AdminLogin from "./AdminLogin";
-import Home from "./Home";
+import Login from "./Pages/Login";
+import AttendanceHistory from "./Components/AttendanceHistory";
+import { UserInterface } from "./Pages/UserInterface";
+import { AdminInterface } from "./Pages/AdminInterface";
+import AddEmployee from "./Components/AddEmployee";
+import { EmployeesData } from "./Components/EmployeesData";
 export const AllRoutes =[
     {
-         path:"/admin" ,
-         element:<AdminLogin/>,
-    },
-      {  path:"/home",
-         element:<Home />,
-      },
-      {
         path: '/',
-        element: <Attendance />,
+        element: <Login />,
     },
+    {
+        path: "/user-interface/:id",
+        element: <UserInterface />,
+    },
+    {
+        path: "/admin-interface/:id",
+        element: <AdminInterface />,
+    },
+    {
+        path: "/attendance-history/:id",
+        element: <AttendanceHistory />,
+    },
+    {
+        path: "/add-employee",
+        element: <AddEmployee />,
+    },
+    {
+        path: "/employees-data",
+        element: <EmployeesData />,
+    }
 ]
