@@ -1,10 +1,10 @@
 const jwt=require("jsonwebtoken") 
 // Function to generate a token
-const generateToken = (user) => {
+const generateToken = (user,role) => {
   return jwt.sign(
-    { id: user._id, role: user.role }, // Payload
-    process.env.JWT_SECRET, // Secret key from environment variables
-    { expiresIn: '1h' } // Token expi ration time
+    { id: user._id, role: role }, // Payload
+    process.env.JWT_SECRET, 
+    { expiresIn: '1h' } 
   );
 };
 

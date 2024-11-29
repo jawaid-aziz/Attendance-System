@@ -19,20 +19,20 @@ exports.loginUser = async (req, res) => {
       .json({ message: "Password must be at least 6 characters long" });
   }
 
-  const allowedRoles = ["admin", "employee"]; // Define allowed roles
-  if (!role || !allowedRoles.includes(role)) {
-    return res
-      .status(400)
-      .json({
-        message: `Role must be one of the following: ${allowedRoles.join(
-          ", "
-        )}`,
-      });
-  }
+  // const allowedRoles = ["admin", "employee"]; // Define allowed roles
+  // if (!role || !allowedRoles.includes(role)) {
+  //   return res
+  //     .status(400)
+  //     .json({
+  //       message: `Role must be one of the following: ${allowedRoles.join(
+  //         ", "
+  //       )}`,
+  //     });
+  // }
 
   try {
     // Check if the user exists
-    const user = await User.findOne({ email , role });
+    const user = await User.findOne({ email  });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -43,9 +43,9 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-   
+    const role=user.role;    
 
-    const token =generateToken(user)
+    const token =generateToken(user,role)
 
     res.status(200).json({
       message: "Login successful",
