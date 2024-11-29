@@ -4,7 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDB = require("./config/db");
-
+const authRoutes=require("./Routes/authRoutes")
+const adminRoutes=require("./Routes/adminRoutes")
 const app = express();
 
 // Connect to MongoDB
@@ -15,10 +16,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Routes
-app.use("/auth", require("./Routes/authRoutes"));
+app.use("/auth",authRoutes);
+app.use("/admin",adminRoutes);
 
-// app.use("/users", require("./Routes/userR"));
-// console.log("File exists: ", require.resolve("./Routes/userR"));
 
 
 // Start server
