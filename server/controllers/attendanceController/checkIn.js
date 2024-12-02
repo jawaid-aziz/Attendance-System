@@ -4,20 +4,7 @@ const Attendance = require("../../models/Attendance")
 
 const checkIn = async (req, res) => {
     try {
-        console.log("hi");
-
-        const { employeeId } = req.params; // Employee ID from the request body
-        // const tokenEmployeeId = req.employeeId; // Employee ID from the decoded JWT token
-
-        // Ensure that the token employeeId matches the body employeeId
-        // if (String(employeeId) !== String(tokenEmployeeId)) {
-        //     console.log("Token employeeId:", tokenEmployeeId);
-        // console.log("Body employeeId:", employeeId);
-
-        //     return res.status(403).json({ message: "You are not authorized to check in for this employee." });
-        // }
-
-        // Get current time in Pakistani Standard Time (PST - UTC+5)
+        const { employeeId } = req.params;
         const currentTime = new Date();
         const pstOffset = 5 * 60 * 60 * 1000; // PST offset in milliseconds
         const localTime = new Date(currentTime.getTime() + pstOffset);

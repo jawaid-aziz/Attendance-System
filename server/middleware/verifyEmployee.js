@@ -2,8 +2,6 @@ const jwt = require("jsonwebtoken");
 const Employee = require("../models/User");
 
 const verifyEmployee = async (req, res, next) => {
-    console.log("veiasdf");
-
     const token = req.headers["authorization"]?.split(" ")[1]; // Remove 'Bearer' prefix if present
     if (!token) {
         return res.status(401).json({ message: "Token not found." });

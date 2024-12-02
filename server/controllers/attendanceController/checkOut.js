@@ -3,7 +3,7 @@ const Attendance = require("../../models/Attendance");
 
 const checkOut = async (req, res) => {
     try {
-        const { employeeId } = req.body;
+        const { employeeId } = req.params;
         const currentTime = new Date();
         const today = new Date(currentTime.setHours(0, 0, 0, 0));
 
