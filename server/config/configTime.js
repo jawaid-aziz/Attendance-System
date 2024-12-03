@@ -7,10 +7,10 @@ dotenv.config();
 
 const config = {
 
-    timeApi: {
-        url: process.env.TIME_API_URL || 'http://worldtimeapi.org/api/timezone/Asia/Karachi',
-        // defaultTimezone: process.env.TIMEZONE || 'Asia/Karachi',
-    },
+    // timeApi: {
+    //     url: process.env.TIME_API_URL || 'http://worldtimeapi.org/api/timezone/Asia/Karachi',
+    //     // defaultTimezone: process.env.TIMEZONE || 'Asia/Karachi',
+    // },
     TIME_SERVER_URL: "http://worldtimeapi.org/api/timezone",
     TIMEZONE:'/Asia/Karachi'
 };
