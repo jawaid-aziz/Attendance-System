@@ -1,28 +1,62 @@
 const Attendance = require("../../models/Attendance");
-// const Employee = require("../models/User");
+const config = require("../../config/configTime");
+const axios = require("axios");
 
 const checkOut = async (req, res) => {
     try {
-        const { employeeId } = req.body;
-        const currentTime = new Date();
-        const today = new Date(currentTime.setHours(0, 0, 0, 0));
+        const { employeeId } = req.params;
 
-        // Find the attendance record for today
-        const attendance = await Attendance.findOne({ employee: employeeId, date: today });
+        let serverTime;
+
+        // Fetchinh current time from server
+        try {
+            const response = await axios.get(`${config.TIME_SERVER_URL}${config.TIMEZONE}`, { timeout: 5000 });
+            const utcTime = new Date(response.data.datetime); // Time in UTC
+            const pstOffset = 5 * 60 * 60 * 1000; // PST offset (+5 hours in milliseconds)
+            serverTime = new Date(utcTime.getTime() + pstOffset); // Adjusted to PST
+        } catch (error) {
+            console.error("Error fetching time:", error.message);
+            return res.status(500).json({ message: "Unable to connect to time server. Please try again later." });
+        }
+
+        // Calc the shift start and todays date for validation
+        const today = new Date(serverTime);
+        // today.setHours(0, 0, 0, 0); // Reset to midnight PST
+
+        const shiftStart = new Date(today);
+        const checkOutHour = serverTime.getHours();
+        if (checkOutHour < 4) {
+            shiftStart.setDate(shiftStart.getDate() - 1); // If after midnight, shift started yesterday
+        }
+        shiftStart.setHours(19, 0, 0, 0); // Shift start at 19:00
+
+        // is there attendance record for the current shift
+        const attendance = await Attendance.findOne({
+            employee: employeeId,
+            checkIn: { $gte: shiftStart },
+        });
 
         if (!attendance || !attendance.checkIn) {
-            return res.status(400).json({ message: "No check-in found for today." });
+            return res.status(400).json({ message: "No check-in found for the current shift." });
         }
 
         if (attendance.checkOut) {
             return res.status(400).json({ message: "Already checked out today." });
         }
 
-        // Add half leave if no check-out occurs
-        const status = currentTime.getHours() > 4 ? "No Check-Out" : attendance.status;
-        const deductions = status === "No Check-Out" ? attendance.deductions + 0.5 : attendance.deductions;
+        let status = attendance.status; //default
+        let deductions = attendance.deductions; 
 
-        attendance.checkOut = currentTime;
+        if (checkOutHour > 4) {
+            status = "late check-out" 
+            deductions = attendance.deductions; // No change
+        } else if (!attendance.checkOut) {
+            // No check-out recorded by the end of shift: apply half leave penalty
+            status = "No Check-Out";
+            deductions = attendance.deductions + 0.5;
+        }
+        // Update the attendance record
+        attendance.checkOut = serverTime;
         attendance.status = status;
         attendance.deductions = deductions;
 
@@ -34,4 +68,5 @@ const checkOut = async (req, res) => {
         res.status(500).json({ message: "Error in check-out", error: error.message });
     }
 };
+
 module.exports = checkOut;
