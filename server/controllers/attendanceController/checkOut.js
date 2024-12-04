@@ -12,55 +12,17 @@ const checkOut = async (req, res) => {
     try {
         const { employeeId } = req.params;
 
-        let serverTime;
+        // let serverTime;
 
-        // Fetchinh current time from server
-        // try {
-        //     const response = await axios.get(`${config.TIME_SERVER_URL}${config.TIMEZONE}`, { timeout: 5000 });
-        //     const utcTime = new Date(response.data.datetime); // Time in UTC
-        //     const pstOffset = 5 * 60 * 60 * 1000; // PST offset (+5 hours in milliseconds)
-        //     serverTime = new Date(utcTime.getTime() + pstOffset); // Adjusted to PST
-        // } catch (error) {
-        //     console.error("Error fetching time:", error.message);
-        //     return res.status(500).json({ message: "Unable to connect to time server. Please try again later." });
-        // }
-        serverTime = dayjs().tz("Asia/Karachi"); // Replace with your desired timezone
+        const serverTime = dayjs().utcOffset(300);// Replace with your desired timezone
         const checkOutHour = serverTime.hour();
-        console.log("ser",serverTime);
-        
-        // Find the attendance record for this employee with a valid check-in
-        //  attendance = await Attendance.findOne({
-        //     employee: employeeId,
-        //     checkIn: { $exists: true }, // Ensure a valid check-in exists
-        // });
-        // Calc the shift start and todays date for validation
-        // const today = new Date(serverTime);
-        // today.setHours(0, 0, 0, 0); // Reset to midnight PST
+        console.log("ser", serverTime);
+        const startOfToday = serverTime.startOf("day").toDate(); // Start of today in local time
+        const endOfToday = serverTime.endOf("day").toDate(); // End of today in local time
 
-        // const shiftStart = new Date(today);
-        // const checkOutHour = serverTime.hour();
-        // if (checkOutHour < 4) {
-        //     shiftStart.setDate(shiftStart.getDate() - 1); // If after midnight, shift started yesterday
-        // }
-        // shiftStart.setHours(19, 0, 0, 0); // Shift start at 19:00
-
-        // // is there attendance record for the current shift
-        // const attendance = await Attendance.findOne({
-        //     employee: employeeId,
-        //     checkIn: { $gte: shiftStart },
-        // });
-
-        // if (!attendance || !attendance.checkIn) {
-        //     return res.status(400).json({ message: "No check-in found for the current shift." });
-        // }
-
-        // if (attendance.checkOut) {
-        //     return res.status(400).json({ message: "Already checked out today." });
-        // }
-        // Find the attendance record for this employee with a valid check-in
         const attendance = await Attendance.findOne({
             employee: employeeId,
-            checkIn: { $exists: true }, // Ensure a valid check-in exists
+            checkIn: { $gte: startOfToday, $lt: endOfToday }, // Ensure a valid check-in exists
         });
 
         if (!attendance) {
@@ -71,27 +33,32 @@ const checkOut = async (req, res) => {
             return res.status(400).json({ message: "Already checked out today." });
         }
 
-        let status = attendance.status; //default
+        let checkOutstatus = attendance.checkOutstatus; //default
         let deductions = attendance.deductions;
 
-        if (checkOutHour > 4) {
-            status = "late check-out"
-            deductions = attendance.deductions; // No change
-        } else if (!attendance.checkOut) {
-            // No check-out recorded by the end of shift: apply half leave penalty
-            status = "No Check-Out";
-            deductions = attendance.deductions + 0.5;
+        if (checkOutHour > 22) {
+            checkOutstatus = "Late Check-Out";
+        } else if (checkOutHour === 22) {
+            checkOutstatus = "Checked Out on Time";
+        } else {
+            return res.status(400).json({ message: "Cannot check out before 21:00." });
+        }
+
+        // No Check-Out recorded by the end of shift
+        if (!attendance.checkOut) {
+            checkOutstatus = "No Check-Out";
+            deductions += 0.5;
         }
         // Update the attendance record
         attendance.checkOut = serverTime.format();
-        attendance.status = status;
+        attendance.checkOutstatus = checkOutstatus;
         attendance.deductions = deductions;
 
         await attendance.save();
 
         res.status(200).json({ message: "Check-out successful", attendance });
-        console.log("out atte",attendance);
-        
+        console.log("out atte", attendance);
+
     } catch (error) {
         console.error("Error in check-out:", error);
         res.status(500).json({ message: "Error in check-out", error: error.message });
