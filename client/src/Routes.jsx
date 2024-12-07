@@ -4,6 +4,7 @@ import { UserInterface } from "./Pages/UserInterface";
 import { AdminInterface } from "./Pages/AdminInterface";
 import AddEmployee from "./Components/AddEmployee";
 import { EmployeesData } from "./Components/EmployeesData";
+import AdminDashboard from "./AdminDashboard";
 export const AllRoutes =[
     {
         path: '/',
@@ -28,5 +29,9 @@ export const AllRoutes =[
     {
         path: "/employees-data",
         element: <EmployeesData />,
+    },
+    {
+        path: "/admin",
+        element: <AdminDashboard/>
     }
 ]

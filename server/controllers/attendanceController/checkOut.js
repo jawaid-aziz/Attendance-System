@@ -4,14 +4,14 @@ const Attendance = require("../../models/Attendance");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
-
+// const io = require("../../index").io; // Import Socket.IO instance
 // Extend dayjs with plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const checkOut = async (req, res) => {
     try {
         const { employeeId } = req.params;
-
+        const io= req.io;
         // let serverTime;
 
         const timezoneName = process.env.TIMEZONE;
@@ -20,7 +20,7 @@ const checkOut = async (req, res) => {
         const checkOutHour = serverTime.hour();
         console.log("ser", serverTime);
         const startOfToday = serverTime.startOf("day").unix(); // Start of day in seconds
-        const endOfToday = serverTime.endOf("day").unix(); 
+        const endOfToday = serverTime.endOf("day").unix();
         const attendance = await Attendance.findOne({
             employee: employeeId,
             checkIn: { $gte: startOfToday, $lt: endOfToday }, // Ensure a valid check-in exists
@@ -52,10 +52,29 @@ const checkOut = async (req, res) => {
         }
         // Update the attendance record
         attendance.checkOut = parseInt(unixTime),
-        attendance.checkOutstatus = checkOutstatus;
+            attendance.checkOutstatus = checkOutstatus;
         attendance.deductions = deductions;
 
         await attendance.save();
+      
+        // await Attendance.updateOne({_id:employeeId},{isActive:false})
+
+        // io.emit("status update",{employeeId, isActive:false})
+
+        // Notify admins of status change
+        await Attendance.updateOne(
+            {
+                employee: employeeId,
+                date: {
+                    $gte: serverTime.startOf("day").toDate(),
+                    $lt: serverTime.endOf("day").toDate(),
+                },
+            },
+            { $set: { isActive: false } }
+        );
+
+        // Notify admins of status change
+        io.emit("status update", { employeeId, isActive: false });
 
         res.status(200).json({ message: "Check-out successful", attendance });
         console.log("out atte", attendance);

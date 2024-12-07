@@ -1,13 +1,17 @@
 const Attendance = require("../../models/Attendance");
+const User = require("../../models/User");
 const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const utc = require("dayjs/plugin/utc")
+// const { io } = require("../../index");
+
 dayjs.extend(timezone);
 dayjs.extend(utc);
 const checkIn = async (req, res) => {
     try {
         const { employeeId } = req.params;
 
+        const io = req.io;
         const timezoneName = process.env.TIMEZONE;
         const serverTime = dayjs().tz(timezoneName);
         const unixTime = serverTime.unix();// Convert to seconds since epoch
@@ -21,7 +25,7 @@ const checkIn = async (req, res) => {
         const checkInMinute = serverTime.minute();
 
         // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 5 && checkInHour < 24;
+        const isWorkingHour = checkInHour >= 2 && checkInHour < 24;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });
@@ -39,7 +43,14 @@ const checkIn = async (req, res) => {
         if (existingAttendance) {
             return res.status(400).json({ message: "You have already checked in today." });
         }
+        const employee = await User.findById(employeeId);
 
+        if (!employee) {
+            return res.status(404).json({ message: "Employee not found" });
+        }
+
+
+        const firstName = employee.firstName;
         // Determine status and deductions based on check-in time
         let checkInstatus = "Present";
         let deductions = 0;
@@ -52,26 +63,31 @@ const checkIn = async (req, res) => {
             deductions = 0.5;
         }
 
-        // const formattedCheckIn = dayjs.unix(unixTime).format("YYYY-MM-DD HH:mm:ss");
-        // console.log("day unix",formattedCheckIn);
-
-        // const myUnixTimestamp = 1691622800; // start with a Unix timestamp
-
-        // const myDate = new Date(unixTime * 1000); // convert timestamp to milliseconds and construct Date object
-
-        // console.log("my date",myDate); // will print "Thu Aug 10 2023 01:13:20" followed by the local timezone on browser console
-
 
         // Create and save attendance record
         const attendance = new Attendance({
             employee: employeeId,
+            firstName: firstName,
             date: serverTime, // Store local date
             checkIn: parseInt(unixTime), // Store local time
             checkInstatus,
+            isActive: true,
             deductions,
         });
 
         await attendance.save();
+
+        await Attendance.findOneAndUpdate(
+            { employee: employeeId, date: { $gte: startOfDay, $lt: endOfDay } },
+            { isActive: true }
+        );
+
+        // Emit status update via Socket.IO
+        io.emit("status update", {
+            employeeId,
+            isActive: true,
+            firstName: firstName
+        });
 
         res.status(200).json({
             message: "Check-in successful",
