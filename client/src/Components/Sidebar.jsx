@@ -5,7 +5,7 @@ export const Sidebar = ({ role }) => {
   const { id } = useId();
 
   return (
-    <div className="w-64 h-screen bg-gray-100 border-r border-gray-300 p-4">
+    <div className="w-64 min-h-screen bg-gray-100 border-r border-gray-300 p-4">
       <div className="mb-6">
         <ul>
           <li className="mb-2">
@@ -59,7 +59,7 @@ export const Sidebar = ({ role }) => {
         <h2 className="text-lg font-bold text-gray-700 mb-2">Settings</h2>
         <ul>
           <li className="mb-2">
-            <NavLink to={`/profile`}>
+            <NavLink to={`/profile/${id}`}>
               <button className="w-full text-left px-4 py-2 rounded bg-white border border-gray-300 shadow-sm hover:bg-gray-200">
                 Profile
               </button>

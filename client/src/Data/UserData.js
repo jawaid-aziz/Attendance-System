@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export const useUserData = () => {
   const [users, setUsers] = useState(USERS_DUMMYDATA);

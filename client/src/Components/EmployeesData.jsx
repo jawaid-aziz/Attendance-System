@@ -5,9 +5,9 @@ export const EmployeesData = () => {
   const { users } = useUserData();
   const navigate = useNavigate();
 
-  const handleEdit = (id) => {
-     // Navigate to an edit page, adjust route as needed
-  };
+  const handleViewProfile = (id) => {
+    navigate(`/profile/${id}`); // Navigate to the profile page, adjust route as needed
+  }
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
@@ -51,13 +51,6 @@ export const EmployeesData = () => {
                 className="bg-blue-800 text-white px-3 py-2 rounded-md hover:bg-blue-500 transition"
               >
                 View Profile
-              </button>
-              {/* Edit Button */}
-              <button
-                onClick={() => handleEdit(user.id)}
-                className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-800 transition"
-              >
-                Edit
               </button>
 
               {/* Delete Button */}

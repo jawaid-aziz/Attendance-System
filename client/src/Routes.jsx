@@ -40,7 +40,7 @@ export const AllRoutes =
                 element: <EmployeesData />,
             },
             {
-                path: "profile",
+                path: "profile/:id",
                 element: <Profile />,
             },
             {
