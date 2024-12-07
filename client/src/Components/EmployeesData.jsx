@@ -22,13 +22,7 @@ export const EmployeesData = () => {
 
   return (
     <div className="container mx-auto p-4">
-      {/* Back to Admin Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-6 right-4 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition"
-      >
-        Back to Admin
-      </button>
+
 
       {/* Page Header */}
       <div className="flex items-center justify-center flex-col">
@@ -45,7 +39,7 @@ export const EmployeesData = () => {
           >
             {/* User Info */}
             <div>
-              <p className="font-bold text-gray-800">{user.name}</p>
+              <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
               <p className="text-gray-600">{user.role}</p>
             </div>
 

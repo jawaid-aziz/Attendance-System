@@ -1,15 +1,17 @@
+import React from "react";
 import Clocking from "../Components/Clocking";
-import { useParams } from "react-router-dom";
+import { useId } from "../Context/IdProvider";
 
 export const UserInterface = () => {
-    const { id } = useParams();
-    return (
-        <div className="container mx-auto p-4">
-            <div className="flex items-center justify-center flex-col">
-            <h1 className="text-2xl font-bold">User Interface</h1>
-            <p>Welcome to the User Interface page.</p>
-            </div>
-            <Clocking id={id}/>
-        </div>
-    );
-}
+  const { id } = useId();
+
+  return (
+    <div className="container mx-auto p-4 flex">
+
+      {/* Main Content - Center Aligned */}
+      <div className="flex-1 flex flex-col items-center justify-start ml-4">
+        <Clocking id={id} />
+      </div>
+    </div>
+  );
+};

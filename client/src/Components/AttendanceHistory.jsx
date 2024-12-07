@@ -24,7 +24,7 @@ const AttendanceHistory = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Attendance History for {user.name}</h1>
+        <h1 className="text-xl font-bold">Attendance History for {user.firstName}</h1>
         <button
           onClick={() => navigate(-1)}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
