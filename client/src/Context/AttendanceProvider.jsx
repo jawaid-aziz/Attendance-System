@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from "react";
-import { USERS_DUMMYDATA } from "../Data/UserData"; // Adjust the path as needed
 import { useUserData } from "../Data/UserData";
 
 const AttendanceContext = createContext();

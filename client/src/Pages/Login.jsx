@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserData } from "../Data/UserData";
+import { useRole } from "../Context/RoleProvider";
+import { useId } from "../Context/IdProvider";
+
 const Login = () => {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const { users } = useUserData(); 
+  const { users } = useUserData();
+  const { setId } = useId();
+  const { setRole } = useRole(); 
 
   const navigate = useNavigate();
 
@@ -27,14 +32,18 @@ const Login = () => {
       return;
     }
 
+    setId(user.id);
+
         // Check if the login ID is 100
         if (parseInt(loginId) === 100) {
-          navigate(`/admin-interface/${user.id}`);
+          setRole("admin");
+          navigate(`/admin-interface/${loginId}`);
           return;
         }
 
     // Redirect to the attendance page for the user
-    navigate(`/user-interface/${user.id}`);
+    setRole("user");
+    navigate(`/user-interface/${loginId}`);
   };
 
   return (

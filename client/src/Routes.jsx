@@ -4,15 +4,55 @@ import { UserInterface } from "./Pages/UserInterface";
 import { AdminInterface } from "./Pages/AdminInterface";
 import AddEmployee from "./Components/AddEmployee";
 import { EmployeesData } from "./Components/EmployeesData";
+
 import AdminDashboard from "./AdminDashboard";
-export const AllRoutes =[
+
+
+import { Profile } from "./Components/Profile";
+import { SystemSettings } from "./Components/SystemSettings";
+import { Layout } from "./Pages/Layout";
+
+export const AllRoutes =
+[
     {
         path: '/',
         element: <Login />,
     },
     {
-        path: "/user-interface/:id",
-        element: <UserInterface />,
+        path: "/",
+        element: <Layout />,
+        children: 
+        [
+            {
+                path: "user-interface/:id",
+                element: <UserInterface />,
+            },
+            {
+                path: "admin-interface/:id",
+                element: <AdminInterface />,
+            },
+            {
+                path: "attendance-history/:id",
+                element: <AttendanceHistory />,
+            },
+            {
+                path: "add-employee",
+                element: <AddEmployee />,
+            },
+            {
+                path: "employees-data",
+                element: <EmployeesData />,
+            },
+            {
+                path: "profile/:id",
+                element: <Profile />,
+            },
+            {
+                path: "system-settings",
+                element: <SystemSettings />,
+            },
+        ]
+            
     },
     {
         path: "/admin-interface/:id",
@@ -34,4 +74,5 @@ export const AllRoutes =[
         path: "/admin",
         element: <AdminDashboard/>
     }
+
 ]

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useAttendance } from "../Context/AttendanceProvider";
 import { useUserData } from "../Data/UserData";
+import { useId } from "../Context/IdProvider";
 
 const Clocking = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useId();
   const [user, setUser] = useState(null);
-  const { getUserById, updateAttendance } = useAttendance();
+  const { updateAttendance } = useAttendance();
   const [isAllowedTime, setIsAllowedTime] = useState(false);
   const { users } = useUserData(); 
 
@@ -91,22 +90,12 @@ const Clocking = () => {
     return false;
   };
 
-  const handleLogout = () => {
-    navigate("/"); // Redirect to the login page
-  };
-
   if (!user) return <p>Loading user data...</p>;
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Attendance for {user.name}</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-        >
-          Log Out
-        </button>
+        <h1 className="text-xl font-bold">Attendance for {user.firstName}</h1>
       </div>
 
       {/* Attendance Actions */}
@@ -124,12 +113,6 @@ const Clocking = () => {
           disabled={!isAllowedTime || !user.checkedIn}
         >
           Check-Out
-        </button>
-        <button
-          onClick={() => navigate(`/attendance-history/${id}`)}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-        >
-          Show Attendance
         </button>
       </div>
     </div>

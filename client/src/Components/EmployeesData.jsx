@@ -5,9 +5,9 @@ export const EmployeesData = () => {
   const { users } = useUserData();
   const navigate = useNavigate();
 
-  const handleEdit = (id) => {
-     // Navigate to an edit page, adjust route as needed
-  };
+  const handleViewProfile = (id) => {
+    navigate(`/profile/${id}`); // Navigate to the profile page, adjust route as needed
+  }
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
@@ -22,13 +22,7 @@ export const EmployeesData = () => {
 
   return (
     <div className="container mx-auto p-4">
-      {/* Back to Admin Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-6 right-4 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition"
-      >
-        Back to Admin
-      </button>
+
 
       {/* Page Header */}
       <div className="flex items-center justify-center flex-col">
@@ -45,7 +39,7 @@ export const EmployeesData = () => {
           >
             {/* User Info */}
             <div>
-              <p className="font-bold text-gray-800">{user.name}</p>
+              <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
               <p className="text-gray-600">{user.role}</p>
             </div>
 
@@ -57,13 +51,6 @@ export const EmployeesData = () => {
                 className="bg-blue-800 text-white px-3 py-2 rounded-md hover:bg-blue-500 transition"
               >
                 View Profile
-              </button>
-              {/* Edit Button */}
-              <button
-                onClick={() => handleEdit(user.id)}
-                className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-800 transition"
-              >
-                Edit
               </button>
 
               {/* Delete Button */}
