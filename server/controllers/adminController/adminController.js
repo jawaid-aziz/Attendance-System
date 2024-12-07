@@ -160,3 +160,41 @@ exports.editUser = async (req, res) => {
     res.status(500).json({ message: "Failed to update user", error: error.message });
   }
 };
+
+// Delete User Controller
+exports.deleteUser = async (req, res) => {
+  const userId = req.params.id; // Assuming user ID is passed as a route parameter
+
+  // Check if user ID is provided
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  try {
+    // Find and delete the user by ID
+    const user = await User.findByIdAndDelete(userId);
+
+    // If user not found
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Respond with success
+    res.status(200).json({
+      message: "User deleted successfully",
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        salary: user.salary,
+        address: user.address,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to delete user", error: error.message });
+  }
+};

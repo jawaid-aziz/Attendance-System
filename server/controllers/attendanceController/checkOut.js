@@ -14,12 +14,13 @@ const checkOut = async (req, res) => {
 
         // let serverTime;
 
-        const serverTime = dayjs().utcOffset(300);// Replace with your desired timezone
+        const timezoneName = process.env.TIMEZONE;
+        const serverTime = dayjs().tz(timezoneName);// Replace with your desired timezone
+        const unixTime = serverTime.unix();
         const checkOutHour = serverTime.hour();
         console.log("ser", serverTime);
-        const startOfToday = serverTime.startOf("day").toDate(); // Start of today in local time
-        const endOfToday = serverTime.endOf("day").toDate(); // End of today in local time
-
+        const startOfToday = serverTime.startOf("day").unix(); // Start of day in seconds
+        const endOfToday = serverTime.endOf("day").unix(); 
         const attendance = await Attendance.findOne({
             employee: employeeId,
             checkIn: { $gte: startOfToday, $lt: endOfToday }, // Ensure a valid check-in exists
@@ -36,13 +37,13 @@ const checkOut = async (req, res) => {
         let checkOutstatus = attendance.checkOutstatus; //default
         let deductions = attendance.deductions;
 
-        if (checkOutHour > 22) {
-            checkOutstatus = "Late Check-Out";
-        } else if (checkOutHour === 22) {
-            checkOutstatus = "Checked Out on Time";
-        } else {
-            return res.status(400).json({ message: "Cannot check out before 21:00." });
-        }
+        // if (checkOutHour > 22) {
+        //     checkOutstatus = "Late Check-Out";
+        // } else if (checkOutHour === 22) {
+        //     checkOutstatus = "Checked Out on Time";
+        // } else {
+        //     return res.status(400).json({ message: "Cannot check out before 21:00." });
+        // }
 
         // No Check-Out recorded by the end of shift
         if (!attendance.checkOut) {
@@ -50,7 +51,7 @@ const checkOut = async (req, res) => {
             deductions += 0.5;
         }
         // Update the attendance record
-        attendance.checkOut = serverTime.format();
+        attendance.checkOut = parseInt(unixTime),
         attendance.checkOutstatus = checkOutstatus;
         attendance.deductions = deductions;
 

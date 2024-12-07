@@ -3,28 +3,33 @@ const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const utc = require("dayjs/plugin/utc")
 dayjs.extend(timezone);
-
+dayjs.extend(utc);
 const checkIn = async (req, res) => {
     try {
         const { employeeId } = req.params;
 
-        // Get current time in Pakistan time zone (Asia/Karachi)
-        const serverTime = dayjs().utcOffset(300);
+        const timezoneName = process.env.TIMEZONE;
+        const serverTime = dayjs().tz(timezoneName);
+        const unixTime = serverTime.unix();// Convert to seconds since epoch
 
+        console.log("Server Time:", serverTime.format()); // Human-readable time
+        console.log("Unix Time:", unixTime); // Time in seconds since epoch
+        console.log("Timezone:", timezoneName);
         // Extract hour and minute
+
         const checkInHour = serverTime.hour();
         const checkInMinute = serverTime.minute();
 
         // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 9 && checkInHour < 22;
+        const isWorkingHour = checkInHour >= 5 && checkInHour < 24;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });
         }
 
         // Check if the user has already checked in on the same day
-        const startOfDay = serverTime.startOf("day").toDate(); // Pakistan start of day
-        const endOfDay = serverTime.endOf("day").toDate(); // Pakistan end of day
+        const startOfDay = serverTime.startOf("day").toDate(); // Local start of day
+        const endOfDay = serverTime.endOf("day").toDate(); // Local end of day
 
         const existingAttendance = await Attendance.findOne({
             employee: employeeId,
@@ -47,11 +52,21 @@ const checkIn = async (req, res) => {
             deductions = 0.5;
         }
 
+        // const formattedCheckIn = dayjs.unix(unixTime).format("YYYY-MM-DD HH:mm:ss");
+        // console.log("day unix",formattedCheckIn);
+
+        // const myUnixTimestamp = 1691622800; // start with a Unix timestamp
+
+        // const myDate = new Date(unixTime * 1000); // convert timestamp to milliseconds and construct Date object
+
+        // console.log("my date",myDate); // will print "Thu Aug 10 2023 01:13:20" followed by the local timezone on browser console
+
+
         // Create and save attendance record
         const attendance = new Attendance({
             employee: employeeId,
             date: serverTime, // Store local date
-            checkIn: serverTime, // Store local time
+            checkIn: parseInt(unixTime), // Store local time
             checkInstatus,
             deductions,
         });
