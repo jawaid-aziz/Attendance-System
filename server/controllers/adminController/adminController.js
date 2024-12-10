@@ -1,5 +1,29 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
+const Attendance = require("../../models/Attendance");
+// Get Users Controller
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    const employees = await Promise.all(
+      users.map(async (user) => {
+        const attendance = await Attendance.findOne({ employee: user._id }).sort({ date: -1 });
+        return {
+          _id: user._id,
+          firstName: user.firstName,
+          role: user.role,
+          isActive: attendance?.isActive || null,
+        };
+      })
+    );
+
+    res.status(200).json({ employees });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Error fetching users", error: error.message });
+  }
+};
+
 
 // Add User Controller
 exports.addUser = async (req, res) => {

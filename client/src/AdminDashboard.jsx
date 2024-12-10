@@ -4,44 +4,13 @@ import { io } from "socket.io-client";
 const AdminDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
+  const socketUrl = "http://localhost:5000"; // Backend URL
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io("http://localhost:5000");
-    setSocket(newSocket);
-
-    // Enhanced debugging listener
-    newSocket.on("status update", (data) => {
-      console.log("Received FULL status update data:", data);
-      console.log("Current employees before update:", employees);
-
-      // Detailed logging
-      console.log("Attempting to update employee with ID:", data.employeeId);
-      console.log("New active status:", data.isActive);
-
-      // More robust update mechanism
-      setEmployees(prevEmployees => {
-        const updatedEmployees = prevEmployees.map(employee => {
-          if (employee._id === data.employeeId) {
-            console.log("MATCH FOUND - Updating employee:", {
-              ...employee,
-              isActive: data.isActive
-            });
-            return { ...employee, isActive: data.isActive };
-          }
-          return employee;
-        });
-
-        console.log("Updated employees array:", updatedEmployees);
-        return updatedEmployees;
-      });
-    });
-
-    // Fetch employees' initial status
-    const fetchEmployeeStatus = async () => {
+    // Fetch initial employee data
+    const fetchEmployees = async () => {
       try {
-        const response = await fetch("http://localhost:5000/attend/status", {
+        const response = await fetch(`${socketUrl}/admin/user`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -49,20 +18,38 @@ const AdminDashboard = () => {
         });
 
         const data = await response.json();
-        console.log("Initial employees fetched:", data.employees);
-        setEmployees(data.employees);
+        const enrichedEmployees = data.employees.map((employee) => ({
+          ...employee,
+          isActive: null, // Default isActive is null
+        }));
+        setEmployees(enrichedEmployees);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching employee statuses:", error);
+        console.error("Error fetching employee data:", error);
         setLoading(false);
       }
     };
 
-    fetchEmployeeStatus();
+    fetchEmployees();
 
-    // Cleanup
+    // Initialize WebSocket connection
+    const socket = io(socketUrl);
+
+    // Listen for status updates
+    socket.on("status update", (data) => {
+      setEmployees((prevEmployees) =>
+        prevEmployees.map((employee) => {
+          if (employee._id === data.employeeId) {
+            return { ...employee, isActive: data.isActive };
+          }
+          return employee;
+        })
+      );
+    });
+
+    // Cleanup WebSocket connection on unmount
     return () => {
-      newSocket.disconnect();
+      socket.disconnect();
     };
   }, []);
 
@@ -80,21 +67,33 @@ const AdminDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {employees.map((employee) => (
-            <tr key={employee._id}>
-              <td className="border border-gray-300 px-4 py-2">
-                {employee.firstName} {employee.lastName}
-              </td>
-              <td className="border border-gray-300 px-4 py-2">{employee.role}</td>
-              <td
-                className={`border border-gray-300 px-4 py-2 ${
-                  employee.isActive ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {employee.isActive ? "Active" : "Inactive"}
-              </td>
-            </tr>
-          ))}
+          {employees.map((employee, index) => {
+            const firstName = employee?.firstName || "Unknown";
+            const role = employee?.role || "Unknown";
+            const isActive = employee?.isActive;
+
+            return (
+              <tr key={index}>
+                <td className="border border-gray-300 px-4 py-2">{firstName}</td>
+                <td className="border border-gray-300 px-4 py-2">{role}</td>
+                <td
+                  className={`border border-gray-300 px-4 py-2 ${
+                    isActive === null
+                      ? "text-gray-500"
+                      : isActive
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  {isActive === null
+                    ? "Unknown"
+                    : isActive
+                    ? "Active"
+                    : "Inactive"}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

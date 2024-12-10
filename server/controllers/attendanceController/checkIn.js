@@ -25,7 +25,7 @@ const checkIn = async (req, res) => {
         const checkInMinute = serverTime.minute();
 
         // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 2 && checkInHour < 24;
+        const isWorkingHour = checkInHour >= 0 && checkInHour < 24;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });
@@ -83,11 +83,14 @@ const checkIn = async (req, res) => {
         );
 
         // Emit status update via Socket.IO
+
         io.emit("status update", {
-            employeeId,
+            employeeId: employeeId.toString(), // Correct Employee ID
             isActive: true,
-            firstName: firstName
-        });
+          });
+        console.log("Emitting employee ID:", employeeId.toString());
+
+
 
         res.status(200).json({
             message: "Check-in successful",
