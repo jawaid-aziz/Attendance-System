@@ -11,7 +11,7 @@ dayjs.extend(timezone);
 const checkOut = async (req, res) => {
     try {
         const { employeeId } = req.params;
-        const io= req.io;
+        const io = req.io;
         // let serverTime;
 
         const timezoneName = process.env.TIMEZONE;
@@ -19,6 +19,8 @@ const checkOut = async (req, res) => {
         const unixTime = serverTime.unix();
         const checkOutHour = serverTime.hour();
         console.log("ser", serverTime);
+        const officeEndHour = 17; // Office hours end at 5 PM (17:00)
+        const noCheckOutDeadline = serverTime.startOf("day").hour(officeEndHour + 2); // 2 hours after office ends
         const startOfToday = serverTime.startOf("day").unix(); // Start of day in seconds
         const endOfToday = serverTime.endOf("day").unix();
         const attendance = await Attendance.findOne({
@@ -37,18 +39,24 @@ const checkOut = async (req, res) => {
         let checkOutstatus = attendance.checkOutstatus; //default
         let deductions = attendance.deductions;
 
-        // if (checkOutHour > 22) {
-        //     checkOutstatus = "Late Check-Out";
-        // } else if (checkOutHour === 22) {
-        //     checkOutstatus = "Checked Out on Time";
-        // } else {
-        //     return res.status(400).json({ message: "Cannot check out before 21:00." });
-        // }
+        if (serverTime.isAfter(noCheckOutDeadline)) {
+            // If past the deadline and no check-out recorded
+            checkOutstatus = "No Check-Out";
+            deductions += 2;
+        }
+        else if (serverTime.hour() > officeEndHour && serverTime.isBefore(noCheckOutDeadline)) {
+            // Checked out after office hours but before the "No Check-Out" deadline
+            checkOutstatus = "Late Check-Out";
+        } else if (checkOutHour === 5) {
+            checkOutstatus = "Checked Out on Time";
+        } else {
+            return res.status(400).json({ message: "Cannot check out before 21:00." });
+        }
 
         // No Check-Out recorded by the end of shift
         if (!attendance.checkOut) {
             checkOutstatus = "No Check-Out";
-            deductions += 0.5;
+            deductions += 2;
         }
         // Update the attendance record
         attendance.checkOut = parseInt(unixTime),
@@ -56,7 +64,7 @@ const checkOut = async (req, res) => {
         attendance.deductions = deductions;
 
         await attendance.save();
-      
+
         // await Attendance.updateOne({_id:employeeId},{isActive:false})
 
         // io.emit("status update",{employeeId, isActive:false})

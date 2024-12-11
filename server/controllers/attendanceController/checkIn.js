@@ -25,7 +25,7 @@ const checkIn = async (req, res) => {
         const checkInMinute = serverTime.minute();
 
         // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 0 && checkInHour < 24;
+        const isWorkingHour = checkInHour >= 10 && checkInHour < 24;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });
@@ -34,10 +34,12 @@ const checkIn = async (req, res) => {
         // Check if the user has already checked in on the same day
         const startOfDay = serverTime.startOf("day").toDate(); // Local start of day
         const endOfDay = serverTime.endOf("day").toDate(); // Local end of day
+        const cutoffTime = dayjs(startOfDay).add(4, "hours").toDate(); // Starting time + 4 hours
+
 
         const existingAttendance = await Attendance.findOne({
             employee: employeeId,
-            checkIn: { $gte: startOfDay, $lt: endOfDay },
+            date: { $gte: startOfDay, $lt: endOfDay },
         });
 
         if (existingAttendance) {
@@ -57,11 +59,12 @@ const checkIn = async (req, res) => {
 
         if (checkInHour === 9 && checkInMinute > 15) {
             checkInstatus = "Late Check-In (Half Leave)";
-            deductions = 0.5;
+            deductions = 2;
         } else if (checkInHour > 9) {
             checkInstatus = "Late Check-In (Half Leave)";
-            deductions = 0.5;
+            deductions = 2;
         }
+
 
 
         // Create and save attendance record
@@ -87,7 +90,7 @@ const checkIn = async (req, res) => {
         io.emit("status update", {
             employeeId: employeeId.toString(), // Correct Employee ID
             isActive: true,
-          });
+        });
         console.log("Emitting employee ID:", employeeId.toString());
 
 

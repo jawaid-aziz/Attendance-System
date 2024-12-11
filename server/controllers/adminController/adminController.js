@@ -7,13 +7,33 @@ exports.getUsers = async (req, res) => {
     const users = await User.find({});
     const employees = await Promise.all(
       users.map(async (user) => {
+        // Find the most recent attendance record
         const attendance = await Attendance.findOne({ employee: user._id }).sort({ date: -1 });
+
+        // Determine status based on attendance record
+        let isActive = null; // Default to null
+        if (attendance) {
+          const today = new Date().toISOString().split("T")[0]; // Current date in "YYYY-MM-DD"
+          const attendanceDate = new Date(attendance.date).toISOString().split("T")[0];
+
+          if (attendanceDate === today) {
+            // If the latest attendance record is for today
+            isActive = attendance.isActive ?? null; // Use `isActive`, fallback to null
+          } else {
+            // If the latest attendance record is not for today, mark as null (not checked in today)
+            isActive = null;
+          }
+        }
+        console.log("isActive satatus:",isActive);
+
+        // Return user with computed attendance status
         return {
           _id: user._id,
           firstName: user.firstName,
           role: user.role,
-          isActive: attendance?.isActive || null,
+          isActive: isActive,
         };
+        
       })
     );
 

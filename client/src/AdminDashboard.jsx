@@ -18,11 +18,11 @@ const AdminDashboard = () => {
         });
 
         const data = await response.json();
-        const enrichedEmployees = data.employees.map((employee) => ({
-          ...employee,
-          isActive: null, // Default isActive is null
-        }));
-        setEmployees(enrichedEmployees);
+        // const enrichedEmployees = data.employees.map((employee) => ({
+        //   ...employee,
+        //   isActive: null, // Default isActive is null
+        // }));
+        setEmployees(data.employees);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching employee data:", error);
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
                   }`}
                 >
                   {isActive === null
-                    ? "Unknown"
+                    ? "null"
                     : isActive
                     ? "Active"
                     : "Inactive"}
