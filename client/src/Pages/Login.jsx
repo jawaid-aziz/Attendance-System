@@ -1,50 +1,54 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUserData } from "../Data/UserData";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
 
 const Login = () => {
-  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const { users } = useUserData();
+  const [email, setEmail] = useState("");
+  const [errorMessage, setError] = useState(null);
   const { setId } = useId();
   const { setRole } = useRole(); 
 
   const navigate = useNavigate();
 
-  // Mock password (for simplicity, we assume all users have the same password for now)
-  const MOCK_PASSWORD = "12345";
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    const user = users.find((user) => user.id === parseInt(loginId));
+    try {
+      const response = await fetch("http://localhost:5000/userRoutes/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, role, id }),
+      });
 
-    if (!user) {
-      setErrorMessage("User ID not found!");
-      return;
+      // const data = await response.json();
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.message || "Something went wrong.");
+        return;
+      }
+
+    
+    // Parse response JSON
+    const data = await response.json();
+    console.log("Login successful:", data);
+
+    setId(parseInt(id));
+    setRole(role);
+
+    if (data.success) {
+      navigate(`/home/${id}`); // Redirect to home page
+    } else {
+      setError("Invalid credentials"); // Handle unexpected backend responses
     }
-
-    if (password !== MOCK_PASSWORD) {
-      setErrorMessage("Incorrect password!");
-      return;
-    }
-
-    setId(user.id);
-
-        // Check if the login ID is 100
-        if (parseInt(loginId) === 100) {
-          setRole("admin");
-          navigate(`/admin-interface/${loginId}`);
-          return;
-        }
-
-    // Redirect to the attendance page for the user
-    setRole("user");
-    navigate(`/user-interface/${loginId}`);
-  };
+  } catch (err) {
+    console.error("Login failed:", err);
+    setError("Something went wrong. Please try again.");
+  }};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -59,13 +63,13 @@ const Login = () => {
               htmlFor="loginId"
               className="block text-gray-700 font-medium mb-2"
             >
-              Login ID
+              Email
             </label>
             <input
               type="text"
-              id="loginId"
-              value={loginId}
-              onChange={(e) => setLoginId(e.target.value)}
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
               placeholder="Enter your login ID"
               required
