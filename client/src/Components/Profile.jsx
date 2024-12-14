@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useUserData } from "../Data/UserData";
 import { useRole } from "../Context/RoleProvider";
@@ -6,41 +6,108 @@ import { useRole } from "../Context/RoleProvider";
 export const Profile = () => {
   const { id } = useParams();
   const {role} = useRole();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { users } = useUserData(); // Access the user data
   console.log("Users Data:", users); 
-  const user = users.find((u) => u.id === Number(id)); // Find the user with the matching ID
+  // const user = users.find((u) => u.id === Number(id)); // Find the user with the matching ID
 
-  console.log("ID from Params:", id);
-console.log("Matching User:", user);
+  // console.log("ID from Params:", id);
+// console.log("Matching User:", user);
 
 
   // State for editable fields
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    username: user?.username || "",
-    email: user?.email || "",
-    gender: user?.gender || "",
-    contact: user?.contact || "",
-    country: user?.country || "",
-    city: user?.city || "",
-    address: user?.address || "",
-    salary: user?.salary || "",
+    firstName: "",
+    lastName: "",
+    // username: "",
+    email: "",
+    role:" ",
+    // gender: "",
+    phone: "",
+    // country: "",
+    // city: "",
+    address: "",
+    salary: "",
   });
+  useEffect(() => {
+    // Fetch user profile data
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const data = await response.json();
+        // setUser(data);
+        setFormData({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          // username: data.username || "",
+          email: data.email || "",
+          role:data.role||"",
+          // gender: data.gender || "",
+           phone: data.phone || "",
+          // country: data.country || "",
+          // city: data.city || "",
+          address: data.address || "",
+          salary: data.salary || "",
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to load user profile.");
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // Submit updated profile data
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Updated Data:", formData);
-    // You can add logic to update the user data in the context or state here
+    try {
+      const response = await fetch(`http://localhost:5000/admin/edit/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update user data");
+      }
+
+      const updatedData = await response.json();
+      setUser(updatedData);
+      alert("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating user data:", error);
+      alert("Failed to update profile.");
+    }
   };
 
-  if (!user) {
-    return <p>User not found</p>;
+  if (loading) {
+    return <div className="text-center py-10">Loading profile...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
   }
 
   return (
@@ -72,7 +139,7 @@ console.log("Matching User:", user);
           />
         </div>
 
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="block font-medium mb-1">Username</label>
           <input
             type="text"
@@ -82,7 +149,7 @@ console.log("Matching User:", user);
             readOnly={role !== "admin"}
             className="w-full border px-3 py-2 rounded bg-gray-100"
           />
-        </div>
+        </div> */}
 
         <div className="mb-4">
           <label className="block font-medium mb-1">Email</label>
@@ -98,11 +165,11 @@ console.log("Matching User:", user);
 
         {/* Read-only Fields */}
         <div className="mb-4">
-          <label className="block font-medium mb-1">Gender</label>
+          <label className="block font-medium mb-1">Role</label>
           <input
             type="text"
             name="gender"
-            value={formData.gender}
+            value={formData.role}
             onChange={handleInputChange}
             readOnly={role !== "admin"}
             className="w-full border px-3 py-2 rounded bg-gray-100"
@@ -110,18 +177,18 @@ console.log("Matching User:", user);
         </div>
 
         <div className="mb-4">
-          <label className="block font-medium mb-1">Contact</label>
+          <label className="block font-medium mb-1">Phone</label>
           <input
             type="text"
             name="contact"
-            value={formData.contact}
+            value={formData.phone}
             onChange={handleInputChange}
             readOnly={role !== "admin"}
             className="w-full border px-3 py-2 rounded bg-gray-100"
           />
         </div>
 
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="block font-medium mb-1">Country</label>
           <input
             type="text"
@@ -143,7 +210,7 @@ console.log("Matching User:", user);
             readOnly={role !== "admin"}
             className="w-full border px-3 py-2 rounded bg-gray-100"
           />
-        </div>
+        </div> */}
 
         <div className="mb-4">
           <label className="block font-medium mb-1">Address</label>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-
+import { useNavigate } from "react-router-dom";
 const AdminDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const socketUrl = "http://localhost:5000"; // Backend URL
-
+const navigate= useNavigate();
   useEffect(() => {
     // Fetch initial employee data
     const fetchEmployees = async () => {
@@ -50,8 +50,10 @@ const AdminDashboard = () => {
   }, []);
 
   const handleViewProfile = (id) => {
-    console.log(`View Profile for employee with ID: ${id}`);
+    navigate(`/profile/${id}`);
   };
+
+  if (loading) return <div className="text-center py-10">Loading...</div>;
 
   const handleDelete = (id) => {
     console.log(`Delete employee with ID: ${id}`);
@@ -126,7 +128,7 @@ const AdminDashboard = () => {
                     }`}
                   >
                     {isActive === null
-                      ? "Unknown"
+                      ? "null"
                       : isActive
                       ? "Active"
                       : "Inactive"}

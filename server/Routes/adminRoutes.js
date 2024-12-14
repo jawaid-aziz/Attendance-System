@@ -10,5 +10,6 @@ const router = express.Router();
 
 router.post("/add", addUser);
 router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
-router.get("/user",getUsers)
+router.get("/user",getUsers);
+
 module.exports = router;

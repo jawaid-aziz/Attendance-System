@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./Routes/authRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const attendanceRoutes = require("./Routes/attendanceRoutes");
+const commonRoutes= require("./Routes/commonRoutes")
 const { Server } = require("socket.io");
 const http = require("http");
 
@@ -36,7 +37,7 @@ app.use("/attend", (req, res, next) => {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
-
+app.use("/byId", commonRoutes);
 io.on("connection", (socket) => {
   console.log("New client connected", socket.id);
 
