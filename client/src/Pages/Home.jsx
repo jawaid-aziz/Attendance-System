@@ -2,16 +2,15 @@ import React from "react";
 import Clocking from "../Components/Clocking";
 import { useId } from "../Context/IdProvider";
 
-export const AdminInterface = () => {
+export const Home = () => {
   const { id } = useId();
 
   return (
-    <div className="container mx-auto p-4 flex bg-black-100">
+    <div className="container mx-auto p-4 flex">
 
-      {/* Main Content */}
+      {/* Main Content - Center Aligned */}
       <div className="flex-1 flex flex-col items-center justify-start ml-4">
-        
-        <Clocking/>
+        <Clocking id={id} />
       </div>
     </div>
   );

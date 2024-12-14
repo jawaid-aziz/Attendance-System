@@ -1,9 +1,8 @@
 import Login from "./Pages/Login";
 import AttendanceHistory from "./Components/AttendanceHistory";
-import { UserInterface } from "./Pages/UserInterface";
-import { AdminInterface } from "./Pages/AdminInterface";
 import AddEmployee from "./Components/AddEmployee";
 import { EmployeesData } from "./Components/EmployeesData";
+import { Home } from "./Pages/Home";
 
 import AdminDashboard from "./AdminDashboard";
 
@@ -24,12 +23,8 @@ export const AllRoutes =
         children: 
         [
             {
-                path: "user-interface/:id",
-                element: <UserInterface />,
-            },
-            {
-                path: "admin-interface/:id",
-                element: <AdminInterface />,
+                path: "home/:id",
+                element: <Home />,
             },
             {
                 path: "attendance-history/:id",
@@ -51,24 +46,7 @@ export const AllRoutes =
                 path: "system-settings",
                 element: <SystemSettings />,
             },
-        ]
-            
-    },
-    {
-        path: "/admin-interface/:id",
-        element: <AdminInterface />,
-    },
-    {
-        path: "/attendance-history/:id",
-        element: <AttendanceHistory />,
-    },
-    {
-        path: "/add-employee",
-        element: <AddEmployee />,
-    },
-    {
-        path: "/employees-data",
-        element: <EmployeesData />,
+        ]            
     },
     {
         path: "/admin",
