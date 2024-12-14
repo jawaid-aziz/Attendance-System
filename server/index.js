@@ -6,7 +6,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./Routes/authRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const attendanceRoutes = require("./Routes/attendanceRoutes");
-const commonRoutes= require("./Routes/commonRoutes")
+const commonRoutes = require("./Routes/commonRoutes")
 const { Server } = require("socket.io");
 const http = require("http");
 

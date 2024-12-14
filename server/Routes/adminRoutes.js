@@ -9,7 +9,8 @@ const authorizeAdmin = require("../middleware/authorizeAdmin");
 const router = express.Router();
 
 router.post("/add", addUser);
-router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
+// router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
+router.put("/edit/:id",  editUser);
 router.get("/user",getUsers);
 
 module.exports = router;

@@ -1,36 +1,27 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useUserData } from "../Data/UserData";
 import { useRole } from "../Context/RoleProvider";
 
 export const Profile = () => {
   const { id } = useParams();
-  const {role} = useRole();
-  const [user, setUser] = useState(null);
+  const { role } = useRole();
+  // const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { users } = useUserData(); // Access the user data
-  console.log("Users Data:", users); 
-  // const user = users.find((u) => u.id === Number(id)); // Find the user with the matching ID
-
-  // console.log("ID from Params:", id);
-// console.log("Matching User:", user);
-
+  // const { users } = useUserData();
 
   // State for editable fields
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    // username: "",
     email: "",
-    role:" ",
-    // gender: "",
+    role: "",
     phone: "",
-    // country: "",
-    // city: "",
     address: "",
     salary: "",
   });
+
   useEffect(() => {
     // Fetch user profile data
     const fetchUser = async () => {
@@ -47,19 +38,17 @@ export const Profile = () => {
         }
 
         const data = await response.json();
-        // setUser(data);
+        console.log("Fetched User Data:", data); // Debug fetched data
+        const user = data.user;
+        // Populate formData with fetched data
         setFormData({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
-          // username: data.username || "",
-          email: data.email || "",
-          role:data.role||"",
-          // gender: data.gender || "",
-           phone: data.phone || "",
-          // country: data.country || "",
-          // city: data.city || "",
-          address: data.address || "",
-          salary: data.salary || "",
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email || "",
+          role: user.role || "",
+          phone: user.phone || "",
+          address: user.address || "",
+          salary: user.salary || "",
         });
         setLoading(false);
       } catch (error) {
@@ -71,6 +60,7 @@ export const Profile = () => {
 
     fetchUser();
   }, [id]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -80,16 +70,25 @@ export const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const sanitizedFormData = {
+        ...formData,
+        salary: Number(formData.salary) || 0, // Ensure salary is a valid number
+      };
+      
+      console.log("Payload being sent:", sanitizedFormData); // Debug payload
       const response = await fetch(`http://localhost:5000/admin/edit/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          // Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData),
+        // body: JSON.stringify(sanitizedFormData),
       });
-
-      if (!response.ok) {
+      console.log("Response Status:", response.status); // Log response status
+      const responseData = await response.json();
+      console.log("Response Data:", responseData); // Log response data
+  
+      if (!response===200) {
         throw new Error("Failed to update user data");
       }
 
@@ -139,18 +138,6 @@ export const Profile = () => {
           />
         </div>
 
-        {/* <div className="mb-4">
-          <label className="block font-medium mb-1">Username</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div> */}
-
         <div className="mb-4">
           <label className="block font-medium mb-1">Email</label>
           <input
@@ -168,10 +155,9 @@ export const Profile = () => {
           <label className="block font-medium mb-1">Role</label>
           <input
             type="text"
-            name="gender"
+            name="role"
             value={formData.role}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
+            readOnly
             className="w-full border px-3 py-2 rounded bg-gray-100"
           />
         </div>
@@ -180,37 +166,13 @@ export const Profile = () => {
           <label className="block font-medium mb-1">Phone</label>
           <input
             type="text"
-            name="contact"
+            name="phone"
             value={formData.phone}
             onChange={handleInputChange}
             readOnly={role !== "admin"}
             className="w-full border px-3 py-2 rounded bg-gray-100"
           />
         </div>
-
-        {/* <div className="mb-4">
-          <label className="block font-medium mb-1">Country</label>
-          <input
-            type="text"
-            name="country"
-            value={formData.country}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block font-medium mb-1">City</label>
-          <input
-            type="text"
-            name="city"
-            value={formData.city}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div> */}
 
         <div className="mb-4">
           <label className="block font-medium mb-1">Address</label>
@@ -220,7 +182,7 @@ export const Profile = () => {
             value={formData.address}
             onChange={handleInputChange}
             readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100  "
+            className="w-full border px-3 py-2 rounded bg-gray-100"
           />
         </div>
 
@@ -236,13 +198,13 @@ export const Profile = () => {
           />
         </div>
 
-        {(role === "admin") && (
-                    <button
-                    type="submit"
-                    className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  >
-                    Save Changes
-                  </button>
+        {role === "admin" && (
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Save Changes
+          </button>
         )}
       </form>
     </div>
