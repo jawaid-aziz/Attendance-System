@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useUserData } from "../Data/UserData";
 import { useRole } from "../Context/RoleProvider";
 
 export const Profile = () => {

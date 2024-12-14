@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import AttendanceProvider from "./Context/AttendanceProvider.jsx";
 import { RoleProvider } from "./Context/RoleProvider.jsx";
 import { IdProvider } from "./Context/IdProvider.jsx";
 import { AllRoutes } from "./Routes.jsx";
@@ -15,11 +14,9 @@ function Main() {
   return (
     <StrictMode>
       <IdProvider>
-      <RoleProvider>
-      <AttendanceProvider>
-        <RouterProvider router={router} />
-      </AttendanceProvider>
-      </RoleProvider>
+        <RoleProvider>
+          <RouterProvider router={router} />
+        </RoleProvider>
       </IdProvider>
     </StrictMode>
   );

@@ -8,7 +8,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [errorMessage, setError] = useState(null);
   const { setId } = useId();
-  const { setRole } = useRole(); 
+  const { setRole } = useRole();
 
   const navigate = useNavigate();
 
@@ -16,12 +16,12 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/userRoutes/login", {
+      const response = await fetch("http://localhost:5000/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password, role, id }),
+        body: JSON.stringify({ email, password }),
       });
 
       // const data = await response.json();
@@ -32,23 +32,15 @@ const Login = () => {
         return;
       }
 
-    
-    // Parse response JSON
-    const data = await response.json();
-    console.log("Login successful:", data);
-
-    setId(parseInt(id));
-    setRole(role);
-
-    if (data.success) {
-      navigate(`/home/${id}`); // Redirect to home page
-    } else {
-      setError("Invalid credentials"); // Handle unexpected backend responses
+      // Parse response JSON
+      const data = await response.json();
+      setId(data.user.id);
+      setRole(data.user.role);
+      navigate(`/home`);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
     }
-  } catch (err) {
-    console.error("Login failed:", err);
-    setError("Something went wrong. Please try again.");
-  }};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -71,7 +63,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter your login ID"
+              placeholder="Enter your email"
               required
             />
           </div>

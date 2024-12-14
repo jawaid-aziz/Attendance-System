@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useAttendance } from "../Context/AttendanceProvider";
 import { useUserData } from "../Data/UserData";
 import { useId } from "../Context/IdProvider";
 
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
-  const { updateAttendance } = useAttendance();
   const [isAllowedTime, setIsAllowedTime] = useState(false);
   const { users } = useUserData(); 
 
