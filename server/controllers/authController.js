@@ -19,33 +19,37 @@ exports.loginUser = async (req, res) => {
       .json({ message: "Password must be at least 6 characters long" });
   }
 
-  // const allowedRoles = ["admin", "employee"]; // Define allowed roles
-  // if (!role || !allowedRoles.includes(role)) {
-  //   return res
-  //     .status(400)
-  //     .json({
-  //       message: `Role must be one of the following: ${allowedRoles.join(
-  //         ", "
-  //       )}`,
-  //     });
-  // }
+  const allowedRoles = ["admin", "employee"]; // Define allowed roles
+  if (!role || !allowedRoles.includes(role)) {
+    return res
+      .status(400)
+      .json({
+        message: `Role must be one of the following: ${allowedRoles.join(
+          ", "
+        )}`,
+      });
+  }
 
   try {
-    // Check if the user exists
-    const user = await User.findOne({ email  });
+    // Check if the user exists with the given email and role
+    const user = await User.findOne({ email, role });
     if (!user) {
+      // Check if the email exists but with a different role
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res
+          .status(403)
+          .json({ message: "You are trying to access with the wrong role" });
+      }
       return res.status(404).json({ message: "User not found" });
     }
-
     // Validate the password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const role=user.role;    
-
-    const token =generateToken(user,role)
+    const token = generateToken(user, role)
 
     res.status(200).json({
       message: "Login successful",
@@ -54,6 +58,7 @@ exports.loginUser = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
         email: user.email,
         phone: user.phone,
         salary: user.salary,

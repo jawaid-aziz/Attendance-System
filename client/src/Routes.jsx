@@ -52,24 +52,7 @@ export const AllRoutes =
                 element: <SystemSettings />,
             },
         ]
-            
-    },
-    {
-        path: "/admin-interface/:id",
-        element: <AdminInterface />,
-    },
-    {
-        path: "/attendance-history/:id",
-        element: <AttendanceHistory />,
-    },
-    {
-        path: "/add-employee",
-        element: <AddEmployee />,
-    },
-    {
-        path: "/employees-data",
-        element: <EmployeesData />,
-    },
+},
     {
         path: "/admin",
         element: <AdminDashboard/>
