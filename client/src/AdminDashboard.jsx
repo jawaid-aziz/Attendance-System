@@ -18,10 +18,6 @@ const AdminDashboard = () => {
         });
 
         const data = await response.json();
-        // const enrichedEmployees = data.employees.map((employee) => ({
-        //   ...employee,
-        //   isActive: null, // Default isActive is null
-        // }));
         setEmployees(data.employees);
         setLoading(false);
       } catch (error) {
@@ -53,49 +49,94 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  const handleViewProfile = (id) => {
+    console.log(`View Profile for employee with ID: ${id}`);
+  };
+
+  const handleDelete = (id) => {
+    console.log(`Delete employee with ID: ${id}`);
+  };
+
+  const handleViewAttendance = (id) => {
+    console.log(`View Attendance for employee with ID: ${id}`);
+  };
+
+  if (loading) return <div className="text-center py-10">Loading...</div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <table className="table-auto w-full border-collapse border border-gray-300">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">Name</th>
-            <th className="border border-gray-300 px-4 py-2">Role</th>
-            <th className="border border-gray-300 px-4 py-2">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((employee, index) => {
-            const firstName = employee?.firstName || "Unknown";
-            const role = employee?.role || "Unknown";
-            const isActive = employee?.isActive;
+    <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-center mb-6">Admin Dashboard</h1>
+      <div className="overflow-x-auto">
+        <table className="table-auto w-full bg-white rounded-lg shadow-md">
+          <thead>
+            <tr className="bg-gray-800 text-white">
+              <th className="px-6 py-4 text-left">Name</th>
+              <th className="px-6 py-4 text-left">Role</th>
+              <th className="px-6 py-4 text-center">Actions</th>
+              <th className="px-6 py-4 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {employees.map((employee, index) => {
+              const firstName = employee?.firstName || "Unknown";
+              const lastName = employee?.lastName || "Unknown";
+              const role = employee?.role || "Unknown";
+              const isActive = employee?.isActive;
 
-            return (
-              <tr key={index}>
-                <td className="border border-gray-300 px-4 py-2">{firstName}</td>
-                <td className="border border-gray-300 px-4 py-2">{role}</td>
-                <td
-                  className={`border border-gray-300 px-4 py-2 ${
-                    isActive === null
-                      ? "text-gray-500"
-                      : isActive
-                      ? "text-green-500"
-                      : "text-red-500"
+              return (
+                <tr
+                  key={index}
+                  className={`border-b last:border-none ${
+                    index % 2 === 0 ? "bg-gray-50" : "bg-gray-100"
                   }`}
                 >
-                  {isActive === null
-                    ? "null"
-                    : isActive
-                    ? "Active"
-                    : "Inactive"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  <td className="px-6 py-4 text-gray-800">
+                    <div className="font-bold">{`${firstName} ${lastName}`}</div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">{role}</td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center space-x-2">
+                      <button
+                        onClick={() => handleViewProfile(employee._id)}
+                        className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"
+                      >
+                        View Profile
+                      </button>
+                      <button
+                        onClick={() => handleDelete(employee._id)}
+                        className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => handleViewAttendance(employee._id)}
+                        className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600 transition"
+                      >
+                        View Attendance
+                      </button>
+                    </div>
+                  </td>
+                  <td
+                    className={`px-6 py-4 text-center font-bold ${
+                      isActive === null
+                        ? "text-gray-500"
+                        : isActive
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {isActive === null
+                      ? "Unknown"
+                      : isActive
+                      ? "Active"
+                      : "Inactive"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
