@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useUserData } from "../Data/UserData";
 import { useRole } from "../Context/RoleProvider";
 
 export const Profile = () => {
   const { id } = useParams();
   const { role } = useRole();
-  // const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const { users } = useUserData();
 
-  // State for editable fields
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -23,7 +19,6 @@ export const Profile = () => {
   });
 
   useEffect(() => {
-    // Fetch user profile data
     const fetchUser = async () => {
       try {
         const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
@@ -38,22 +33,18 @@ export const Profile = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched User Data:", data); // Debug fetched data
-        const user = data.user;
-        // Populate formData with fetched data
         setFormData({
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          email: user.email || "",
-          role: user.role || "",
-          phone: user.phone || "",
-          address: user.address || "",
-          salary: user.salary || "",
+          firstName: data.user.firstName || "",
+          lastName: data.user.lastName || "",
+          email: data.user.email || "",
+          role: data.user.role || "",
+          phone: data.user.phone || "",
+          address: data.user.address || "",
+          salary: data.user.salary || "",
         });
         setLoading(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("Failed to load user profile.");
+      } catch (err) {
+        setError(err.message);
         setLoading(false);
       }
     };
@@ -66,7 +57,6 @@ export const Profile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit updated profile data
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -74,30 +64,25 @@ export const Profile = () => {
         ...formData,
         salary: Number(formData.salary) || 0, // Ensure salary is a valid number
       };
-      
-      console.log("Payload being sent:", sanitizedFormData); // Debug payload
+
       const response = await fetch(`http://localhost:5000/admin/edit/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          // Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        // body: JSON.stringify(sanitizedFormData),
+        body: JSON.stringify(sanitizedFormData),
       });
-      console.log("Response Status:", response.status); // Log response status
-      const responseData = await response.json();
-      console.log("Response Data:", responseData); // Log response data
-  
-      if (!response===200) {
-        throw new Error("Failed to update user data");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update user data");
       }
 
-      const updatedData = await response.json();
-      setUser(updatedData);
       alert("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating user data:", error);
-      alert("Failed to update profile.");
+    } catch (err) {
+      console.error("Error updating user data:", err);
+      alert(`Error: ${err.message}`);
     }
   };
 
@@ -113,7 +98,6 @@ export const Profile = () => {
     <div className="max-w-lg mx-auto bg-white p-6 shadow rounded">
       <h1 className="text-2xl font-bold mb-4">Profile</h1>
       <form onSubmit={handleSubmit}>
-        {/* Editable Fields */}
         <div className="mb-4">
           <label className="block font-medium mb-1">First Name</label>
           <input
@@ -150,7 +134,6 @@ export const Profile = () => {
           />
         </div>
 
-        {/* Read-only Fields */}
         <div className="mb-4">
           <label className="block font-medium mb-1">Role</label>
           <input
