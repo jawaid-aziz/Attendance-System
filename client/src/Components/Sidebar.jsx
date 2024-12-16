@@ -9,7 +9,7 @@ export const Sidebar = ({ role }) => {
       <div className="mb-6">
         <ul>
           <li className="mb-2">
-            <NavLink to={`/${role}-interface/${id}`}>
+            <NavLink to={`/home`}>
               <button className="w-full font-bold text-lg text-left px-4 py-2 rounded bg-white border border-gray-300 shadow-sm hover:bg-gray-200">
                 Home
               </button>

@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret-key";
 
 // User Login
 exports.loginUser = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password} = req.body;
 
   // Manual validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,28 +19,10 @@ exports.loginUser = async (req, res) => {
       .json({ message: "Password must be at least 6 characters long" });
   }
 
-  const allowedRoles = ["admin", "employee"]; // Define allowed roles
-  if (!role || !allowedRoles.includes(role)) {
-    return res
-      .status(400)
-      .json({
-        message: `Role must be one of the following: ${allowedRoles.join(
-          ", "
-        )}`,
-      });
-  }
-
   try {
     // Check if the user exists with the given email and role
-    const user = await User.findOne({ email, role });
+    const user = await User.findOne({ email });
     if (!user) {
-      // Check if the email exists but with a different role
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res
-          .status(403)
-          .json({ message: "You are trying to access with the wrong role" });
-      }
       return res.status(404).json({ message: "User not found" });
     }
     // Validate the password
@@ -49,7 +31,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(user, role)
+    const token = generateToken(user)
 
     res.status(200).json({
       message: "Login successful",
