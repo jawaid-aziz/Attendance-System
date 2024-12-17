@@ -1,30 +1,36 @@
-import { Header } from "../Components/Header"
-import { Sidebar } from "../Components/Sidebar"
-import { Outlet } from "react-router-dom"
-import { useRole } from "../Context/RoleProvider"
-import { useId } from "../Context/IdProvider"
+import { Header } from "../Components/Header";
+import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import { AppSidebar } from "@/Components/AppSidebar";
+import { Outlet } from "react-router-dom";
+import { useRole } from "../Context/RoleProvider";
+import { useId } from "../Context/IdProvider";
 
-export const Layout = ({ children }) => {
-
+export const Layout = () => {
   const { role } = useRole();
   const { id } = useId();
 
-  if (!id || !role) {
-    return <div>Loading...</div>;
-  }
+  return (
+    <SidebarProvider>
+      <div className="flex h-screen">
 
-    return(
-    <div className="flex">
-      {/* Sidebar */}
-      <Sidebar role={role} id={id} />
+        {/* Sidebar */}
+        <AppSidebar role={role} id={id} />
 
-      {/* Main Content */}
-      <div className="flex-1">
-        <Header role={role} id={id} />
-        <div className="p-4">
-          <Outlet /> {/* Placeholder for nested routes */}
+        {/* Sidebar Trigger */}
+        <div className="p-3">
+          <SidebarTrigger /> {/* Sidebar trigger for toggling */}
+        </div>
+        
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <Header role={role} id={id} />
+
+          {/* Page Content */}
+          <div className="p-4 flex-1 overflow-auto">
+            <Outlet /> {/* Nested routes */}
+          </div>
         </div>
       </div>
-    </div>
-)
-}
+    </SidebarProvider>
+  );
+};

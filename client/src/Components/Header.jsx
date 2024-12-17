@@ -8,7 +8,7 @@ export const Header = ({ role }) => {
   }
 
   return (
-    <div className="flex items-center justify-between px-4">
+    <div className="flex justify-between">
       <div className="flex flex-col items-center w-full">
         <h1 className="text-2xl font-bold">
           {role === "admin" ? "Admin Dashboard" : "User Dashboard"}
