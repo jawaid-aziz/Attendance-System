@@ -25,7 +25,7 @@ const checkIn = async (req, res) => {
         const checkInMinute = serverTime.minute();
 
         // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 10 && checkInHour < 24;
+        const isWorkingHour = checkInHour >= 9 && checkInHour < 18;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });

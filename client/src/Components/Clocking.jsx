@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useUserData } from "../Data/UserData";
 import { useId } from "../Context/IdProvider";
 
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
-  const { users } = useUserData(); 
+  const [checkedIn, setCheckedIn] = useState();
 
   // Check if the current time is within allowed hours
   const checkAllowedTime = () => {
     const currentHour = new Date().getHours();
-    setIsAllowedTime(currentHour >= 19 || currentHour < 4);
+    setIsAllowedTime(currentHour >= 9 && currentHour < 22);
   };
 
   useEffect(() => {
@@ -21,63 +20,95 @@ const Clocking = () => {
   }, []);
 
   useEffect(() => {
-    const selectedUser = users.find(
-      (user) => user.id === parseInt(id)
-    );
-    setUser(selectedUser);
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
+          method: "GET",
+          // headers: {
+          //     Authorization: `Bearer ${localStorage.getItem("token")}`,
+          // },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data.");
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+        
+      } catch (error) {
+        console.error("Error fetching user data:", error.message);
+      }
+    };
+
+    fetchUser();
   }, [id]);
 
   // Handle check-in
-  const handleCheckIn = () => {
-    const currentTime = new Date();
-    const updatedUser = {
-      ...user,
-      checkedIn: true,
-      checkInTime: currentTime,
-    };
-    setUser(updatedUser);
-    updateAttendance(user.id, updatedUser.dailyAttendance);
+  const handleCheckIn = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/attend/check-in/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to check in.");
+        return;
+      }
+
+      const data = await response.json();
+      setCheckedIn(true);
+      console.log("Checked in:", checkedIn);
+
+      setUser((prev) => ({
+        ...prev,
+        checkInTime: new Date(data.attendance.date),
+      }));
+
+      alert("Check-in successful!");
+    } catch (error) {
+      console.error("Error during check-in:", error.message);
+      alert("An error occurred during check-in.");
+    }
   };
 
   // Handle check-out
-  const handleCheckOut = () => {
-    const currentTime = new Date();
-    if (user && user.checkedIn) {
-      const checkInTime = user.checkInTime;
-      const isHalfLeave = calculateHalfLeave(checkInTime);
-
-      const updatedAttendance = [
-        ...user.dailyAttendance,
-        {
-          date: checkInTime.toLocaleDateString(),
-          checkInTime: checkInTime.toLocaleTimeString(),
-          checkOutTime: currentTime.toLocaleTimeString(),
-          halfLeave: isHalfLeave,
+  const handleCheckOut = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/attend/check-out/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      ];
+      });
 
-      let updatedHalfLeaveCount = user.halfLeaveCount;
-      let salaryThisMonth = user.salary;
-
-      if (isHalfLeave) {
-        updatedHalfLeaveCount += 1;
-        if (updatedHalfLeaveCount === 3) {
-          salaryThisMonth -= user.salary / 30; // Deduct 1 day's salary
-          updatedHalfLeaveCount = 0;
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to check out.");
+        return;
       }
 
-      setUser({
-        ...user,
-        checkedIn: false,
+      const data = await response.json();
+      setCheckedIn(false);
+
+      setUser((prev) => ({
+        ...prev,
         checkInTime: null,
-        halfLeaveCount: updatedHalfLeaveCount,
-        dailyAttendance: updatedAttendance,
-        salaryThisMonth: Math.floor(salaryThisMonth),
-      });
-      updateAttendance(user.id, updatedAttendance);
+      }));
+
+      alert("Check-out successful!");
+    } catch (error) {
+      console.error("Error during check-out:", error.message);
+      alert("An error occurred during check-out.");
     }
   };
+
 
   // Check if the check-in time qualifies as half-leave
   const calculateHalfLeave = (checkInTime) => {
@@ -101,14 +132,14 @@ const Clocking = () => {
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
           onClick={handleCheckIn}
-          disabled={!isAllowedTime || user.checkedIn}
+          disabled={!isAllowedTime || checkedIn}
         >
           Check-In
         </button>
         <button
           className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
           onClick={handleCheckOut}
-          disabled={!isAllowedTime || !user.checkedIn}
+          disabled={ !checkedIn}
         >
           Check-Out
         </button>

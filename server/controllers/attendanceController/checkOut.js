@@ -1,11 +1,7 @@
 const Attendance = require("../../models/Attendance");
-// const config = require("../../config/configTime");
-// const axios = require("axios");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
-// const io = require("../../index").io; // Import Socket.IO instance
-// Extend dayjs with plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const checkOut = async (req, res) => {
@@ -19,7 +15,7 @@ const checkOut = async (req, res) => {
         const unixTime = serverTime.unix();
         const checkOutHour = serverTime.hour();
         console.log("ser", serverTime);
-        const officeEndHour = 17; // Office hours end at 5 PM (17:00)
+        const officeEndHour = 10; // Office hours end at 5 PM (17:00)
         const noCheckOutDeadline = serverTime.startOf("day").hour(officeEndHour + 2); // 2 hours after office ends
         const startOfToday = serverTime.startOf("day").unix(); // Start of day in seconds
         const endOfToday = serverTime.endOf("day").unix();
@@ -49,7 +45,8 @@ const checkOut = async (req, res) => {
             checkOutstatus = "Late Check-Out";
         } else if (checkOutHour === 5) {
             checkOutstatus = "Checked Out on Time";
-        } else {
+        }
+        else {
             return res.status(400).json({ message: "Cannot check out before 21:00." });
         }
 
@@ -64,10 +61,6 @@ const checkOut = async (req, res) => {
         attendance.deductions = deductions;
 
         await attendance.save();
-
-        // await Attendance.updateOne({_id:employeeId},{isActive:false})
-
-        // io.emit("status update",{employeeId, isActive:false})
 
         // Notify admins of status change
         await Attendance.updateOne(
