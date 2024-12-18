@@ -57,7 +57,7 @@ const EmployeesData = () => {
   if (loading) return <div className="text-center py-10">Loading...</div>;
 
   const handleDelete = (id) => {
-    console.log(`Delete employee with ID: ${id}`);
+    navigate(`/delete/${id}`);
   };
 
   const handleViewAttendance = (id) => {

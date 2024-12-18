@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
+const mongoose = require("mongoose");
 // Get Users Controller
 exports.getUsers = async (req, res) => {
   try {
@@ -215,6 +216,11 @@ exports.deleteUser = async (req, res) => {
     return res.status(400).json({ message: "User ID is required" });
   }
 
+  // Validate the format of the ObjectId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid User ID format" });
+  }
+
   try {
     // Find and delete the user by ID
     const user = await User.findByIdAndDelete(userId);
@@ -224,11 +230,14 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Delete all attendance records for the user
+    const attendanceDeletionResult = await Attendance.deleteMany({ employee: userId });
+
     // Respond with success
     res.status(200).json({
-      message: "User deleted successfully",
-      user: {
-        id: user._id,
+      message: "User and associated attendance records deleted successfully",
+      deletedUser: {
+        _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -237,9 +246,11 @@ exports.deleteUser = async (req, res) => {
         address: user.address,
         role: user.role,
       },
+      attendanceDeletedCount: attendanceDeletionResult.deletedCount,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to delete user", error: error.message });
+    console.error("Error deleting user and attendance records:", error);
+    res.status(500).json({ message: "Failed to delete user and attendance records", error: error.message });
   }
 };
+

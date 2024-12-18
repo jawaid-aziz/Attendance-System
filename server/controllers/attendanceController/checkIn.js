@@ -4,6 +4,7 @@ const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const utc = require("dayjs/plugin/utc")
 // const { io } = require("../../index");
+const cron = require("node-cron");
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -106,5 +107,49 @@ const checkIn = async (req, res) => {
         res.status(500).json({ message: "Error in check-in", error: error.message });
     }
 };
+// Mark employees as absent if they did not check in
+const markAbsentForNonCheckIns = async () => {
+    try {
+        const timezoneName = process.env.TIMEZONE;
+        const serverTime = dayjs().tz(timezoneName);
+        const startOfDay = serverTime.startOf("day").toDate();
+        const endOfDay = serverTime.endOf("day").toDate();
+
+        // Fetch all employees
+        const allEmployees = await User.find({});
+
+        // Find employees who have not checked in today
+        for (const employee of allEmployees) {
+            const existingAttendance = await Attendance.findOne({
+                employee: employee._id,
+                date: { $gte: startOfDay, $lt: endOfDay },
+            });
+
+            if (!existingAttendance) {
+                const absentRecord = new Attendance({
+                    employee: employee._id,
+                    firstName: employee.firstName,
+                    date: serverTime, // Store local date
+                    checkIn: null, // No check-in time
+                    checkInstatus: "Absent",
+                    isActive: false,
+                    deductions: 6, // Deduction logic for absent employees
+                });
+
+                await absentRecord.save();
+                console.log(`Marked absent: ${employee.firstName} (${employee._id})`);
+            }
+        }
+
+        console.log("Absent marking complete.");
+    } catch (error) {
+        console.error("Error marking absentees:", error);
+    }
+};
+
+// Schedule job to run at 6 PM PST daily
+cron.schedule("0 18 * * *", markAbsentForNonCheckIns, {
+    timezone: process.env.TIMEZONE,
+});
 
 module.exports = checkIn;

@@ -3,7 +3,7 @@ import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
 import { Home } from "./Pages/Home";
-
+import { DeleteEmployee } from "./Components/DeleteEmployee";
 import { Profile } from "./Components/Profile";
 import { SystemSettings } from "./Components/SystemSettings";
 import { Layout } from "./Pages/Layout";
@@ -36,6 +36,10 @@ export const AllRoutes = [
       {
         path: "profile/:id",
         element: <Profile />,
+      },
+      {
+        path: "delete/:id",
+        element: <DeleteEmployee/>
       },
       {
         path: "system-settings",
