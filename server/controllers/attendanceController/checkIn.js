@@ -21,12 +21,13 @@ const checkIn = async (req, res) => {
         console.log("Unix Time:", unixTime); // Time in seconds since epoch
         console.log("Timezone:", timezoneName);
         // Extract hour and minute
-
+        const workStartHour = parseInt(process.env.WORK_START_HOUR, 10) || 9; // Default 9 AM
+        const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 19;   // Default 7 PM
         const checkInHour = serverTime.hour();
         const checkInMinute = serverTime.minute();
 
-        // Validate working hours (9 AM to 5 PM Pakistan time)
-        const isWorkingHour = checkInHour >= 9 && checkInHour < 18;
+        // Validate working hours (9 AM to 7 PM Pakistan time)
+        const isWorkingHour = checkInHour >= workStartHour && checkInHour < workEndHour;
 
         if (!isWorkingHour) {
             return res.status(400).json({ message: "Check-in time is outside working hours (9 AM to 5 PM PST)." });
@@ -58,10 +59,10 @@ const checkIn = async (req, res) => {
         let checkInstatus = "Present";
         let deductions = 0;
 
-        if (checkInHour === 9 && checkInMinute > 15) {
+        if (checkInHour === workStartHour && checkInMinute > 15) {
             checkInstatus = "Late Check-In (Half Leave)";
             deductions = 2;
-        } else if (checkInHour > 9) {
+        } else if (checkInHour > workStartHour) {
             checkInstatus = "Late Check-In (Half Leave)";
             deductions = 2;
         }
