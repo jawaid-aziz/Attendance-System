@@ -1,5 +1,5 @@
 import { Header } from "../Components/Header";
-import { SidebarProvider, SidebarTrigger } from "@/Components/ui/sidebar";
+import { SidebarProvider } from "@/Components/ui/sidebar";
 import { AppSidebar } from "@/Components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
@@ -11,24 +11,20 @@ export const Layout = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen">
-
+      <div className="flex">
         {/* Sidebar */}
         <AppSidebar role={role} id={id} />
+      </div>
 
-        {/* Sidebar Trigger */}
-        <div className="p-3">
-          <SidebarTrigger /> {/* Sidebar trigger for toggling */}
-        </div>
-        
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
+      <div className="flex flex-col w-full">
+        {/* Header */}
+        <div>
           <Header role={role} id={id} />
+        </div>
 
-          {/* Page Content */}
-          <div className="p-4 flex-1 overflow-auto">
-            <Outlet /> {/* Nested routes */}
-          </div>
+        {/* Page Content */}
+        <div>
+          <Outlet /> {/* Nested routes */}
         </div>
       </div>
     </SidebarProvider>

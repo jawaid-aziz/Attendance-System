@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { SelectContent, Select, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AddEmployeeForm = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +18,8 @@ const AddEmployeeForm = () => {
     password: "",
     role: "employee",
   });
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const navigate = useNavigate();
 
@@ -28,175 +35,160 @@ const AddEmployeeForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setLoading(true);
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
+    }, 100);
+
     try {
-      const response = await axios.post("http://localhost:5000/admin/add", formData); // Update endpoint accordingly
-      alert("Employee added successfully!");
-      navigate("/admin"); // Redirect to the admin page or desired location
+      const response = await axios.post("http://localhost:5000/admin/add", formData);
+      clearInterval(interval);
+      setProgress(100);
+      setTimeout(() => {
+        alert("Employee added successfully!");
+        navigate("/admin");
+      }, 500);
     } catch (error) {
-      if (error.response && error.response.data) {
-        alert(error.response.data.message); // Display the error message from the backend
-      } else {
-        alert("Failed to add employee. Please try again.");
-      }
+      clearInterval(interval);
+      setProgress(100);
+      alert("Failed to add employee. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-4 text-gray-800">Add Employee</h1>
-        <form onSubmit={handleSubmit}>
-          {/* First Name */}
-          <div className="mb-4">
-            <label htmlFor="firstName" className="block text-gray-700 font-medium mb-2">
-              First Name
-            </label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee first name"
-              required
-            />
-          </div>
+    <div className="flex items-center justify-center">
+      <Card className="w-full max-w-xl">
+        <CardHeader>
+          <h1 className="text-2xl font-bold text-gray-800">Add Employee</h1>
+        </CardHeader>
+        <CardContent>
+          {loading && (
+            <div className="mb-4">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-gray-500 mt-2">{progress}% Adding employee...</p>
+            </div>
+          )}
 
-          {/* Last Name */}
-          <div className="mb-4">
-            <label htmlFor="lastName" className="block text-gray-700 font-medium mb-2">
-              Last Name
-            </label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee last name"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* First Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">First Name</label>
+              <Input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee first name"
+              />
+            </div>
 
-          {/* Email */}
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee email"
-              required
-            />
-          </div>
+            {/* Last Name */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Last Name</label>
+              <Input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee last name"
+              />
+            </div>
 
-          {/* Phone */}
-          <div className="mb-4">
-            <label htmlFor="phone" className="block text-gray-700 font-medium mb-2">
-              Phone
-            </label>
-            <input
-              type="text"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee phone number"
-              required
-            />
-          </div>
+            {/* Email */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Email</label>
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee email"
+              />
+            </div>
 
-          {/* Salary */}
-          <div className="mb-4">
-            <label htmlFor="salary" className="block text-gray-700 font-medium mb-2">
-              Salary
-            </label>
-            <input
-              type="number"
-              id="salary"
-              name="salary"
-              value={formData.salary}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee salary"
-              required
-            />
-          </div>
+            {/* Phone */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Phone</label>
+              <Input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee phone number"
+              />
+            </div>
 
-          {/* Address */}
-          <div className="mb-4">
-            <label htmlFor="address" className="block text-gray-700 font-medium mb-2">
-              Address
-            </label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter employee address"
-              required
-            />
-          </div>
+            {/* Salary */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Salary</label>
+              <Input
+                type="number"
+                name="salary"
+                value={formData.salary}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee salary"
+              />
+            </div>
 
-          {/* Password */}
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              placeholder="Enter password"
-              required
-            />
-          </div>
+            {/* Address */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Address</label>
+              <Input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                placeholder="Enter employee address"
+              />
+            </div>
 
-          {/* Role */}
-          <div className="mb-4">
-            <label htmlFor="role" className="block text-gray-700 font-medium mb-2">
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-              required
-            >
-              <option value="admin">Admin</option>
-              <option value="employee">Employee</option>
-            </select>
-          </div>
+            {/* Password */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Password</label>
+              <Input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="Enter password"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-          >
-            Add Employee
-          </button>
-        </form>
-        <button
-          onClick={handleBackToAdmin}
-          className="mt-4 text-blue-500 underline hover:text-blue-700"
-        >
-          Back to Admin
-        </button>
-      </div>
+            {/* Role */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Role</label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="employee">Employee</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Submit Button */}
+            <Button type="submit" className="w-full">
+              Add Employee
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

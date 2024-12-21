@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useId } from "../Context/IdProvider";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
-  const [checkedIn, setCheckedIn] = useState();
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Check if the current time is within allowed hours
   const checkAllowedTime = () => {
@@ -122,28 +125,45 @@ const Clocking = () => {
   if (!user) return <p>Loading user data...</p>;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Attendance for {user.firstName}</h1>
-      </div>
-
-      {/* Attendance Actions */}
-      <div className="flex items-center justify-center space-x-4 mb-6">
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-          onClick={handleCheckIn}
-          disabled={!isAllowedTime || checkedIn}
-        >
-          Check-In
-        </button>
-        <button
-          className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
-          onClick={handleCheckOut}
-          disabled={ checkedIn}
-        >
-          Check-Out
-        </button>
-      </div>
+    <div>
+      <Card className="flex flex-col justify-center items-center w-full text-center max-w-lg p-4 shadow-lg rounded-lg">
+        <CardHeader>
+          <h1 className="text-2xl font-bold">Attendance</h1>
+        </CardHeader>
+        <CardContent>
+          <div className=" mb-6">
+            <h2 className="text-xl font-semibold">
+              Welcome, <span className="text-blue-600">{user.firstName}</span>
+            </h2>
+            {user.checkInTime && (
+              <p className="text-base text-gray-700">
+                Check-In Time: {new Date(user.checkInTime).toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <div className="flex justify-around">
+            <Button
+              variant="default"
+              disabled={!isAllowedTime || checkedIn}
+              onClick={handleCheckIn}
+              className="px-6 py-2 text-lg"
+            >
+              Check-In
+            </Button>
+            <Button
+              variant="danger"
+              disabled={ checkedIn}
+              onClick={handleCheckOut}
+              className="px-6 py-2 text-lg"
+            >
+              Check-Out
+            </Button>
+          </div>
+        </CardContent>
+        <CardFooter className=" text-gray-500 text-sm mt-4">
+          {isAllowedTime ? "You can check-in until 10 PM." : "Check-in is allowed only between 9 AM and 10 PM."}
+        </CardFooter>
+      </Card>
     </div>
   );
 };

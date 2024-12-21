@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress"; // Adjust the path as per your project setup
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
   const socketUrl = "http://localhost:5000"; // Backend URL
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Simulate progress during data fetch
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
+    }, 100);
+
     // Fetch initial employee data
     const fetchEmployees = async () => {
       try {
@@ -24,6 +31,9 @@ const EmployeesData = () => {
         setLoading(false);
       } catch (error) {
         setLoading(false);
+      } finally {
+        clearInterval(interval);
+        setProgress(100);
       }
     };
 
@@ -54,7 +64,14 @@ const EmployeesData = () => {
     navigate(`/profile/${id}`);
   };
 
-  if (loading) return <div className="text-center py-10">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="p-6">
+        <Progress value={progress} className="h-2" />
+        <p className="text-sm text-gray-500 mt-2">{progress}% Loading employee data...</p>
+      </div>
+    );
+  }
 
   const handleDelete = (id) => {
     navigate(`/delete/${id}`);
@@ -64,8 +81,6 @@ const EmployeesData = () => {
     console.log(`View Attendance for employee with ID: ${id}`);
     navigate(`/attendance-history/${id}`);
   };
-
-  if (loading) return <div className="text-center py-10">Loading...</div>;
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">

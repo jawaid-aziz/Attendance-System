@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import { useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 export const Profile = () => {
   const { id } = useParams();
   const { role } = useRole();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -20,6 +25,13 @@ export const Profile = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      setLoading(true);
+      setProgress(0);
+
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev < 95 ? prev + 5 : prev));
+      }, 100);
+
       try {
         const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
           method: "GET",
@@ -42,10 +54,14 @@ export const Profile = () => {
           address: data.user.address || "",
           salary: data.user.salary || "",
         });
-        setLoading(false);
+        setError(null);
       } catch (err) {
         setError(err.message);
-        setLoading(false);
+        setFormData({ ...formData, firstName: "No data" }); // Fallback if error
+      } finally {
+        clearInterval(interval);
+        setProgress(100);
+        setTimeout(() => setLoading(false), 500);
       }
     };
 
@@ -87,7 +103,12 @@ export const Profile = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10">Loading profile...</div>;
+    return (
+      <div className="p-6">
+        <Progress value={progress} className="h-2" />
+        <p className="text-sm text-gray-500 mt-2">{progress}% Loading profile...</p>
+      </div>
+    );
   }
 
   if (error) {
@@ -95,101 +116,95 @@ export const Profile = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto bg-white p-6 shadow rounded">
-      <h1 className="text-2xl font-bold mb-4">Profile</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block font-medium mb-1">First Name</label>
-          <input
-            type="text"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+    <Card className="w-full md:w-1/2 mx-auto">
+      <CardHeader>
+        <h1 className="text-2xl font-bold">Profile</h1>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1 font-medium">First Name</label>
+            <Input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Last Name</label>
-          <input
-            type="text"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Last Name</label>
+            <Input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Email</label>
+            <Input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Role</label>
-          <input
-            type="text"
-            name="role"
-            value={formData.role}
-            readOnly
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Role</label>
+            <Input
+              type="text"
+              name="role"
+              value={formData.role}
+              readOnly
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Phone</label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Phone</label>
+            <Input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Address</label>
+            <Input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Salary</label>
-          <input
-            type="text"
-            name="salary"
-            value={formData.salary}
-            onChange={handleInputChange}
-            readOnly={role !== "admin"}
-            className="w-full border px-3 py-2 rounded bg-gray-100"
-          />
-        </div>
+          <div>
+            <label className="block mb-1 font-medium">Salary</label>
+            <Input
+              type="text"
+              name="salary"
+              value={formData.salary}
+              onChange={handleInputChange}
+              readOnly={role !== "admin"}
+            />
+          </div>
 
-        {role === "admin" && (
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Save Changes
-          </button>
-        )}
-      </form>
-    </div>
+          {role === "admin" && (
+            <Button type="submit" className="w-full">
+              Save Changes
+            </Button>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   );
 };

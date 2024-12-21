@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import timezoneData from "../Data/Timezones.json";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-export const SystemSettings = () => {
+export const Timezone = () => {
   const [timezones, setTimezones] = useState([]);
   const [selectedTimezone, setSelectedTimezone] = useState("");
   const [currentTimezone, setCurrentTimezone] = useState(""); // New state for current timezone
@@ -38,8 +41,8 @@ export const SystemSettings = () => {
     setTimezones(timezoneData);
   }, []);
 
-  const handleTimezoneChange = (e) => {
-    setSelectedTimezone(e.target.value);
+  const handleTimezoneChange = (value) => {
+    setSelectedTimezone(value);
   };
 
   const saveTimezone = async () => {
@@ -69,36 +72,41 @@ export const SystemSettings = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-4 bg-white shadow rounded">
-      <h1 className="text-xl font-bold mb-4">Manage Timezone</h1>
-      <div className="mb-4">
-        {/* Display the current timezone */}
-        <p className="text-gray-600 mb-2">
-          <strong>Current Timezone:</strong> {currentTimezone || "Loading..."}
-        </p>
-
-        {/* Dropdown to select new timezone */}
-        <label className="block font-medium mb-2">Select Timezone:</label>
-        <select
-          className="w-full border px-3 py-2 rounded"
-          value={selectedTimezone}
-          onChange={handleTimezoneChange}
-        >
-          <option value="">-- Select Timezone --</option>
-          {timezones.map((tz, index) => (
-            <option key={index} value={tz.utc[0]}>
-              {tz.text}
-            </option>
-          ))}
-        </select>
-      </div>
-      <button
-        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        onClick={saveTimezone}
-        disabled={loading || !selectedTimezone}
-      >
-        {loading ? "Saving..." : "Save Timezone"}
-      </button>
+    <div className="flex justify-center items-center p-8">
+      <Card className="w-full max-w-lg p-6 shadow-lg rounded-lg">
+        <CardHeader className="text-center mb-4">
+          <h1 className="text-2xl font-bold">Manage Timezone</h1>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <p className="text-gray-600 mb-2">
+              <strong>Current Timezone:</strong> {currentTimezone || "Loading..."}
+            </p>
+            <Select onValueChange={handleTimezoneChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Timezone" className="h-full h-screen"/>
+              </SelectTrigger>
+              <SelectContent>
+                {timezones.map((tz, index) => (
+                  <SelectItem key={index} value={tz.utc[0]}>
+                    {tz.text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={saveTimezone}
+            disabled={loading || !selectedTimezone}
+            className="w-full"
+          >
+            {loading ? "Saving..." : "Save Timezone"}
+          </Button>
+        </CardContent>
+        <CardFooter className="text-center text-gray-500 text-sm mt-4">
+          Please select and save your desired timezone.
+        </CardFooter>
+      </Card>
     </div>
   );
 };
