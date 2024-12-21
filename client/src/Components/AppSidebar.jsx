@@ -72,7 +72,7 @@ import {
         <SidebarContent>
           {/* Sidebar Menu */}
           <SidebarGroup>
-            <SidebarGroupLabel>OnTime Attendance</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-l">OnTime Attendance</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item) => (

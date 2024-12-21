@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ModeToggle } from "../Components/mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,12 +35,15 @@ export const Header = ({ role }) => {
         </h1>
       </div>
 
-      
-      <div>
+      <div className="flex items-center space-x-2">
+        <div>
+          <ModeToggle />
+        </div>
+
         {/* Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="outline" size="icon">
               <UserCircle className="h-8 w-8 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
