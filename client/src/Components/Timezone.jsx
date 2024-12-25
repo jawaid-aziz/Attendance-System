@@ -86,7 +86,7 @@ export const Timezone = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Timezone" className="h-full"/>
               </SelectTrigger>
-              <SelectContent  className="lg:max-h-64 overflow-y-auto max-h-96 pt-2" >
+              <SelectContent  className="2xl:h-full lg:h-94 h-60 " >
                 {timezones.map((tz, index) => (
                   <SelectItem key={index} value={tz.utc[0]}>
                     {tz.text}
