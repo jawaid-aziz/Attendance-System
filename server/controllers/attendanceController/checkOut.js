@@ -4,24 +4,29 @@ const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
 const checkOut = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const io = req.io;
-        // let serverTime;
 
-        const timezoneName = process.env.TIMEZONE;
-        const serverTime = dayjs().tz(timezoneName);// Replace with your desired timezone
+        const GRACE_PERIOD_HOURS = 2;
+        const timezoneName = process.env.TIMEZONE || "UTC";
+        const serverTime = dayjs().tz(timezoneName);
         const unixTime = serverTime.unix();
-        const checkOutHour = serverTime.hour();
-        console.log("ser", serverTime);
-        const officeEndHour = 10; // Office hours end at 5 PM (17:00)
-        const noCheckOutDeadline = serverTime.startOf("day").hour(officeEndHour + 2); // 2 hours after office ends
-        const startOfToday = serverTime.startOf("day").unix(); // Start of day in seconds
-        const endOfToday = serverTime.endOf("day").unix();
+        const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 17;
+
+        // Calculate exact work end time and no-checkout deadline
+        const workEndTime = serverTime.startOf("day").hour(workEndHour); // e.g., 17:00
+        const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // e.g., 19:00
+
+        const startOfToday = serverTime.startOf("day").unix(); // Start of the day
+        const endOfToday = serverTime.endOf("day").unix(); // End of the day
+
+        // Find today's attendance
         const attendance = await Attendance.findOne({
             employee: employeeId,
-            checkIn: { $gte: startOfToday, $lt: endOfToday }, // Ensure a valid check-in exists
+            checkIn: { $gte: startOfToday, $lt: endOfToday },
         });
 
         if (!attendance) {
@@ -32,54 +37,32 @@ const checkOut = async (req, res) => {
             return res.status(400).json({ message: "Already checked out today." });
         }
 
-        let checkOutstatus = attendance.checkOutstatus; //default
+        let checkOutstatus = attendance.checkOutstatus; // Default status
         let deductions = attendance.deductions;
 
         if (serverTime.isAfter(noCheckOutDeadline)) {
-            // If past the deadline and no check-out recorded
+            // Past the deadline and no check-out recorded
             checkOutstatus = "No Check-Out";
             deductions += 2;
-        }
-        else if (serverTime.hour() > officeEndHour && serverTime.isBefore(noCheckOutDeadline)) {
-            // Checked out after office hours but before the "No Check-Out" deadline
-            checkOutstatus = "Late Check-Out";
-        } else if (checkOutHour === 5) {
-            checkOutstatus = "Checked Out on Time";
-        }
-        else {
-            return res.status(400).json({ message: "Cannot check out before 21:00." });
+        } else if (serverTime.isAfter(workEndTime) && serverTime.isBefore(noCheckOutDeadline)) {
+            // Checked out on time or late check-out within the grace period
+            checkOutstatus = serverTime.isSame(workEndTime) ? "Checked Out on Time" : "Late Check-Out";
+        } else if (serverTime.isBefore(workEndTime)) {
+            // Attempting to check out before the work end time
+            return res.status(400).json({ message: `Cannot check out before ${workEndHour}:00.` });
         }
 
-        // No Check-Out recorded by the end of shift
-        if (!attendance.checkOut) {
-            checkOutstatus = "No Check-Out";
-            deductions += 2;
-        }
-        // Update the attendance record
-        attendance.checkOut = parseInt(unixTime),
-            attendance.checkOutstatus = checkOutstatus;
+        // Update attendance record
+        attendance.checkOut = unixTime;
+        attendance.checkOutstatus = checkOutstatus;
         attendance.deductions = deductions;
 
         await attendance.save();
 
         // Notify admins of status change
-        await Attendance.updateOne(
-            {
-                employee: employeeId,
-                date: {
-                    $gte: serverTime.startOf("day").toDate(),
-                    $lt: serverTime.endOf("day").toDate(),
-                },
-            },
-            { $set: { isActive: false } }
-        );
-
-        // Notify admins of status change
         io.emit("status update", { employeeId, isActive: false });
 
         res.status(200).json({ message: "Check-out successful", attendance });
-        console.log("out atte", attendance);
-
     } catch (error) {
         console.error("Error in check-out:", error);
         res.status(500).json({ message: "Error in check-out", error: error.message });

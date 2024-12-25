@@ -144,7 +144,7 @@ const EmployeesData = () => {
                     }`}
                   >
                     {isActive === null
-                      ? "null"
+                      ? "Inactive"
                       : isActive
                       ? "Active"
                       : "Inactive"}

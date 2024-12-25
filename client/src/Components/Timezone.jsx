@@ -84,9 +84,9 @@ export const Timezone = () => {
             </p>
             <Select onValueChange={handleTimezoneChange}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Timezone" className="h-full h-screen"/>
+                <SelectValue placeholder="Select Timezone" className="h-full"/>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent  className="lg:max-h-64 overflow-y-auto max-h-96 pt-2" >
                 {timezones.map((tz, index) => (
                   <SelectItem key={index} value={tz.utc[0]}>
                     {tz.text}

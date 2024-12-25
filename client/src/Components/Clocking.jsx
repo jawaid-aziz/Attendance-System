@@ -2,24 +2,40 @@ import React, { useState, useEffect } from "react";
 import { useId } from "../Context/IdProvider";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+// const dayjs = require("dayjs");
+// import dayjs from "dayjs";
+// const timezone = require("dayjs/plugin/timezone");
+// import { Timezone } from "./Timezone";
+// const utc = require("dayjs/plugin/utc")
+// const { io } = require("../../index");
+// const cron = require("node-cron");
 
+// dayjs.extend(timezone);
+// dayjs.extend(utc);
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
-  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkedIn, setCheckedIn] = useState();
   const [loading, setLoading] = useState(true);
 
   // Check if the current time is within allowed hours
-  const checkAllowedTime = () => {
-    const currentHour = new Date().getHours();
-    setIsAllowedTime(currentHour >= 9 && currentHour < 22);
-  };
-
   useEffect(() => {
-    checkAllowedTime();
-    const interval = setInterval(checkAllowedTime, 60000); // Update every minute
-    return () => clearInterval(interval);
+    const fetchServerTime = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/attend/server-time");
+        if (!response.ok) {
+          throw new Error("Failed to fetch server time.");
+        }
+
+        const data = await response.json();
+        setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
+      } catch (error) {
+        console.error("Error fetching server time:", error.message);
+      }
+    };
+
+    fetchServerTime();
   }, []);
 
   useEffect(() => {
@@ -65,12 +81,12 @@ const Clocking = () => {
       }
 
       const data = await response.json();
-      setCheckedIn(true);
+      checkedIn(true);
       console.log("Checked in:", checkedIn);
 
       setUser((prev) => ({
         ...prev,
-        checkInTime: new Date(data.attendance.date),
+        // checkInTime: new Date(data.attendance.date),
       }));
 
       alert("Check-in successful!");
@@ -102,7 +118,7 @@ const Clocking = () => {
 
       setUser((prev) => ({
         ...prev,
-        checkInTime: null,
+        // checkInTime: null,
       }));
 
       alert("Check-out successful!");
@@ -114,13 +130,13 @@ const Clocking = () => {
 
 
   // Check if the check-in time qualifies as half-leave
-  const calculateHalfLeave = (checkInTime) => {
-    const checkInHour = checkInTime.getHours();
-    const checkInMinutes = checkInTime.getMinutes();
-    if (checkInHour > 19) return true;
-    if (checkInHour === 19 && checkInMinutes > 15) return true;
-    return false;
-  };
+  // const calculateHalfLeave = (checkInTime) => {
+  //   const checkInHour = checkInTime.getHours();
+  //   const checkInMinutes = checkInTime.getMinutes();
+  //   if (checkInHour > 19) return true;
+  //   if (checkInHour === 19 && checkInMinutes > 15) return true;
+  //   return false;
+  // };
 
   if (!user) return <p>Loading user data...</p>;
 
@@ -152,7 +168,7 @@ const Clocking = () => {
             </Button>
             <Button
               variant="danger"
-              disabled={ checkedIn}
+              disabled={ !isAllowedTime || checkedIn}
               onClick={handleCheckOut}
               className="px-6 py-2 text-lg"
             >

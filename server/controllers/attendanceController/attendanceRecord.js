@@ -39,7 +39,9 @@ const attendanceRecord = async (req, res) => {
                 ? dayjs.unix(record.checkOut).tz(timezoneName).format("YYYY-MM-DD HH:mm:ss")
                 : null;
 
-            totalDeductions += record.deductions || 0;
+            const deductionPercentage = (record.deductions || 0) / 100; // Convert to a fraction
+            totalDeductions += deductionPercentage;
+
 
             return {
                 ...record._doc, // Spread the original record
@@ -49,7 +51,9 @@ const attendanceRecord = async (req, res) => {
         });
 
         // Calculate total salary after deductions
-        const totalSalary = employee.salary - totalDeductions * employee.salary / 30; // Assuming salary is monthly
+        const dailySalary = employee.salary / 30; // Assuming salary is monthly
+        const totalDeductionAmount = totalDeductions * employee.salary; // Deduction for all days
+        const totalSalary = employee.salary - totalDeductionAmount;
 
         // Respond with the data
         res.status(200).json({

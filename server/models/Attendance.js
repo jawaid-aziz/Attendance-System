@@ -8,7 +8,7 @@ const AttendanceSchema = new mongoose.Schema({
     checkOut: { type: Number },
     checkInstatus: { type: String, enum: ["Present", "Late Check-In (Half Leave)", "No Check-In (Full Leave)"], default: "Present" },
     isActive: { type: Boolean,default:null }, // Track active status
-    checkOutstatus: { type: String, enum: ["late check-out", "No Check-Out"] },
+    checkOutstatus: { type: String, enum: ["Late Check-Out", "No Check-Out"] },
     deductions: { type: Number, default: 0 }, // Salary deductions for the day
 });
 

@@ -153,4 +153,5 @@ cron.schedule("0 18 * * *", markAbsentForNonCheckIns, {
     timezone: process.env.TIMEZONE,
 });
 
+
 module.exports = checkIn;
