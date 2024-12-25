@@ -18,7 +18,6 @@ const AttendanceHistory = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-
   const [firstName, setFirstName] = useState("");
 
   useEffect(() => {
@@ -36,7 +35,7 @@ const AttendanceHistory = () => {
         }
 
         const data = await response.json();
-        setFirstName(data.user.firstName);
+        setFirstName(`for ${data.user.firstName}`);
       } catch (err) {
         setError(err.message);
       }
@@ -78,22 +77,35 @@ const AttendanceHistory = () => {
     fetchAttendanceRecords();
   }, []);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString, options) => {
     if (!dateString) return "N/A";
-    const options = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
     return new Date(dateString).toLocaleString(undefined, options);
+  };
+
+  const getMonthAndYear = () => {
+    if (records.length > 0 && records[0].checkIn) {
+      return formatDate(records[0].checkIn, {
+        year: "numeric",
+        month: "long",
+      });
+    }
+    return "N/A";
+  };
+
+  const getDay = () => {
+    if (records.length > 0 && records[0].checkIn) {
+      const date = new Date(records[0].checkIn);
+      const weekday = date.toLocaleString(undefined, { weekday: "long" });
+      const day = date.toLocaleString(undefined, { day: "numeric" });
+      return `${weekday}, ${day}`;
+    }
+    return "N/A";
   };
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
-        Attendance Records for {firstName}
+        Attendance Records {firstName}
       </h1>
 
       {loading && (
@@ -108,14 +120,19 @@ const AttendanceHistory = () => {
       {error && <p className="text-red-500">Error: {error}</p>}
 
       {!loading && records.length > 0 ? (
-        <ScrollArea className=" rounded-md border p-4">
+        <ScrollArea className="rounded-md border p-4">
           <Table className="w-full">
             <TableCaption>
               Attendance details for the selected employee.
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead colSpan={5} className="text-center">
+                  {getMonthAndYear()}
+                </TableHead>
+              </TableRow>
+              <TableRow>
+                <TableHead>Date</TableHead>
                 <TableHead>Check-In</TableHead>
                 <TableHead>Check-Out</TableHead>
                 <TableHead>Status</TableHead>
@@ -125,9 +142,19 @@ const AttendanceHistory = () => {
             <TableBody>
               {records.map((record, index) => (
                 <TableRow key={index}>
-                  <TableCell>{record.firstName}</TableCell>
-                  <TableCell>{formatDate(record.checkIn)}</TableCell>
-                  <TableCell>{formatDate(record.checkOut)}</TableCell>
+                  <TableCell>{getDay()}</TableCell>
+                  <TableCell>
+                    {formatDate(record.checkIn, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {formatDate(record.checkOut, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </TableCell>
                   <TableCell>{record.checkInstatus}</TableCell>
                   <TableCell>{record.deductions}</TableCell>
                 </TableRow>

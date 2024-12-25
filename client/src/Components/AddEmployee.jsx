@@ -18,8 +18,10 @@ const AddEmployeeForm = () => {
     password: "",
     role: "employee",
   });
+
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+
+  const {navigate} = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,6 +34,7 @@ const AddEmployeeForm = () => {
     try {
       const response = await axios.post("http://localhost:5000/admin/add", formData); // Update endpoint accordingly
       alert("Employee added successfully!");
+      navigate(`/add-employee`);
     } catch (error) {
       if (error.response && error.response.data) {
         alert(error.response.data.message); // Display the error message from the backend
