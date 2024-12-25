@@ -78,12 +78,11 @@ const EmployeesData = () => {
   };
 
   const handleViewAttendance = (id) => {
-    console.log(`View Attendance for employee with ID: ${id}`);
     navigate(`/attendance-history/${id}`);
   };
 
   return (
-    <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <div className="container mx-auto p-6 min-h-screen">
       <div className="overflow-x-auto">
         <table className="table-auto w-full bg-white rounded-lg shadow-md">
           <thead>

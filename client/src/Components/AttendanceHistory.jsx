@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Progress } from "@/components/ui/progress"; // Adjust the path as per your project setup
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -9,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"; // Adjust the path as per your project setup
+} from "@/components/ui/table";
 
 const AttendanceHistory = () => {
   const { id } = useParams();
@@ -18,7 +19,31 @@ const AttendanceHistory = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const [firstName, setFirstName] = useState(null); // Default is null to differentiate loading
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const data = await response.json();
+        setFirstName(data.user.firstName);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
 
   const fetchAttendanceRecords = async () => {
     setLoading(true);
@@ -39,15 +64,9 @@ const AttendanceHistory = () => {
       }
       const data = await response.json();
       setRecords(data.records || []);
-      if (data.records?.length > 0) {
-        setFirstName(data.records[0].firstName); // Update only when records are available
-      } else {
-        setFirstName("No records");
-      }
       setError(null);
     } catch (err) {
       setError(err.message);
-      setFirstName("No records"); // Fallback in case of error
     } finally {
       clearInterval(interval);
       setProgress(100);
@@ -80,36 +99,43 @@ const AttendanceHistory = () => {
       {loading && (
         <div className="w-full my-4">
           <Progress value={progress} className="h-2" />
-          <p className="text-sm text-gray-500 mt-2">{progress}% Loading records...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {progress}% Loading records...
+          </p>
         </div>
       )}
 
       {error && <p className="text-red-500">Error: {error}</p>}
 
       {!loading && records.length > 0 ? (
-        <Table className="w-full">
-          <TableCaption>Attendance details for the selected employee.</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Check-In</TableHead>
-              <TableHead>Check-Out</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Deductions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {records.map((record, index) => (
-              <TableRow key={index}>
-                <TableCell>{record.firstName}</TableCell>
-                <TableCell>{formatDate(record.checkIn)}</TableCell>
-                <TableCell>{formatDate(record.checkOut)}</TableCell>
-                <TableCell>{record.checkInstatus}</TableCell>
-                <TableCell>{record.deductions}</TableCell>
+        <ScrollArea className=" rounded-md border p-4">
+          <Table className="w-full">
+            <TableCaption>
+              Attendance details for the selected employee.
+            </TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Check-In</TableHead>
+                <TableHead>Check-Out</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Deductions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {records.map((record, index) => (
+                <TableRow key={index}>
+                  <TableCell>{record.firstName}</TableCell>
+                  <TableCell>{formatDate(record.checkIn)}</TableCell>
+                  <TableCell>{formatDate(record.checkOut)}</TableCell>
+                  <TableCell>{record.checkInstatus}</TableCell>
+                  <TableCell>{record.deductions}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       ) : (
         !loading && <p>No attendance records found.</p>
       )}

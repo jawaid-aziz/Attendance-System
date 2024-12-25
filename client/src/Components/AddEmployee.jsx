@@ -21,12 +21,6 @@ const AddEmployeeForm = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const navigate = useNavigate();
-
-  const handleBackToAdmin = () => {
-    navigate(-1);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -35,27 +29,15 @@ const AddEmployeeForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
-    }, 100);
-
     try {
-      const response = await axios.post("http://localhost:5000/admin/add", formData);
-      clearInterval(interval);
-      setProgress(100);
-      setTimeout(() => {
-        alert("Employee added successfully!");
-        navigate("/admin");
-      }, 500);
+      const response = await axios.post("http://localhost:5000/admin/add", formData); // Update endpoint accordingly
+      alert("Employee added successfully!");
     } catch (error) {
-      clearInterval(interval);
-      setProgress(100);
-      alert("Failed to add employee. Please try again.");
-    } finally {
-      setLoading(false);
+      if (error.response && error.response.data) {
+        alert(error.response.data.message); // Display the error message from the backend
+      } else {
+        alert("Failed to add employee. Please try again.");
+      }
     }
   };
 

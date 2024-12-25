@@ -68,11 +68,11 @@ import {
     };
   
     return (
-      <Sidebar>
-        <SidebarContent>
+      <Sidebar >
+        <SidebarContent className="bg-cornflower-blue-400">
           {/* Sidebar Menu */}
           <SidebarGroup>
-            <SidebarGroupLabel>OnTime Attendance</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-l">OnTime Attendance</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuItems.map((item) => (
