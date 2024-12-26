@@ -57,6 +57,9 @@ import {
           ...(role === "admin"
             ? [{ title: "Timezone", url: `/timezone` }]
             : []),
+            ...(role === "admin"
+              ? [{ title: "Configuration", url: `/config` }]
+              : []),
         ],
       },
     ];

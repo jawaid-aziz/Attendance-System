@@ -7,6 +7,7 @@ import { DeleteEmployee } from "./Components/DeleteEmployee";
 import { Profile } from "./Components/Profile";
 import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
+import { Configuration } from "./Components/Configuration";
 
 export const AllRoutes = [
   {
@@ -44,6 +45,10 @@ export const AllRoutes = [
       {
         path: "timezone",
         element: <Timezone />,
+      },
+      {
+        path: "config",
+        element: <Configuration />,
       },
     ],
   },

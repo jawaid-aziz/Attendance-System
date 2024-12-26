@@ -129,15 +129,6 @@ const Clocking = () => {
   };
 
 
-  // Check if the check-in time qualifies as half-leave
-  // const calculateHalfLeave = (checkInTime) => {
-  //   const checkInHour = checkInTime.getHours();
-  //   const checkInMinutes = checkInTime.getMinutes();
-  //   if (checkInHour > 19) return true;
-  //   if (checkInHour === 19 && checkInMinutes > 15) return true;
-  //   return false;
-  // };
-
   if (!user) return <p>Loading user data...</p>;
 
   return (

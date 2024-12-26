@@ -58,7 +58,7 @@ const AttendanceHistory = () => {
       );
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch attendance records: ${response.status}`
+          `Failed to fetch attendance records.`
         );
       }
       const data = await response.json();
