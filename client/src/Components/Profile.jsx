@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Profile = () => {
   const { id } = useParams();
@@ -73,6 +74,10 @@ export const Profile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleRoleChange = (value) => {
+    setFormData((prev) => ({ ...prev, role: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -116,86 +121,100 @@ export const Profile = () => {
   }
 
   return (
-    <Card className="w-full md:w-1/2 mx-auto">
+    <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
       <CardHeader>
-        <h1 className="text-2xl font-bold">Profile</h1>
+        <h1 className="text-2xl font-semibold">Profile</h1>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1 font-medium">First Name</label>
-            <Input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium text-gray-700">Personal Information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 font-medium">First Name</label>
+                <Input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  readOnly={role !== "admin"}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Last Name</label>
+                <Input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  readOnly={role !== "admin"}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Phone</label>
+                <Input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  readOnly={role !== "admin"}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Email</label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  readOnly={role !== "admin"}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Address</label>
+              <Input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                readOnly={role !== "admin"}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block mb-1 font-medium">Last Name</label>
-            <Input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Email</label>
-            <Input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Role</label>
-            <Input
-              type="text"
-              name="role"
-              value={formData.role}
-              readOnly
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Phone</label>
-            <Input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Address</label>
-            <Input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">Salary</label>
-            <Input
-              type="text"
-              name="salary"
-              value={formData.salary}
-              onChange={handleInputChange}
-              readOnly={role !== "admin"}
-            />
+          {/* Professional Information Section */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium text-gray-700">Professional Information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 font-medium">Role</label>
+                {role === "admin" ? (
+                  <Select value={formData.role} onValueChange={handleRoleChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="employee">Employee</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input type="text" name="role" value={formData.role} readOnly />
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Salary</label>
+                <Input
+                  type="text"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleInputChange}
+                  readOnly={role !== "admin"}
+                />
+              </div>
+            </div>
           </div>
 
           {role === "admin" && (

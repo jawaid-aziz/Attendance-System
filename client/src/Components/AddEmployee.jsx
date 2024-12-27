@@ -5,7 +5,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { SelectContent, Select, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  SelectContent,
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AddEmployeeForm = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +27,7 @@ const AddEmployeeForm = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const {navigate} = useNavigate();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,7 +38,10 @@ const AddEmployeeForm = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:5000/admin/add", formData); // Update endpoint accordingly
+      const response = await axios.post(
+        "http://localhost:5000/admin/add",
+        formData
+      ); // Update endpoint accordingly
       alert("Employee added successfully!");
       navigate(`/add-employee`);
     } catch (error) {
@@ -54,79 +63,77 @@ const AddEmployeeForm = () => {
           {loading && (
             <div className="mb-4">
               <Progress value={progress} className="h-2" />
-              <p className="text-sm text-gray-500 mt-2">{progress}% Adding employee...</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {progress}% Adding employee...
+              </p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* First Name */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">First Name</label>
-              <Input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                placeholder="Enter employee first name"
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  First Name
+                </label>
+                <Input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter employee first name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  Last Name
+                </label>
+                <Input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter employee last name"
+                />
+              </div>
             </div>
 
-            {/* Last Name */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Last Name</label>
-              <Input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                placeholder="Enter employee last name"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  Phone
+                </label>
+                <Input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter employee phone number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter employee email"
+                />
+              </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Email</label>
-              <Input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="Enter employee email"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Phone</label>
-              <Input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                placeholder="Enter employee phone number"
-              />
-            </div>
-
-            {/* Salary */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Salary</label>
-              <Input
-                type="number"
-                name="salary"
-                value={formData.salary}
-                onChange={handleChange}
-                required
-                placeholder="Enter employee salary"
-              />
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Address</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Address
+              </label>
               <Input
                 type="text"
                 name="address"
@@ -137,34 +144,54 @@ const AddEmployeeForm = () => {
               />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Password</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Password
+              </label>
               <Input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="Enter password"
+                placeholder="Enter employee password"
               />
             </div>
 
-            {/* Role */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Role</label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  Role
+                </label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, role: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">
+                  Salary
+                </label>
+                <Input
+                  type="number"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter employee salary"
+                />
+              </div>
             </div>
 
             {/* Submit Button */}
