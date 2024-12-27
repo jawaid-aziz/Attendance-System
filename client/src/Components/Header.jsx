@@ -15,7 +15,11 @@ export const Header = ({ role }) => {
   const navigate = useNavigate();
   const { id } = useId();
   const handleLogout = () => {
-    navigate("/"); // Redirect to the login page
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("id");
+    console.log("Token, role, and id removed from localStorage.");
+    navigate("/");
   };
 
   return (

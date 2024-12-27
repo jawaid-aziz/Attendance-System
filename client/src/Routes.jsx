@@ -8,15 +8,24 @@ import { Profile } from "./Components/Profile";
 import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
+import ProtectedRoute from "./Components/ProtectedRoutes";
 
 export const AllRoutes = [
   {
     path: "/",
     element: <Login />,
   },
+  // {
+  //   path: "/unauthorized",
+  //   element: <Unauthorized />,
+  // },
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute roles={["admin", "employee"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: "home",
@@ -27,6 +36,21 @@ export const AllRoutes = [
         element: <AttendanceHistory />,
       },
       {
+        path: "profile/:id",
+        element: <Profile />,
+      },
+      
+    ],
+  },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute roles={["admin"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
         path: "add-employee",
         element: <AddEmployee />,
       },
@@ -35,12 +59,8 @@ export const AllRoutes = [
         element: <EmployeesData />,
       },
       {
-        path: "profile/:id",
-        element: <Profile />,
-      },
-      {
         path: "delete/:id",
-        element: <DeleteEmployee/>
+        element: <DeleteEmployee />,
       },
       {
         path: "timezone",

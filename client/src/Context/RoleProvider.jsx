@@ -1,27 +1,28 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+// src/Context/RoleProvider.jsx
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const RoleContext = createContext();
 
-export const useRole = () => useContext(RoleContext);
-
 export const RoleProvider = ({ children }) => {
-    const [role, setRole] = useState(() => {
-      // Get initial value from localStorage
-      return localStorage.getItem("role") || null;
-    });
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Store the value in localStorage whenever it changes
-        if (role) {
-          localStorage.setItem("role", role);
-        } else {
-          localStorage.removeItem("role");
-        }
-      }, [role]);
+  useEffect(() => {
+    // Retrieve role from localStorage when the component mounts
+    const storedRole = localStorage.getItem('role');
+    if (storedRole) {
+      setRole(storedRole);
+    }
+    setLoading(false);
+  }, []);
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={{ role, setRole, loading }}>
       {children}
     </RoleContext.Provider>
   );
+};
+
+export const useRole = () => {
+  return useContext(RoleContext);
 };

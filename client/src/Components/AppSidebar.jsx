@@ -16,10 +16,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
   } from "@/components/ui/sidebar";
-  
+  import { useNavigate } from "react-router-dom";
   export function AppSidebar({ role }) {
     const { id } = useId();
-  
+  const navigate=useNavigate();
     // Menu items with grouped structure
     const menuItems = [
       {
@@ -63,11 +63,12 @@ import {
         ],
       },
     ];
-  
     const handleLogout = () => {
-      // Logic for logging out
-      console.log("Logging out...");
-      window.location.href = "/"; // Redirect to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("id");
+      console.log("Token, role, and id removed from localStorage.");
+      navigate("/");
     };
   
     return (

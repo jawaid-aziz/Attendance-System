@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret-key";
 
 // User Login
 exports.loginUser = async (req, res) => {
-  const { email, password} = req.body;
+  const { email, password } = req.body;
 
   // Manual validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,7 +31,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(user)
+    const token = generateToken(user, user.role)
 
     res.status(200).json({
       message: "Login successful",
