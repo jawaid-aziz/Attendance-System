@@ -1,27 +1,27 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+// src/Context/IdProvider.jsx
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const IdContext = createContext();
 
-export const useId = () => useContext(IdContext);
-
 export const IdProvider = ({ children }) => {
-    const [id, setId] = useState(() => {
-      // Get initial value from localStorage
-      return localStorage.getItem("id") || null;
-    });
+  const [id, setId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Store the value in localStorage whenever it changes
-        if (id) {
-          localStorage.setItem("id", id);
-        } else {
-          localStorage.removeItem("id");
-        }
-      }, [id]);
+  useEffect(() => {
+    const storedId = localStorage.getItem('id');
+    if (storedId) {
+      setId(storedId);
+    }
+    setLoading(false);
+  }, []);
 
   return (
-    <IdContext.Provider value={{ id, setId }}>
+    <IdContext.Provider value={{ id, setId, loading }}>
       {children}
     </IdContext.Provider>
   );
+};
+
+export const useId = () => {
+  return useContext(IdContext);
 };

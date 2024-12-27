@@ -34,8 +34,17 @@ const Login = () => {
 
       // Parse response JSON
       const data = await response.json();
-      setId(data.user.id);
-      setRole(data.user.role);
+      const { token, user } = data; // Ensure backend sends both token and user
+
+      // Store token, role, and id in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", user.role);
+      localStorage.setItem("id", user.id); // Adjust key if necessary
+      console.log("Token, role, and id stored in localStorage:", token, user.role, user.id);
+
+      // Update context
+      setRole(user.role);
+      setId(user.id);
       navigate(`/home`);
     } catch (err) {
       setError("Something went wrong. Please try again.");
@@ -65,6 +74,7 @@ const Login = () => {
               className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
               placeholder="Enter your email"
               required
+              autoComplete="username" // Added autocomplete attribute
             />
           </div>
           <div className="mb-4">
@@ -82,6 +92,7 @@ const Login = () => {
               className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
               placeholder="Enter your password"
               required
+              autoComplete="current-password" // Added autocomplete attribute
             />
           </div>
           <button

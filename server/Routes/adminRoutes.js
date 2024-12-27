@@ -11,14 +11,14 @@ const {getTimezone} = require("../controllers/TimezoneController/Timezone")
 const {updateTimezone} = require("../controllers/TimezoneController/Timezone")
 const router = express.Router();
 
-router.post("/add", addUser);
+router.post("/add",authenticateToken, authorizeAdmin, addUser);
 // router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
-router.put("/edit/:id", editUser);
-router.delete("/delete/:id", deleteUser);
-router.get("/user", getUsers);
+router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
+router.delete("/delete/:id",authenticateToken, authorizeAdmin, deleteUser);
+router.get("/user",authenticateToken, authorizeAdmin, getUsers);
 
-router.get("/getTime", getTimezone);
+router.get("/getTime",authenticateToken, authorizeAdmin, getTimezone);
 
 // Route to update the timezone
-router.post("/updateTime", updateTimezone);
+router.post("/updateTime",authenticateToken, authorizeAdmin, updateTimezone);
 module.exports = router;
