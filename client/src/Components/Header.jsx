@@ -14,6 +14,7 @@ import { useId } from "@/Context/IdProvider";
 export const Header = ({ role }) => {
   const navigate = useNavigate();
   const { id } = useId();
+  
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");

@@ -23,7 +23,7 @@ export const Layout = () => {
         </div>
 
         {/* Page Content */}
-        <div>
+        <div className="">
           <Outlet /> {/* Nested routes */}
         </div>
       </div>

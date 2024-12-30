@@ -63,6 +63,7 @@ const AttendanceHistory = () => {
       }
       const data = await response.json();
       setRecords(data.records || []);
+      console.log(data.records);
       setError(null);
     } catch (err) {
       setError(err.message);
