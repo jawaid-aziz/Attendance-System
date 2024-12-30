@@ -66,15 +66,12 @@ const Clocking = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/byId/getUser/${id}`,
-          {
-            method: "GET",
-            // headers: {
-            //     Authorization: `Bearer ${localStorage.getItem("token")}`,
-            // },
-          }
-        );
+        const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
+          method: "GET",
+          headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch user data.");
@@ -109,6 +106,10 @@ const Clocking = () => {
         alert(errorData.message || "Failed to check in.");
         return;
       }
+
+      const data = await response.json();
+      setCheckedIn(true);
+      console.log("Checked in:", checkedIn);
 
       setUser((prev) => ({
         ...prev,

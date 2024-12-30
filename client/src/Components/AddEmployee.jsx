@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,8 +25,8 @@ const AddEmployeeForm = () => {
   });
 
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
+  const [progress, setProgress] = useState(0); // Added progress state
+  const navigate = useNavigate(); // Fixed destructuring for navigate
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,20 +35,40 @@ const AddEmployeeForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
+    }, 100);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/admin/add",
-        formData
-      ); // Update endpoint accordingly
+      const response = await fetch("http://localhost:5000/admin/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // Token logic added
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add employee.");
+      }
+
       alert("Employee added successfully!");
-      navigate(`/add-employee`);
+      navigate(`home`);
     } catch (error) {
-      if (error.response && error.response.data) {
-        alert(error.response.data.message); // Display the error message from the backend
+      if (error.message) {
+        alert(error.message); // Display the error message from the fetch response
       } else {
         alert("Failed to add employee. Please try again.");
       }
+    } finally {
+      clearInterval(interval);
+      setProgress(100);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
