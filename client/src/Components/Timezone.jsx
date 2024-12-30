@@ -20,6 +20,7 @@ export const Timezone = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
+        
 
         if (!response.ok) {
           throw new Error("Failed to fetch current timezone.");
@@ -28,6 +29,7 @@ export const Timezone = () => {
         const data = await response.json();
         setCurrentTimezone(data.timezone); // Set the current timezone from the backend
       } catch (error) {
+        console.log(localStorage.getItem("token"));
         console.error("Error fetching current timezone:", error.message);
         alert("Failed to load current timezone.");
       }

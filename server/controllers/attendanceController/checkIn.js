@@ -148,10 +148,39 @@ const markAbsentForNonCheckIns = async () => {
     }
 };
 
+const getAttendanceStatus = async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      const serverTime = dayjs();
+      const startOfToday = serverTime.startOf("day").toDate();
+      const endOfToday = serverTime.endOf("day").toDate();
+  
+      // Find today's attendance
+      const attendance = await Attendance.findOne({
+        employee: employeeId,
+        date: { $gte: startOfToday, $lt: endOfToday },
+      });
+  
+      if (!attendance) {
+        return res.status(200).json({ checkedIn: false, checkedOut: false });
+      }
+  
+      res.status(200).json({
+        checkedIn: !!attendance.checkIn,
+        checkedOut: !!attendance.checkOut,
+      });
+    } catch (error) {
+      console.error("Error fetching attendance status:", error);
+      res.status(500).json({ message: "Error fetching attendance status", error: error.message });
+    }
+  };
+  
+  
+
 // Schedule job to run at 6 PM PST daily
 cron.schedule("0 18 * * *", markAbsentForNonCheckIns, {
     timezone: process.env.TIMEZONE,
 });
 
-
+module.exports = getAttendanceStatus;
 module.exports = checkIn;
