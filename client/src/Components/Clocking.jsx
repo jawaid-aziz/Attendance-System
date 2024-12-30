@@ -43,9 +43,9 @@ const Clocking = () => {
       try {
         const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
           method: "GET",
-          // headers: {
-          //     Authorization: `Bearer ${localStorage.getItem("token")}`,
-          // },
+          headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
 
         if (!response.ok) {
@@ -81,7 +81,7 @@ const Clocking = () => {
       }
 
       const data = await response.json();
-      checkedIn(true);
+      setCheckedIn(true);
       console.log("Checked in:", checkedIn);
 
       setUser((prev) => ({
