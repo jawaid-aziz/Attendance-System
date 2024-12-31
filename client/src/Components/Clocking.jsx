@@ -21,44 +21,48 @@ const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
-  const [checkedIn, setCheckedIn] = useState();
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkedOut, setCheckedOut] = useState();
   const [loading, setLoading] = useState(true);
-
   // Check if the current time is within allowed hours
+
+  const fetchServerTime = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/attend/server-time"
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch server time.");
+      }
+
+      const data = await response.json();
+      setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
+    } catch (error) {
+      console.error("Error fetching server time:", error.message);
+    }
+  };
+
+  const fetchAttendanceStatus = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/attend/status/${id}`
+      );
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const data = await response.json();
+      console.log(data);
+      setCheckedIn(data.checkedIn);
+      if ((data.checkedIn && data.checkedOut) === true) {
+        setCheckedIn(true);
+        setCheckedOut(true);
+      }
+    } catch (error) {
+      console.error("Error fetching attendance status:", error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchServerTime = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/attend/server-time"
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch server time.");
-        }
-
-        const data = await response.json();
-        setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
-      } catch (error) {
-        console.error("Error fetching server time:", error.message);
-      }
-    };
-
-    const fetchAttendanceStatus = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:5000/attend/status/${id}`
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
-
-        const data = await response.json();
-        console.log(data);
-        const { checkedIn } = await response.json();
-        setCheckedIn(!checkedIn);
-      } catch (error) {
-        console.error("Error fetching attendance status:", error.message);
-      }
-    };
-
     fetchServerTime();
     fetchAttendanceStatus();
   }, [id]);
@@ -108,16 +112,16 @@ const Clocking = () => {
       }
 
       const data = await response.json();
-      setCheckedIn(true);
+      
       console.log("Checked in:", checkedIn);
 
       setUser((prev) => ({
         ...prev,
         // checkInTime: new Date(data.attendance.date),
       }));
-
+      fetchAttendanceStatus();
       alert("Check-in successful!");
-      await fetchAttendanceStatus();
+      
     } catch (error) {
       console.error("Error during check-in:", error.message);
       alert("An error occurred during check-in.");
@@ -153,7 +157,7 @@ const Clocking = () => {
       }));
 
           // Re-fetch attendance status
-    await fetchAttendanceStatus();
+        fetchAttendanceStatus();
 
       alert("Check-out successful!");
     } catch (error) {
@@ -184,7 +188,7 @@ const Clocking = () => {
           <div className="flex gap-2">
             <Button
               variant="default"
-              disabled={!isAllowedTime || checkedIn}
+              disabled={checkedIn}
               onClick={handleCheckIn}
               className="px-4 py-2 text-lg"
             >
@@ -192,7 +196,7 @@ const Clocking = () => {
             </Button>
             <Button
               variant="default"
-              disabled={!isAllowedTime || !checkedIn}
+              disabled={!checkedIn || checkedOut}
               onClick={handleCheckOut}
               className="px-4 py-2 text-lg"
             >
@@ -201,9 +205,7 @@ const Clocking = () => {
           </div>
         </CardContent>
         <CardFooter className=" text-gray-500 text-sm mt-4">
-          {isAllowedTime
-            ? "You can check-in until 10 PM."
-            : "Check-in is allowed only between 9 AM and 10 PM."}
+            Check-in is only allowed between 9:00 AM and 5:00 PM
         </CardFooter>
       </Card>
     </div>
