@@ -42,25 +42,25 @@ const Clocking = () => {
       }
     };
 
-    const fetchAttendanceStatus = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:5000/attend/status/${id}`
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    // const fetchAttendanceStatus = async () => {
+    //   try {
+    //     const response = await fetch(
+    //       `http://localhost:5000/attend/status/${id}`
+    //     );
+    //     if (!response.ok)
+    //       throw new Error(`HTTP error! Status: ${response.status}`);
 
-        const data = await response.json();
-        console.log(data);
-        const { checkedIn } = await response.json();
-        setCheckedIn(!checkedIn);
-      } catch (error) {
-        console.error("Error fetching attendance status:", error.message);
-      }
-    };
+    //     const data = await response.json();
+    //     console.log(data);
+    //     const { checkedIn } = await response.json();
+    //     setCheckedIn(!checkedIn);
+    //   } catch (error) {
+    //     console.error("Error fetching attendance status:", error.message);
+    //   }
+    // };
 
     fetchServerTime();
-    fetchAttendanceStatus();
+    // fetchAttendanceStatus();
   }, [id]);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ const Clocking = () => {
       }));
 
       alert("Check-in successful!");
-      await fetchAttendanceStatus();
+      // await fetchAttendanceStatus();
     } catch (error) {
       console.error("Error during check-in:", error.message);
       alert("An error occurred during check-in.");
@@ -153,7 +153,7 @@ const Clocking = () => {
       }));
 
           // Re-fetch attendance status
-    await fetchAttendanceStatus();
+    // await fetchAttendanceStatus();
 
       alert("Check-out successful!");
     } catch (error) {
@@ -184,7 +184,7 @@ const Clocking = () => {
           <div className="flex gap-2">
             <Button
               variant="default"
-              disabled={!isAllowedTime || checkedIn}
+              disabled={ checkedIn}
               onClick={handleCheckIn}
               className="px-4 py-2 text-lg"
             >
@@ -192,7 +192,7 @@ const Clocking = () => {
             </Button>
             <Button
               variant="default"
-              disabled={!isAllowedTime || !checkedIn}
+              disabled={ checkedIn}
               onClick={handleCheckOut}
               className="px-4 py-2 text-lg"
             >

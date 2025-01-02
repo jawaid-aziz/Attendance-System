@@ -9,6 +9,9 @@ const authenticateToken = require("../middleware/authMiddleware");
 const authorizeAdmin = require("../middleware/authorizeAdmin");
 const {getTimezone} = require("../controllers/TimezoneController/Timezone")
 const {updateTimezone} = require("../controllers/TimezoneController/Timezone")
+
+const { getDeductions, updateDeductions } = require("../controllers/adminController/configDeductions");
+
 const router = express.Router();
 
 router.post("/add",authenticateToken, authorizeAdmin, addUser);
@@ -21,4 +24,9 @@ router.get("/getTime",authenticateToken, authorizeAdmin, getTimezone);
 
 // Route to update the timezone
 router.post("/updateTime",authenticateToken, authorizeAdmin, updateTimezone);
+
+router.get("/getDeductions",authenticateToken, authorizeAdmin, getDeductions);
+router.post("/updateDeductions",authenticateToken, authorizeAdmin, updateDeductions);
+
+
 module.exports = router;
