@@ -79,28 +79,8 @@ const AttendanceHistory = () => {
   }, []);
 
   const formatDate = (dateString, options) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "Not Available";
     return new Date(dateString).toLocaleString(undefined, options);
-  };
-
-  const getMonthAndYear = () => {
-    if (records.length > 0 && records[0].checkIn) {
-      return formatDate(records[0].checkIn, {
-        year: "numeric",
-        month: "long",
-      });
-    }
-    return "N/A";
-  };
-
-  const getDay = () => {
-    if (records.length > 0 && records[0].checkIn) {
-      const date = new Date(records[0].checkIn);
-      const weekday = date.toLocaleString(undefined, { weekday: "long" });
-      const day = date.toLocaleString(undefined, { day: "numeric" });
-      return `${weekday}, ${day}`;
-    }
-    return "N/A";
   };
 
   return (
@@ -128,11 +108,6 @@ const AttendanceHistory = () => {
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead colSpan={5} className="text-center">
-                  {getMonthAndYear()}
-                </TableHead>
-              </TableRow>
-              <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Check-In</TableHead>
                 <TableHead>Check-Out</TableHead>
@@ -143,7 +118,14 @@ const AttendanceHistory = () => {
             <TableBody>
               {records.map((record, index) => (
                 <TableRow key={index}>
-                  <TableCell>{getDay()}</TableCell>
+                  <TableCell>
+                    {formatDate(record.checkIn, {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </TableCell>
                   <TableCell>
                     {formatDate(record.checkIn, {
                       hour: "2-digit",
