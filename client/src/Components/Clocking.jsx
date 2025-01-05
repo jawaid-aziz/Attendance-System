@@ -63,41 +63,8 @@ const Clocking = () => {
   };
 
   useEffect(() => {
-    const fetchServerTime = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/attend/server-time"
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch server time.");
-        }
-
-        const data = await response.json();
-        setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
-      } catch (error) {
-        console.error("Error fetching server time:", error.message);
-      }
-    };
-
-    // const fetchAttendanceStatus = async () => {
-    //   try {
-    //     const response = await fetch(
-    //       `http://localhost:5000/attend/status/${id}`
-    //     );
-    //     if (!response.ok)
-    //       throw new Error(`HTTP error! Status: ${response.status}`);
-
-    //     const data = await response.json();
-    //     console.log(data);
-    //     const { checkedIn } = await response.json();
-    //     setCheckedIn(!checkedIn);
-    //   } catch (error) {
-    //     console.error("Error fetching attendance status:", error.message);
-    //   }
-    // };
-
     fetchServerTime();
-    // fetchAttendanceStatus();
+    fetchAttendanceStatus();
   }, [id]);
 
   useEffect(() => {
@@ -190,7 +157,7 @@ const Clocking = () => {
       }));
 
           // Re-fetch attendance status
-    // await fetchAttendanceStatus();
+    await fetchAttendanceStatus();
 
       alert("Check-out successful!");
     } catch (error) {
@@ -229,7 +196,7 @@ const Clocking = () => {
             </Button>
             <Button
               variant="default"
-              disabled={ checkedIn}
+              disabled={!checkedIn || checkedOut}
               onClick={handleCheckOut}
               className="px-4 py-2 text-lg"
             >
