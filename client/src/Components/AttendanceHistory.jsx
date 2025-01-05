@@ -93,7 +93,7 @@ const AttendanceHistory = () => {
         <div className="w-full my-4">
           <Progress value={progress} className="h-2" />
           <p className="text-sm text-gray-500 mt-2">
-            {progress}% Loading records...
+            Loading...
           </p>
         </div>
       )}

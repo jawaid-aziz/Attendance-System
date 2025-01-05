@@ -25,11 +25,11 @@
 //             Authorization: `Bearer ${localStorage.getItem("token")}`,
 //           },
 //         });
-    
+
 //         if (!response.ok) {
 //           throw new Error(`Failed to fetch: ${response.status}`);
 //         }
-    
+
 //         const data = await response.json();
 //         if (Array.isArray(data.employees)) {
 //           setEmployees(data.employees);
@@ -46,7 +46,6 @@
 //         setProgress(100);
 //       }
 //     };
-    
 
 //     // Initialize WebSocket connection
 //     const socket = io(socketUrl);
@@ -172,7 +171,17 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import { Progress } from "@/components/ui/progress"; // Adjust the path as per your project setup
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
@@ -239,7 +248,9 @@ const EmployeesData = () => {
     return (
       <div className="p-6">
         <Progress value={progress} className="h-2" />
-        <p className="text-sm text-gray-500 mt-2">{progress}% Loading employee data...</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {progress}% Loading employee data...
+        </p>
       </div>
     );
   }
@@ -253,77 +264,74 @@ const EmployeesData = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 min-h-screen">
+    <div className="container mx-auto p-6">
       <div className="overflow-x-auto">
-        <table className="table-auto w-full bg-white rounded-lg shadow-md">
-          <thead>
-            <tr className="bg-gray-800 text-white">
-              <th className="px-6 py-4 text-left">Name</th>
-              <th className="px-6 py-4 text-left">Role</th>
-              <th className="px-6 py-4 text-center">Actions</th>
-              <th className="px-6 py-4 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((employee, index) => {
-              const firstName = employee?.firstName || "Unknown";
-              const lastName = employee?.lastName || "Unknown";
-              const role = employee?.role || "Unknown";
-              const isActive = employee?.isActive;
+        <Table className="bg-white shadow-sm rounded-md">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {employees.map((employee) => {
+              const {
+                _id,
+                firstName = "Unknown",
+                lastName = "Unknown",
+                role = "Unknown",
+                isActive,
+              } = employee;
 
               return (
-                <tr
-                  key={index}
-                  className={`border-b last:border-none ${
-                    index % 2 === 0 ? "bg-gray-50" : "bg-gray-100"
-                  }`}
-                >
-                  <td className="px-6 py-4 text-gray-800">
-                    <div className="font-bold">{`${firstName} ${lastName}`}</div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{role}</td>
-                  <td className="px-6 py-4 text-center">
+                <TableRow key={_id}>
+                  <TableCell>
+                    <div className="font-medium text-gray-800">{`${firstName} ${lastName}`}</div>
+                  </TableCell>
+                  <TableCell className="text-gray-600">{role}</TableCell>
+                  <TableCell className="text-center">
                     <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => handleViewProfile(employee._id)}
-                        className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleViewProfile(_id)}
                       >
                         View Profile
-                      </button>
-                      <button
-                        onClick={() => handleDelete(employee._id)}
-                        className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition"
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(_id)}
                       >
                         Delete
-                      </button>
-                      <button
-                        onClick={() => handleViewAttendance(employee._id)}
-                        className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600 transition"
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewAttendance(_id)}
                       >
-                        View Attendance
-                      </button>
+                        Attendance
+                      </Button>
                     </div>
-                  </td>
-                  <td
-                    className={`px-6 py-4 text-center font-bold ${
-                      isActive === null
-                        ? "text-gray-500"
-                        : isActive
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {isActive === null
-                      ? "Inactive"
-                      : isActive
-                      ? "Active"
-                      : "Inactive"}
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      className={
+                        isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    >
+                      {isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

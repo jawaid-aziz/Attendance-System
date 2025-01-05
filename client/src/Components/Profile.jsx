@@ -100,7 +100,6 @@ export const Profile = () => {
         throw new Error(errorData.message || "Failed to update user data");
       }
 
-      alert("Profile updated successfully!");
     } catch (err) {
       console.error("Error updating user data:", err);
       alert(`Error: ${err.message}`);
@@ -111,7 +110,7 @@ export const Profile = () => {
     return (
       <div className="p-6">
         <Progress value={progress} className="h-2" />
-        <p className="text-sm text-gray-500 mt-2">{progress}% Loading profile...</p>
+        <p className="text-sm text-gray-500 mt-2">Loading...</p>
       </div>
     );
   }
@@ -139,6 +138,7 @@ export const Profile = () => {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
+                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
               <div>
@@ -149,6 +149,7 @@ export const Profile = () => {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
+                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
               <div>
@@ -159,6 +160,7 @@ export const Profile = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
+                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
               <div>
@@ -169,6 +171,7 @@ export const Profile = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
+                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
             </div>
@@ -180,6 +183,7 @@ export const Profile = () => {
                 value={formData.address}
                 onChange={handleInputChange}
                 readOnly={role !== "admin"}
+                className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
               />
             </div>
           </div>
@@ -201,7 +205,7 @@ export const Profile = () => {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input type="text" name="role" value={formData.role} readOnly />
+                  <Input type="text" name="role" value={formData.role} readOnly className={role !== "admin" ? "bg-cornflower-blue-100" : ""} />
                 )}
               </div>
               <div>
@@ -212,6 +216,7 @@ export const Profile = () => {
                   value={formData.salary}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
+                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
             </div>
