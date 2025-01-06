@@ -1,10 +1,8 @@
-// controllers/DeductionsController/Deductions.js
-
 const fs = require('fs');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Define the path to your .env file
+// Define the path to .env file
 const envPath = path.resolve(__dirname, '../../.env'); // Adjust the path as necessary
 
 // Initial load of environment variables

@@ -5,7 +5,7 @@ const AdminDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const socketUrl = "http://localhost:5000"; // Backend URL
-const navigate= useNavigate();
+  const navigate = useNavigate();
   useEffect(() => {
     // Fetch initial employee data
     const fetchEmployees = async () => {

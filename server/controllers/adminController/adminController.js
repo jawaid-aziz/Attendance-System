@@ -25,27 +25,25 @@ exports.getUsers = async (req, res) => {
             isActive = null;
           }
         }
-        console.log("isActive satatus:",isActive);
+        console.log("isActive satatus:", isActive);
 
         // Return user with computed attendance status
         return {
           _id: user._id,
           firstName: user.firstName,
-          lastName:user.lastName,
+          lastName: user.lastName,
           role: user.role,
           isActive: isActive,
         };
-        
+
       })
     );
-
     res.status(200).json({ employees });
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Error fetching users", error: error.message });
   }
 };
-
 
 // Add User Controller
 exports.addUser = async (req, res) => {
@@ -133,8 +131,7 @@ exports.editUser = async (req, res) => {
   if (!userId) {
     return res.status(400).json({ message: "User ID is required" });
   }
-
-  // Manual Validation
+ // Manual Validation
   if (firstName && firstName.length < 2) {
     return res.status(400).json({ message: "First name must be at least 2 characters long" });
   }
@@ -209,7 +206,7 @@ exports.editUser = async (req, res) => {
 
 // Delete User Controller
 exports.deleteUser = async (req, res) => {
-  const userId = req.params.id; // Assuming user ID is passed as a route parameter
+  const userId = req.params.id; 
 
   // Check if user ID is provided
   if (!userId) {

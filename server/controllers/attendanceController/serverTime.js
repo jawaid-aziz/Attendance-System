@@ -1,11 +1,6 @@
-const Attendance = require("../../models/Attendance");
-const User = require("../../models/User");
 const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const utc = require("dayjs/plugin/utc")
-// const { io } = require("../../index");
-const cron = require("node-cron");
-
 dayjs.extend(timezone);
 dayjs.extend(utc);
 

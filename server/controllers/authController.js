@@ -2,8 +2,6 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { generateToken } = require("../utils/tokenUtils");
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret-key";
-
 // User Login
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -31,7 +29,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(user, user.role)
+    const token = generateToken(user, user.role);
 
     res.status(200).json({
       message: "Login successful",

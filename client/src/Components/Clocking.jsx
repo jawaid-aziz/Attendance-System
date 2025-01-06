@@ -7,16 +7,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-// const dayjs = require("dayjs");
-// import dayjs from "dayjs";
-// const timezone = require("dayjs/plugin/timezone");
-// import { Timezone } from "./Timezone";
-// const utc = require("dayjs/plugin/utc")
-// const { io } = require("../../index");
-// const cron = require("node-cron");
 
-// dayjs.extend(timezone);
-// dayjs.extend(utc);
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
