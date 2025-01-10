@@ -1,4 +1,4 @@
-import Login from "./Pages/Login";
+// import Login from "./Pages/Login";
 import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
@@ -9,11 +9,21 @@ import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
-
+import AdminLogin from "./Pages/AdminLogin";
+import LoginPage from "./Pages/LoginPage";
+import UserLogin from "./Pages/UserLogin";
 export const AllRoutes = [
   {
     path: "/",
-    element: <Login />,
+    element: <LoginPage/>
+  },
+  {
+    path: "/admin/login",
+    element: <AdminLogin/>
+  },
+  {
+    path: "/user/login",
+    element: <UserLogin/>
   },
   // {
   //   path: "/unauthorized",

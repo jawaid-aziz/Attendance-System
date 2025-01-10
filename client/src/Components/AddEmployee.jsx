@@ -58,7 +58,7 @@ const AddEmployeeForm = () => {
       }
 
       alert("Employee added successfully!");
-      navigate(`home`);
+      navigate(`/add-employee`);
     } catch (error) {
       if (error.message) {
         alert(error.message); // Display the error message from the fetch response
