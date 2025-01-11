@@ -6,6 +6,7 @@ import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/Components/ui/card";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
+import toast, { Toaster } from "react-hot-toast";
 
 const UserLogin = () => {
   const [email, setEmail] = useState("");
@@ -30,12 +31,12 @@ const UserLogin = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Something went wrong.");
+        toast.error(data.message || "Something went wrong.", { duration: 5000 });
         return;
       }
 
       if (data.user.role !== "employee") {
-        setError("Only employee can log in here.");
+        toast.error("Only employee can log in here.", { duration: 5000 });
         return;
       }
 
@@ -47,12 +48,14 @@ const UserLogin = () => {
       setId(data.user.id);
       navigate("/home");
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.", { duration: 5000 });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <>
+          <Toaster position="bottom-right" reverseOrder={false} />
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-center text-xl">Employee Login</CardTitle>
@@ -97,6 +100,7 @@ const UserLogin = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

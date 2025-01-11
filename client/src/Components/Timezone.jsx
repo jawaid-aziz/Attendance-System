@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react";
 import timezoneData from "../Data/Timezones.json";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import toast, { Toaster } from "react-hot-toast";
 
 export const Timezone = () => {
   const [timezones, setTimezones] = useState([]);
@@ -20,10 +32,9 @@ export const Timezone = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        
 
         if (!response.ok) {
-          throw new Error("Failed to fetch current timezone.");
+          toast.error("Failed to fetch current timezone.", { duration: 5000 });
         }
 
         const data = await response.json();
@@ -31,7 +42,7 @@ export const Timezone = () => {
       } catch (error) {
         console.log(localStorage.getItem("token"));
         console.error("Error fetching current timezone:", error.message);
-        alert("Failed to load current timezone.");
+        toast.error("Failed to load current timezone.", { duration: 5000 });
       }
     };
 
@@ -60,55 +71,62 @@ export const Timezone = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save timezone.");
+        toast.error("Failed to save timezone.", { duration: 5000 });
       }
 
-      alert("Timezone updated successfully!");
+      toast.success("Timezone updated successfully!", { duration: 5000 });
       setCurrentTimezone(selectedTimezone); // Update the displayed timezone after saving
     } catch (error) {
       console.error("Error saving timezone:", error.message);
-      alert("Failed to update timezone.");
+      toast.error("Failed to update timezone.", { duration: 5000 });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center p-8">
-      <Card className="w-full max-w-lg p-6 shadow-lg rounded-lg">
-        <CardHeader className="text-center mb-4">
-          <h1 className="text-2xl font-bold">Manage Timezone</h1>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <p className="text-gray-600 mb-2">
-              <strong>Current Timezone:</strong> {currentTimezone || "Loading..."}
-            </p>
-            <Select onValueChange={handleTimezoneChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Timezone" className="h-full"/>
-              </SelectTrigger>
-              <SelectContent  className="2xl:h-full lg:h-94 h-60 " >
-                {timezones.map((tz, index) => (
-                  <SelectItem key={index} value={tz.utc[0]}>
-                    {tz.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            onClick={saveTimezone}
-            disabled={loading || !selectedTimezone}
-            className="w-full"
-          >
-            {loading ? "Saving..." : "Save Timezone"}
-          </Button>
-        </CardContent>
-        <CardFooter className="text-center text-gray-500 text-sm mt-4">
-          Please select and save your desired timezone.
-        </CardFooter>
-      </Card>
-    </div>
+    <>
+      <Toaster position="bottom-right" reverseOrder={false} />
+      <div className="flex justify-center items-center p-8">
+        <Card className="w-full max-w-lg p-6 shadow-lg rounded-lg">
+          <CardHeader className="text-center mb-4">
+            <h1 className="text-2xl font-bold">Manage Timezone</h1>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <p className="text-gray-600 mb-2">
+                <strong>Current Timezone:</strong>{" "}
+                {currentTimezone || "Loading..."}
+              </p>
+              <Select onValueChange={handleTimezoneChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder="Select Timezone"
+                    className="h-full"
+                  />
+                </SelectTrigger>
+                <SelectContent className="2xl:h-full lg:h-94 h-60 ">
+                  {timezones.map((tz, index) => (
+                    <SelectItem key={index} value={tz.utc[0]}>
+                      {tz.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={saveTimezone}
+              disabled={loading || !selectedTimezone}
+              className="w-full"
+            >
+              {loading ? "Saving..." : "Save Timezone"}
+            </Button>
+          </CardContent>
+          <CardFooter className="text-center text-gray-500 text-sm mt-4">
+            Please select and save your desired timezone.
+          </CardFooter>
+        </Card>
+      </div>
+    </>
   );
 };

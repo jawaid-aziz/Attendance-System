@@ -5,13 +5,19 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import toast, { Toaster } from "react-hot-toast";
 
 export const Profile = () => {
   const { id } = useParams();
   const { role } = useRole();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [progress, setProgress] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -34,15 +40,18 @@ export const Profile = () => {
       }, 100);
 
       try {
-        const response = await fetch(`http://localhost:5000/byId/getUser/${id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const response = await fetch(
+          `http://localhost:5000/byId/getUser/${id}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch user data");
+          toast.error("Failed to fetch user data", { duration: 5000 });
         }
 
         const data = await response.json();
@@ -55,10 +64,9 @@ export const Profile = () => {
           address: data.user.address || "",
           salary: data.user.salary || "",
         });
-        setError(null);
       } catch (err) {
-        setError(err.message);
-        setFormData({ ...formData, firstName: "No data" }); // Fallback if error
+        toast.error(err.message, { duration: 5000 });
+        setFormData({ ...formData}); // Fallback if error
       } finally {
         clearInterval(interval);
         setProgress(100);
@@ -97,12 +105,12 @@ export const Profile = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update user data");
+        toast.error(errorData.message || "Failed to update user data", { duration: 5000 });
       }
 
+      toast.success("User data updated successfully!", { duration: 5000 });
     } catch (err) {
-      console.error("Error updating user data:", err);
-      alert(`Error: ${err.message}`);
+      toast.error(err.message, { duration: 5000 });
     }
   };
 
@@ -115,120 +123,134 @@ export const Profile = () => {
     );
   }
 
-  if (error) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
-  }
-
   return (
-    <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
-      <CardHeader>
-        <h1 className="text-2xl font-semibold">Profile</h1>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Personal Information Section */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-700">Personal Information</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 font-medium">First Name</label>
-                <Input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  readOnly={role !== "admin"}
-                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                />
+    <>
+      <Toaster position="bottom-right" reverseOrder={false} />
+      <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
+        <CardHeader>
+          <h1 className="text-2xl font-semibold">Profile</h1>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Personal Information Section */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium text-gray-700">
+                Personal Information
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">First Name</label>
+                  <Input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    readOnly={role !== "admin"}
+                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Last Name</label>
+                  <Input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    readOnly={role !== "admin"}
+                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Phone</label>
+                  <Input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    readOnly={role !== "admin"}
+                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Email</label>
+                  <Input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    readOnly={role !== "admin"}
+                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
+                  />
+                </div>
               </div>
               <div>
-                <label className="block mb-1 font-medium">Last Name</label>
+                <label className="block mb-1 font-medium">Address</label>
                 <Input
                   type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  readOnly={role !== "admin"}
-                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">Phone</label>
-                <Input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  readOnly={role !== "admin"}
-                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">Email</label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  name="address"
+                  value={formData.address}
                   onChange={handleInputChange}
                   readOnly={role !== "admin"}
                   className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
                 />
               </div>
             </div>
-            <div>
-              <label className="block mb-1 font-medium">Address</label>
-              <Input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                readOnly={role !== "admin"}
-                className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-              />
-            </div>
-          </div>
 
-          {/* Professional Information Section */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-700">Professional Information</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 font-medium">Role</label>
-                {role === "admin" ? (
-                  <Select value={formData.role} onValueChange={handleRoleChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input type="text" name="role" value={formData.role} readOnly className={role !== "admin" ? "bg-cornflower-blue-100" : ""} />
-                )}
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">Salary</label>
-                <Input
-                  type="text"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleInputChange}
-                  readOnly={role !== "admin"}
-                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                />
+            {/* Professional Information Section */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium text-gray-700">
+                Professional Information
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">Role</label>
+                  {role === "admin" ? (
+                    <Select
+                      value={formData.role}
+                      onValueChange={handleRoleChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="employee">Employee</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      type="text"
+                      name="role"
+                      value={formData.role}
+                      readOnly
+                      className={
+                        role !== "admin" ? "bg-cornflower-blue-100" : ""
+                      }
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Salary</label>
+                  <Input
+                    type="text"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    readOnly={role !== "admin"}
+                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {role === "admin" && (
-            <Button type="submit" className="w-full">
-              Save Changes
-            </Button>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+            {role === "admin" && (
+              <Button type="submit" className="w-full">
+                Save Changes
+              </Button>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+    </>
   );
 };

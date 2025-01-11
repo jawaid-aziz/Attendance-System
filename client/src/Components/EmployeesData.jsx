@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import toast, { Toaster } from "react-hot-toast";
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
@@ -40,6 +41,7 @@ const EmployeesData = () => {
         setEmployees(data.employees);
         setLoading(false);
       } catch (error) {
+        toast.error("Failed to fetch employee data", { duration: 5000 });
         setLoading(false);
       } finally {
         clearInterval(interval);
@@ -94,76 +96,79 @@ const EmployeesData = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="overflow-x-auto">
-        <Table className="bg-white shadow-sm rounded-md">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {employees.map((employee) => {
-              const {
-                _id,
-                firstName = "Unknown",
-                lastName = "Unknown",
-                role = "Unknown",
-                isActive,
-              } = employee;
+    <>
+      <Toaster position="bottom-right" reverseOrder={false} />
+      <div className="container mx-auto p-6">
+        <div className="overflow-x-auto">
+          <Table className="bg-white shadow-sm rounded-md">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {employees.map((employee) => {
+                const {
+                  _id,
+                  firstName = "Unknown",
+                  lastName = "Unknown",
+                  role = "Unknown",
+                  isActive,
+                } = employee;
 
-              return (
-                <TableRow key={_id}>
-                  <TableCell>
-                    <div className="font-medium text-gray-800">{`${firstName} ${lastName}`}</div>
-                  </TableCell>
-                  <TableCell className="text-gray-600">{role}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center space-x-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleViewProfile(_id)}
+                return (
+                  <TableRow key={_id}>
+                    <TableCell>
+                      <div className="font-medium text-gray-800">{`${firstName} ${lastName}`}</div>
+                    </TableCell>
+                    <TableCell className="text-gray-600">{role}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center space-x-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleViewProfile(_id)}
+                        >
+                          View Profile
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(_id)}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewAttendance(_id)}
+                        >
+                          Attendance
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        className={
+                          isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }
                       >
-                        View Profile
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(_id)}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewAttendance(_id)}
-                      >
-                        Attendance
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      className={
-                        isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }
-                    >
-                      {isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                        {isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
