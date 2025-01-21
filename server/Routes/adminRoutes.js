@@ -16,6 +16,7 @@ const {
   getDeductions,
   updateDeductions,
 } = require("../controllers/adminController/configDeductions");
+const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
 
 const router = express.Router();
 
@@ -26,12 +27,13 @@ router.get("/user", authenticateToken, authorizeAdmin, getUsers);
 router.get("/getTime", authenticateToken, authorizeAdmin, getTimezone);
 // Route to update the timezone
 router.post("/updateTime", authenticateToken, authorizeAdmin, updateTimezone);
+//route for deduction logic
 router.get("/getDeductions", authenticateToken, authorizeAdmin, getDeductions);
-router.post(
-  "/updateDeductions",
-  authenticateToken,
-  authorizeAdmin,
-  updateDeductions
-);
+router.post("/updateDeductions",authenticateToken,authorizeAdmin,updateDeductions);
+//route for router ip configuration
+router.get("/getAllowedIP", authenticateToken, authorizeAdmin, getAllowedIPs);
+router.post("/addAllowedIP", authenticateToken, authorizeAdmin, addAllowedIP);
+router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, removeAllowedIP);
+
 
 module.exports = router;
