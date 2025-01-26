@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 
 export const Configuration = () => {
   // States for deduction configuration
@@ -177,86 +181,89 @@ export const Configuration = () => {
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Configuration</h1>
-
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-bold">Configuration</h1>
+  
         {/* Deduction Configuration Section */}
-        <div className="mb-6 pb-6 border-b-4 border-black">
-          <h2 className="text-lg font-semibold mb-4">
-            Deduction Configuration
-          </h2>
-          <label className="flex items-center space-x-4">
-            <input
-              type="checkbox"
-              checked={deductionsEnabled}
-              onChange={handleToggleDeductions}
-              className="form-checkbox"
-            />
-            <span>Enable Deductions</span>
-          </label>
-          {deductionsEnabled && (
-            <div className="mt-4">
-              <label className="block mb-2 text-gray-700 font-semibold">
-                Deduction Rate (%):
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={deductionRate}
-                onChange={handleRateChange}
-                className="border rounded-lg px-3 py-2 w-full"
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Deduction Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                checked={deductionsEnabled}
+                onCheckedChange={handleToggleDeductions}
               />
+              <span>Enable Deductions</span>
             </div>
-          )}
-          <button
-            onClick={handleSaveDeductionConfiguration}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            Save Deduction Configuration
-          </button>
-        </div>
-
+            {deductionsEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Deduction Rate (%)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={deductionRate}
+                  onChange={handleRateChange}
+                />
+              </div>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleSaveDeductionConfiguration}>
+              Save Deduction Configuration
+            </Button>
+          </CardFooter>
+        </Card>
+  
         {/* Allowed IP Configuration Section */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center justify-center">
-            Router IP Configuration
-          </h2>
-          <div className="mb-4">
-            <label className="block mb-2 font-semibold">
-              Add New Router IP
-            </label>
-            <input
-              type="text"
-              value={newIP}
-              onChange={(e) => setNewIP(e.target.value)}
-              placeholder="192.168.100.1"
-              className="border px-3 py-2 rounded-lg w-full mb-2"
-            />
-            <button
-              onClick={handleAddIP}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg"
-            >
-              Add IP
-            </button>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Allowed Router IPs</h3>
-          <ul>
-            {allowedIPs.map((ip, index) => (
-              <li
-                key={index}
-                className="flex justify-between items-center mb-2 border-b"
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Router IP Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Add New Router IP
+              </label>
+              <Input
+                type="text"
+                value={newIP}
+                onChange={(e) => setNewIP(e.target.value)}
+                placeholder="192.168.100.1"
+              />
+              <Button
+                variant="secondary"
+                className="mt-2"
+                onClick={handleAddIP}
               >
-                <span>{ip}</span>
-                <button
-                  onClick={() => handleRemoveIP(ip)}
-                  className="px-2 py-1 bg-red-600 text-white rounded"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+                Add IP
+              </Button>
+            </div>
+            <div>
+              <h3 className="text-md font-semibold mb-2">Allowed Router IPs</h3>
+              <ul className="space-y-2">
+                {allowedIPs.map((ip, index) => (
+                  <li
+                    key={index}
+                    className="flex justify-between items-center bg-gray-100 p-2 rounded"
+                  >
+                    <span>{ip}</span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveIP(ip)}
+                    >
+                      Remove
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </>
   );

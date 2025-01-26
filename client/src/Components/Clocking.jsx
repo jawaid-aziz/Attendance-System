@@ -233,7 +233,7 @@ const Clocking = () => {
           </CardHeader>
           <CardContent>
             <div className=" mb-6">
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold capitalize">
                 Welcome, <span className="text-blue-600">{user.firstName}</span>
               </h2>
               {user.checkInTime && (

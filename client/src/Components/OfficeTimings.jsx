@@ -115,6 +115,10 @@
 // };
 // File: src/components/AdminPanel.jsx
 import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 
 const OfficeTimings = () => {
@@ -164,12 +168,15 @@ const OfficeTimings = () => {
 
           setOfficeSchedule(filteredSchedule);
         } else {
-          console.error("Failed to fetch office schedule. Status:", response.status);
+          console.error(
+            "Failed to fetch office schedule. Status:",
+            response.status
+          );
           toast.error("Failed to fetch office schedule.");
         }
       } catch (error) {
         console.error("Error fetching office schedule:", error.message);
-        toast.error(`Error fetching office schedule: ${error.message}`);
+        toast.error(`${error.message}`);
       }
     };
 
@@ -202,14 +209,17 @@ const OfficeTimings = () => {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/admin/saveOfficeTiming", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ schedule: officeSchedule }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/admin/saveOfficeTiming",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ schedule: officeSchedule }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -222,61 +232,83 @@ const OfficeTimings = () => {
       }
     } catch (error) {
       console.error("Error saving office schedule:", error.message);
-      toast.error(`Error saving office schedule: ${error.message}`);
+      toast.error(`${error.message}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <Toaster position="bottom-right" reverseOrder={false} />
-      <h1 className="text-3xl font-bold text-center mb-6">Configure Office Timings</h1>
-      <form>
-        <div className="space-y-6">
-          {daysOfWeek.map((day) => (
-            <div key={day} className="flex items-center justify-between p-4 border rounded-lg shadow-md">
-              <span className="font-semibold text-lg capitalize">{day}</span>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={officeSchedule[day]?.isOpen || false}
-                  onChange={() => handleToggle(day)}
-                  className="mr-2"
+    <>
+      <Toaster position="bottom-right" />
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold text-center mb-8">
+          Configure Office Timings
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6">
+          {daysOfWeek.slice(0, -1).map((day, index) => (
+            <Card key={day} className="shadow-lg">
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle className="capitalize">{day}</CardTitle>
+                <Switch
+                  checked={officeSchedule[day].isOpen}
+                  onCheckedChange={() => handleToggle(day)}
                 />
-                {officeSchedule[day]?.isOpen ? "Open" : "Closed"}
-              </label>
-              {officeSchedule[day]?.isOpen && (
-                <div className="space-x-4">
-                  <input
+              </CardHeader>
+              {officeSchedule[day].isOpen && (
+                <CardContent className="flex items-center space-x-4">
+                  <Input
                     type="time"
-                    value={officeSchedule[day]?.startTime || ""}
-                    onChange={(e) => handleTimeChange(day, "startTime", e.target.value)}
-                    className="border p-2 rounded-md"
+                    value={officeSchedule[day].startTime}
+                    onChange={(e) =>
+                      handleTimeChange(day, "startTime", e.target.value)
+                    }
                   />
-                  <input
+                  <Input
                     type="time"
-                    value={officeSchedule[day]?.endTime || ""}
-                    onChange={(e) => handleTimeChange(day, "endTime", e.target.value)}
-                    className="border p-2 rounded-md"
+                    value={officeSchedule[day].endTime}
+                    onChange={(e) =>
+                      handleTimeChange(day, "endTime", e.target.value)
+                    }
                   />
-                </div>
+                </CardContent>
               )}
-            </div>
+            </Card>
           ))}
         </div>
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="bg-blue-500 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none"
-          >
-            Save Schedule
-          </button>
+        <div className="mt-6 px-6">
+          <Card key="Sunday" className="shadow-lg">
+            <CardHeader className="flex justify-between items-center">
+              <CardTitle>Sunday</CardTitle>
+              <Switch
+                checked={officeSchedule["Sunday"].isOpen}
+                onCheckedChange={() => handleToggle("Sunday")}
+              />
+            </CardHeader>
+            {officeSchedule["Sunday"].isOpen && (
+              <CardContent className="flex items-center space-x-4">
+                <Input
+                  type="time"
+                  value={officeSchedule["Sunday"].startTime}
+                  onChange={(e) =>
+                    handleTimeChange("Sunday", "startTime", e.target.value)
+                  }
+                />
+                <Input
+                  type="time"
+                  value={officeSchedule["Sunday"].endTime}
+                  onChange={(e) =>
+                    handleTimeChange("Sunday", "endTime", e.target.value)
+                  }
+                />
+              </CardContent>
+            )}
+          </Card>
         </div>
-      </form>
-    </div>
+        <div className="mt-6 flex justify-center">
+          <Button onClick={handleSave}>Save Schedule</Button>
+        </div>
+      </div>
+    </>
   );
 };
 
 export default OfficeTimings;
-
-

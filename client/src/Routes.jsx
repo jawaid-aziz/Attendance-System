@@ -13,10 +13,13 @@ import AdminLogin from "./Pages/AdminLogin";
 // import LoginPage from "./Pages/LoginPage";
 import UserLogin from "./Pages/UserLogin";
 import  OfficeTimings  from "./Components/OfficeTimings";
+import { isTokenValid } from "@/lib/isTokenValid";
+import { Navigate } from "react-router-dom";
+
 export const AllRoutes = [
   {
     path: "/login",
-    element: <Login/>
+    element: isTokenValid() ? <Navigate to="/" replace /> : <Login />, // Redirect if token is valid
   },
   // {
   //   path: "/admin/login",
