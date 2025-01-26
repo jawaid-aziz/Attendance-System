@@ -16,6 +16,9 @@ const Clocking = () => {
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkedOut, setCheckedOut] = useState();
   const [loading, setLoading] = useState(true);
+
+  const [officeSchedule, setOfficeSchedule] = useState(null);
+  const [currentDaySchedule, setCurrentDaySchedule] = useState(null);
   // Check if the current time is within allowed hours
 
   const fetchServerTime = async () => {
@@ -28,14 +31,19 @@ const Clocking = () => {
       const data = await response.json();
       setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
     } catch (error) {
-      toast.error(`Error fetching server time: ${error.message}`, { duration: 5000 });
+      toast.error(`Error fetching server time: ${error.message}`, {
+        duration: 5000,
+      });
     }
   };
 
   const fetchAttendanceStatus = async () => {
     try {
       const response = await fetch(`http://localhost:5000/attend/status/${id}`);
-      if (!response.ok) toast.error(`HTTP error! Status: ${response.status}`, { duration: 5000 });
+      if (!response.ok)
+        toast.error(`HTTP error! Status: ${response.status}`, {
+          duration: 5000,
+        });
 
       const data = await response.json();
       setCheckedIn(data.checkedIn);
@@ -44,7 +52,9 @@ const Clocking = () => {
         setCheckedOut(true);
       }
     } catch (error) {
-      toast.error(`Error fetching attendance status: ${error.message}`, { duration: 5000 });
+      toast.error(`Error fetching attendance status: ${error.message}`, {
+        duration: 5000,
+      });
     }
   };
 
@@ -52,6 +62,43 @@ const Clocking = () => {
     fetchServerTime();
     fetchAttendanceStatus();
   }, [id]);
+
+  //office timing
+  useEffect(() => {
+    const fetchOfficeSchedule = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/admin/getOfficeTiming",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          toast.error("Failed to fetch office schedule.", { duration: 5000 });
+          return;
+        }
+
+        const data = await response.json();
+        console.log("Fetched Office Schedule:", data);
+        setOfficeSchedule(data);
+
+        const today = new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+        setCurrentDaySchedule(data[today]);
+      } catch (error) {
+        toast.error(`Error fetching office schedule: ${error.message}`, {
+          duration: 5000,
+        });
+        console.error("Error fetching office schedule:", error);
+      }
+    };
+
+    fetchOfficeSchedule();
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -73,7 +120,9 @@ const Clocking = () => {
         const data = await response.json();
         setUser(data.user);
       } catch (error) {
-        toast.error(`Error fetching user data: ${error.message}`, { duration: 5000 });
+        toast.error(`Error fetching user data: ${error.message}`, {
+          duration: 5000,
+        });
       }
     };
 
@@ -96,7 +145,9 @@ const Clocking = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || "Failed to check in.", { duration: 5000 });
+        toast.error(errorData.message || "Failed to check in.", {
+          duration: 5000,
+        });
         return;
       }
 
@@ -109,7 +160,9 @@ const Clocking = () => {
       fetchAttendanceStatus();
       toast.success("Check-in successful!", { duration: 5000 });
     } catch (error) {
-      toast.error(`An error occurred during check-in: ${error.message}`, { duration: 5000 });
+      toast.error(`An error occurred during check-in: ${error.message}`, {
+        duration: 5000,
+      });
     }
   };
 
@@ -129,7 +182,9 @@ const Clocking = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || "Failed to check out.", { duration: 5000 });
+        toast.error(errorData.message || "Failed to check out.", {
+          duration: 5000,
+        });
         return;
       }
 
@@ -145,9 +200,26 @@ const Clocking = () => {
 
       toast.success("Check-out successful!", { duration: 5000 });
     } catch (error) {
-      toast.error(`An error occurred during check-out: ${error.message}`, { duration: 5000 });
+      toast.error(`An error occurred during check-out: ${error.message}`, {
+        duration: 5000,
+      });
     }
   };
+  //
+  const isOfficeOpen = currentDaySchedule?.isOpen;
+  // const isWithinOfficeHours = () => {
+  //   const now = new Date();
+  //   const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes
+  //   const [startHour, startMinute] = currentDaySchedule?.startTime.split(":").map(Number);
+  //   const [endHour, endMinute] = currentDaySchedule?.endTime.split(":").map(Number);
+
+  //   const startTime = startHour * 60 + startMinute;
+  //   const endTime = endHour * 60 + endMinute;
+
+  //   return currentTime >= startTime && currentTime <= endTime;
+  // };
+
+  // const canCheckInOrOut = isOfficeOpen && isWithinOfficeHours();
 
   if (!user) return <p>Loading user data...</p>;
 
@@ -174,7 +246,7 @@ const Clocking = () => {
             <div className="flex gap-2">
               <Button
                 variant="default"
-                disabled={checkedIn}
+                disabled={ !checkedIn}
                 onClick={handleCheckIn}
                 className="px-4 py-2 text-lg"
               >
@@ -182,7 +254,7 @@ const Clocking = () => {
               </Button>
               <Button
                 variant="default"
-                disabled={!checkedIn || checkedOut}
+                disabled={!isOfficeOpen || !checkedIn || checkedOut}
                 onClick={handleCheckOut}
                 className="px-4 py-2 text-lg"
               >
@@ -191,7 +263,9 @@ const Clocking = () => {
             </div>
           </CardContent>
           <CardFooter className=" text-gray-500 text-sm mt-4">
-            Check-in is only allowed between 9:00 AM and 5:00 PM
+            {isOfficeOpen
+              ? "Check-in is only allowed during office hours."
+              : "The office is closed today."}
           </CardFooter>
         </Card>
       </div>

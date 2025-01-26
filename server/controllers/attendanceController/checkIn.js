@@ -26,19 +26,103 @@ const checkIn = async (req, res) => {
     const timezoneName = process.env.TIMEZONE || "Asia/Karachi";
     const serverTime = dayjs().tz(timezoneName);
     const unixTime = serverTime.unix(); // Convert to seconds since epoch
+    const today = serverTime.format("dddd");
 
     console.log("Server Time:", serverTime.format());
     console.log("Unix Time:", unixTime);
     console.log("Timezone:", timezoneName);
 
-    const workStartHour = parseInt(process.env.WORK_START_HOUR, 10) || 9; // Default 9 AM
-    const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 17; // Default 5 PM
+    //   const workStartHour = parseInt(process.env.OFFICE_SCHEDULE); // Default 9 AM
+    //  const todaySchedule= workStartHour[today];
+    //   const workEndHour = parseInt(process.env.OFFICE_SCHEDULE) ; // Default 5 PM
+    //   const todayScheduleEnd= workEndHour[today];
+
+    //   const checkInHour = serverTime.hour();
+    //   const checkInMinute = serverTime.minute();
+
+    //   // Validate working hours
+    //   const isWorkingHour =
+    //     checkInHour >= todaySchedule?.startTime && checkInHour < todayScheduleEnd?.endTime;
+
+    //   if (!isWorkingHour) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Check-in time is outside working hours." });
+    //   }
+
+    //   const startOfDay = serverTime.startOf("day").toDate();
+    //   const endOfDay = serverTime.endOf("day").toDate();
+
+    //   const existingAttendance = await Attendance.findOne({
+    //     employee: employeeId,
+    //     date: { $gte: startOfDay, $lt: endOfDay },
+    //   });
+
+    //   if (existingAttendance) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "You have already checked in today." });
+    //   }
+
+    //   const employee = await User.findById(employeeId);
+
+    //   if (!employee) {
+    //     return res.status(404).json({ message: "Employee not found" });
+    //   }
+
+    //   const firstName = employee.firstName;
+
+    //   // Fetch deductions settings
+    //   const deductionsEnabled = process.env.DEDUCTIONS_ENABLED === "true";
+    //   const deductionRate = parseFloat(process.env.DEDUCTION_RATE) || 0;
+
+    //   console.log("Deductions Enabled:", deductionsEnabled);
+    //   console.log("Deduction Rate:", deductionRate);
+
+    //   // Determine status and deductions
+    //   let checkInstatus = "Present";
+    //   let deductions = 0;
+
+    //   if (deductionsEnabled) {
+    //     if (checkInHour === workStartHour && checkInMinute > 15) {
+    //       checkInstatus = "Late Check-In (Half Leave)";
+    //       deductions = deductionRate / 3; // Deduction logic based on rate
+    //     } else if (checkInHour > workStartHour) {
+    //       checkInstatus = "Late Check-In (Half Leave)";
+    //       deductions = deductionRate / 3; // Deduction logic based on rate
+    //     }
+    //   }
+    // Parse OFFICE_SCHEDULE from .env
+    const officeSchedule = JSON.parse(process.env.OFFICE_SCHEDULE || "{}");
+
+    // Retrieve today's schedule
+    const todaySchedule = officeSchedule[today];
+
+    if (!todaySchedule) {
+      return res
+        .status(400)
+        .json({ message: "Office schedule is not configured for today." });
+    }
+
+    if (!todaySchedule.isOpen) {
+      return res.status(400).json({ message: "The office is closed today." });
+    }
+
+    const [startHour, startMinute] = todaySchedule.startTime
+      .split(":")
+      .map(Number);
+    const [endHour, endMinute] = todaySchedule.endTime.split(":").map(Number);
+
     const checkInHour = serverTime.hour();
     const checkInMinute = serverTime.minute();
 
     // Validate working hours
+    const startTimeMinutes = startHour * 60 + startMinute;
+    const endTimeMinutes = endHour * 60 + endMinute;
+    const currentMinutes = checkInHour * 60 + checkInMinute;
+
     const isWorkingHour =
-      checkInHour >= workStartHour && checkInHour < workEndHour;
+      currentMinutes >= startTimeMinutes && currentMinutes <= endTimeMinutes;
 
     if (!isWorkingHour) {
       return res
@@ -80,10 +164,7 @@ const checkIn = async (req, res) => {
     let deductions = 0;
 
     if (deductionsEnabled) {
-      if (checkInHour === workStartHour && checkInMinute > 15) {
-        checkInstatus = "Late Check-In (Half Leave)";
-        deductions = deductionRate / 3; // Deduction logic based on rate
-      } else if (checkInHour > workStartHour) {
+      if (currentMinutes > startTimeMinutes + 15) {
         checkInstatus = "Late Check-In (Half Leave)";
         deductions = deductionRate / 3; // Deduction logic based on rate
       }
@@ -127,19 +208,25 @@ const markAbsentForNonCheckIns = async () => {
   try {
     const timezoneName = process.env.TIMEZONE || "Asia/Karachi";
     const serverTime = dayjs().tz(timezoneName);
-    const startOfDay = serverTime.startOf("day").toDate();
-    const endOfDay = serverTime.endOf("day").toDate();
+    const today = serverTime.format("dddd");
 
-    const deductionsEnabled = process.env.DEDUCTIONS_ENABLED === "true";
-    const deductionRate = deductionsEnabled
-      ? parseFloat(process.env.DEDUCTION_RATE) || 0
-      : 0;
+    // Fetch office schedule
+    const officeSchedule = JSON.parse(process.env.OFFICE_SCHEDULE || "{}");
+    const todaySchedule = officeSchedule[today];
 
-    // Fetch unattended employee IDs
+    if (!todaySchedule?.isOpen) {
+      console.log(`Skipping absent marking. Office is closed on ${today}.`);
+      return;
+    }
+
+    // Proceed with marking absentees if the office is open
     const unattendedEmployeeIds = await User.find({
       _id: {
         $nin: await Attendance.distinct("employee", {
-          date: { $gte: startOfDay, $lt: endOfDay },
+          date: {
+            $gte: serverTime.startOf("day").toDate(),
+            $lt: serverTime.endOf("day").toDate(),
+          },
         }),
       },
     }).select("_id firstName");
@@ -149,7 +236,6 @@ const markAbsentForNonCheckIns = async () => {
       return;
     }
 
-    // Prepare absent records in bulk
     const absentRecords = unattendedEmployeeIds.map((employee) => ({
       employee: employee._id,
       firstName: employee.firstName,
@@ -157,12 +243,10 @@ const markAbsentForNonCheckIns = async () => {
       checkIn: null,
       checkInstatus: "Absent",
       isActive: false,
-      deductions: deductionRate,
+      deductions: parseFloat(process.env.DEDUCTION_RATE) || 0,
     }));
 
-    // Bulk insert absent records
     await Attendance.insertMany(absentRecords);
-
     console.log(`Marked ${absentRecords.length} employees absent.`);
   } catch (error) {
     console.error("Error marking absentees:", error);

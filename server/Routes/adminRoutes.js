@@ -17,6 +17,7 @@ const {
   updateDeductions,
 } = require("../controllers/adminController/configDeductions");
 const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
+const { getOfficeSchedule, saveOfficeSchedule } = require("../controllers/adminController/configOfficeTiming");
 
 const router = express.Router();
 
@@ -34,6 +35,9 @@ router.post("/updateDeductions",authenticateToken,authorizeAdmin,updateDeduction
 router.get("/getAllowedIP", authenticateToken, authorizeAdmin, getAllowedIPs);
 router.post("/addAllowedIP", authenticateToken, authorizeAdmin, addAllowedIP);
 router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, removeAllowedIP);
+//office timing setting
+router.get("/getOfficeTiming",  getOfficeSchedule);
+router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, saveOfficeSchedule);
 
 
 module.exports = router;

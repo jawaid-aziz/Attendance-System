@@ -1,4 +1,4 @@
-// import Login from "./Pages/Login";
+import Login from "./Pages/Login";
 import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
@@ -10,21 +10,22 @@ import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
 import AdminLogin from "./Pages/AdminLogin";
-import LoginPage from "./Pages/LoginPage";
+// import LoginPage from "./Pages/LoginPage";
 import UserLogin from "./Pages/UserLogin";
+import  OfficeTimings  from "./Components/OfficeTimings";
 export const AllRoutes = [
   {
-    path: "/",
-    element: <LoginPage/>
+    path: "/login",
+    element: <Login/>
   },
-  {
-    path: "/admin/login",
-    element: <AdminLogin/>
-  },
-  {
-    path: "/user/login",
-    element: <UserLogin/>
-  },
+  // {
+  //   path: "/admin/login",
+  //   element: <AdminLogin/>
+  // },
+  // {
+  //   path: "/user/login",
+  //   element: <UserLogin/>
+  // },
   // {
   //   path: "/unauthorized",
   //   element: <Unauthorized />,
@@ -38,7 +39,7 @@ export const AllRoutes = [
     ),
     children: [
       {
-        path: "home",
+        path: "/",
         element: <Home />,
       },
       {
@@ -79,6 +80,10 @@ export const AllRoutes = [
       {
         path: "config",
         element: <Configuration />,
+      },
+      {
+        path: "officeTime",
+        element: <OfficeTimings/>,
       },
     ],
   },

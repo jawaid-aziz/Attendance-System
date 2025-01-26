@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 // Socket.IO initialization
 const io = new Server(server, {
   cors: {
-    origin: "*", // Be more specific in production
+    origin: "*", 
     methods: ["GET", "POST"],
   },
 });

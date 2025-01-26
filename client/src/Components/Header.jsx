@@ -20,7 +20,7 @@ export const Header = ({ role }) => {
     localStorage.removeItem("role");
     localStorage.removeItem("id");
     console.log("Token, role, and id removed from localStorage.");
-    navigate("/");
+    navigate("/login");
   };
 
   return (

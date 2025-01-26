@@ -13,7 +13,7 @@ const validateOfficeIP = (req, res, next) => {
         iface.family === "IPv4" && // Check only IPv4
         !iface.internal && // Ignore internal/localhost addresses
         iface.netmask === "255.255.255.0" && // Match standard subnet mask
-        iface.address.startsWith("192.168.100") // Focus on specific subnet
+        iface.address.startsWith("192.168") // Focus on specific subnet
       ) {
         gatewayIP = iface.address;
         break;
@@ -41,4 +41,3 @@ const validateOfficeIP = (req, res, next) => {
 };
 
 module.exports = validateOfficeIP;
-            

@@ -21,11 +21,31 @@ const checkOut = async (req, res) => {
     const timezoneName = process.env.TIMEZONE || "UTC";
     const serverTime = dayjs().tz(timezoneName);
     const unixTime = serverTime.unix();
-    const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 17;
+    // const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 17;
 
-    // Calculate exact work end time and no-checkout deadline
-    const workEndTime = serverTime.startOf("day").hour(workEndHour); // e.g., 17:00
-    const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // e.g., 19:00
+    // // Calculate exact work end time and no-checkout deadline
+    // const workEndTime = serverTime.startOf("day").hour(workEndHour); // e.g., 17:00
+    // const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // e.g., 19:00
+    const today = serverTime.format("dddd"); // Get the current day name
+
+    // Parse OFFICE_SCHEDULE from .env
+    const officeSchedule = JSON.parse(process.env.OFFICE_SCHEDULE || "{}");
+    const todaySchedule = officeSchedule[today];
+
+    if (!todaySchedule) {
+      return res.status(400).json({ message: "Office schedule is not configured for today." });
+    }
+
+    if (!todaySchedule.isOpen) {
+      return res.status(400).json({ message: "The office is closed today. Cannot check out." });
+    }
+
+    const [workEndHour, workEndMinute] = todaySchedule.endTime.split(":").map(Number);
+    // const GRACE_PERIOD_HOURS = parseInt(process.env.GRACE_PERIOD_HOURS, 10) || 2;
+
+    // Calculate work end time and grace period deadline
+    const workEndTime = serverTime.startOf("day").hour(workEndHour).minute(workEndMinute); // Office end time
+    const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // Grace period end time
 
     const startOfToday = serverTime.startOf("day").unix(); // Start of the day
     const endOfToday = serverTime.endOf("day").unix(); // End of the day

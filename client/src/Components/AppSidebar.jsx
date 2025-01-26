@@ -32,7 +32,7 @@ export function AppSidebar({ role }) {
   const menuItems = [
     {
       title: "Home",
-      url: "/home",
+      url: "/",
       icon: Home,
     },
     {
@@ -63,6 +63,8 @@ export function AppSidebar({ role }) {
           ? [
               { title: "Timezone", url: `/timezone` },
               { title: "Configuration", url: `/config` },
+              { title: "Office Timing", url: `/officeTime` },
+
             ]
           : []),
       ],
@@ -74,7 +76,7 @@ export function AppSidebar({ role }) {
     localStorage.removeItem("role");
     localStorage.removeItem("id");
     console.log("Token, role, and id removed from localStorage.");
-    navigate("/");
+    navigate("/login");
   };
 
   const toggleMenu = (title) => {

@@ -15,16 +15,16 @@ const ProtectedRoute = ({ children, roles }) => {
   }
   if (!token ||isTokenExpired(token)) {
     localStorage.clear();
-    return <Navigate to="/" />;
+    return <Navigate to="/login" />;
   }
   // If no token or role/id is missing, redirect to login
   if (!role || !id) {
-    return <Navigate to="/"  />;
+    return <Navigate to="/login"  />;
   }
 
   // If roles are specified and user's role is not authorized, redirect to unauthorized page
   if (roles && !roles.includes(role)) {
-    return <Navigate to="/"  />;
+    return <Navigate to="/login"  />;
   }
 
   // User is authenticated and authorized
