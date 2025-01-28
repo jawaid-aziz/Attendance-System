@@ -1,0 +1,2 @@
+Overview:
+The Office Attendance System is a web-based application designed to manage and monitor employee attendance for a workplace. The system ensures strict adherence to time policies and incorporates salary adjustments based on attendance. The application is built using React.js, Tailwind CSS, and Node.js.
