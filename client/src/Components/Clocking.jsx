@@ -246,7 +246,7 @@ const Clocking = () => {
             <div className="flex gap-2">
               <Button
                 variant="default"
-                disabled={ !checkedIn}
+                disabled={ !isOfficeOpen || checkedIn}
                 onClick={handleCheckIn}
                 className="px-4 py-2 text-lg"
               >

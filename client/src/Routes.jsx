@@ -19,7 +19,7 @@ import { Navigate } from "react-router-dom";
 export const AllRoutes = [
   {
     path: "/login",
-    element: isTokenValid() ? <Navigate to="/" replace /> : <Login />, // Redirect if token is valid
+    element: isTokenValid() ? <Navigate to="/" /> : <Login />, // Redirect if token is valid
   },
   // {
   //   path: "/admin/login",
