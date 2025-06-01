@@ -98,7 +98,7 @@ const AddEmployeeForm = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" autocomplete="off">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 font-medium mb-1">
