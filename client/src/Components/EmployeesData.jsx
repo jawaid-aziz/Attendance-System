@@ -11,11 +11,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
 import { Badge } from "@/components/ui/badge";
 import toast, { Toaster } from "react-hot-toast";
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const socketUrl = "http://localhost:5000"; // Backend URL
@@ -80,15 +94,44 @@ const EmployeesData = () => {
     return (
       <div className="p-6">
         <Progress value={progress} className="h-2" />
-        <p className="text-sm text-gray-500 mt-2">
-          Loading...
-        </p>
+        <p className="text-sm text-gray-500 mt-2">Loading...</p>
       </div>
     );
   }
 
-  const handleDelete = (id) => {
-    navigate(`/delete/${id}`);
+  const openDeleteDialog = (employee) => {
+    setEmployeeToDelete(employee);
+  };
+
+  const confirmDelete = async () => {
+    if (!employeeToDelete) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `${socketUrl}/admin/delete/${employeeToDelete._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        toast.error("Failed to delete employee");
+      } else {
+        toast.success("Employee deleted");
+        setEmployees((prev) =>
+          prev.filter((e) => e._id !== employeeToDelete._id)
+        );
+      }
+    } catch (err) {
+      toast.error("Error deleting employee");
+    } finally {
+      setDeleting(false);
+      setEmployeeToDelete(null);
+    }
   };
 
   const handleViewAttendance = (id) => {
@@ -134,13 +177,46 @@ const EmployeesData = () => {
                         >
                           View Profile
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(_id)}
-                        >
-                          Delete
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                openDeleteDialog({ _id, firstName, lastName })
+                              }
+                            >
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete {employeeToDelete?.firstName}{" "}
+                                {employeeToDelete?.lastName}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. The employee will
+                                be permanently removed from the database.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel
+                                onClick={() => setEmployeeToDelete(null)}
+                              >
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                disabled={deleting}
+                                onClick={confirmDelete}
+                              >
+                                {deleting ? "Deleting..." : "Yes, Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
                         <Button
                           variant="outline"
                           size="sm"

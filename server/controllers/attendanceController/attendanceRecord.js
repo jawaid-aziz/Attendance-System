@@ -12,15 +12,10 @@ const attendanceRecord = async (req, res) => {
     const { employeeId } = req.params;
     const timezoneName = process.env.TIMEZONE || "Asia/Karachi";
 
-    // Calculate the date range
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
-
-    // Fetch attendance records for the past 30 days
     const attendanceRecords = await Attendance.find({
       employee: employeeId,
-      date: { $gte: thirtyDaysAgo },
     });
+
 
     // Fetch employee details
     const employee = await Employee.findById(employeeId);
@@ -33,16 +28,16 @@ const attendanceRecord = async (req, res) => {
     const convertedRecords = attendanceRecords.map((record) => {
       const checkInServerTime = record.checkIn
         ? dayjs
-            .unix(record.checkIn)
-            .tz(timezoneName)
-            .format("YYYY-MM-DD HH:mm:ss")
+          .unix(record.checkIn)
+          .tz(timezoneName)
+          .format("YYYY-MM-DD HH:mm:ss")
         : null;
 
       const checkOutServerTime = record.checkOut
         ? dayjs
-            .unix(record.checkOut)
-            .tz(timezoneName)
-            .format("YYYY-MM-DD HH:mm:ss")
+          .unix(record.checkOut)
+          .tz(timezoneName)
+          .format("YYYY-MM-DD HH:mm:ss")
         : null;
 
       const deductionPercentage = (record.deductions || 0) / 100; // Convert to a fraction
