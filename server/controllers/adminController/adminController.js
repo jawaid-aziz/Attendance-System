@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
+const sendCredentialsEmail = require("../../utils/sendMail");
+
 const mongoose = require("mongoose");
 // Get Users Controller
 exports.getUsers = async (req, res) => {
@@ -103,6 +105,9 @@ exports.addUser = async (req, res) => {
     // Save the user to the database
     await newUser.save();
 
+    // Send credentials via email
+    sendCredentialsEmail(email, `${firstName} ${lastName}`, password);
+
     res.status(201).json({
       message: "User added successfully",
       user: {
@@ -131,7 +136,7 @@ exports.editUser = async (req, res) => {
   if (!userId) {
     return res.status(400).json({ message: "User ID is required" });
   }
- // Manual Validation
+  // Manual Validation
   if (firstName && firstName.length < 2) {
     return res.status(400).json({ message: "First name must be at least 2 characters long" });
   }
@@ -206,7 +211,7 @@ exports.editUser = async (req, res) => {
 
 // Delete User Controller
 exports.deleteUser = async (req, res) => {
-  const userId = req.params.id; 
+  const userId = req.params.id;
 
   // Check if user ID is provided
   if (!userId) {
