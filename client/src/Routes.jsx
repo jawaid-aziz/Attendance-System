@@ -9,7 +9,11 @@ import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
-import  OfficeTimings  from "./Components/OfficeTimings";
+import OfficeTimings from "./Components/OfficeTimings";
+import { AddProject } from "./Components/AddProject";
+import { ViewProjects } from "./Components/ViewProjects";
+import { Project } from "./Components/Project";
+import { Tasks } from "./Components/Tasks";
 import { isTokenValid } from "@/lib/isTokenValid";
 import { Navigate } from "react-router-dom";
 
@@ -38,7 +42,6 @@ export const AllRoutes = [
         path: "profile/:id",
         element: <Profile />,
       },
-      
     ],
   },
   {
@@ -71,7 +74,23 @@ export const AllRoutes = [
       },
       {
         path: "officeTime",
-        element: <OfficeTimings/>,
+        element: <OfficeTimings />,
+      },
+      {
+        path: "add-project",
+        element: <AddProject />,
+      },
+      {
+        path: "projects",
+        element: <ViewProjects />,
+      },
+      {
+        path: "project:id",
+        element: <Project />,
+      },
+      {
+        path: "tasks",
+        element: <Tasks />,
       },
     ],
   },
