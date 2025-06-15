@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
+  FolderDot
 } from "lucide-react";
 import { useId } from "../Context/IdProvider";
 import {
@@ -54,6 +55,19 @@ export function AppSidebar({ role }) {
           },
         ]
       : []),
+          {
+      title: "Projects",
+      icon: FolderDot,
+      children: [
+        ...(role == "admin"
+          ? [
+            {title: "Add", url: ``},
+          ]
+          : []),
+        {title: "View", url: ``},
+        {title: "Tasks", url: ``},
+      ],
+    },
     {
       title: "Settings",
       icon: Settings,
@@ -64,7 +78,6 @@ export function AppSidebar({ role }) {
               { title: "Timezone", url: `/timezone` },
               { title: "Configuration", url: `/config` },
               { title: "Office Timing", url: `/officeTime` },
-
             ]
           : []),
       ],
@@ -111,7 +124,6 @@ export function AppSidebar({ role }) {
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="text-left">{item.title}</span>{" "}
-                        
                       </Link>
                     ) : (
                       <div
