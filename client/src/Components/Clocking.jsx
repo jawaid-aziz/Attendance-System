@@ -6,16 +6,18 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 
 const Clocking = () => {
   const { id } = useId();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkedOut, setCheckedOut] = useState();
-  const [loading, setLoading] = useState(true);
 
   const [officeSchedule, setOfficeSchedule] = useState(null);
   const [currentDaySchedule, setCurrentDaySchedule] = useState(null);
@@ -101,6 +103,12 @@ const Clocking = () => {
   }, []);
 
   useEffect(() => {
+    setLoading(true);
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
+    }, 100);
     const fetchUser = async () => {
       try {
         const response = await fetch(
@@ -123,6 +131,10 @@ const Clocking = () => {
         toast.error(`Error fetching user data: ${error.message}`, {
           duration: 5000,
         });
+      } finally {
+        clearInterval(interval);
+        setProgress(100);
+        setTimeout(() => setLoading(false), 500);
       }
     };
 
@@ -207,66 +219,68 @@ const Clocking = () => {
   };
   //
   const isOfficeOpen = currentDaySchedule?.isOpen;
-  // const isWithinOfficeHours = () => {
-  //   const now = new Date();
-  //   const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes
-  //   const [startHour, startMinute] = currentDaySchedule?.startTime.split(":").map(Number);
-  //   const [endHour, endMinute] = currentDaySchedule?.endTime.split(":").map(Number);
-
-  //   const startTime = startHour * 60 + startMinute;
-  //   const endTime = endHour * 60 + endMinute;
-
-  //   return currentTime >= startTime && currentTime <= endTime;
-  // };
-
-  // const canCheckInOrOut = isOfficeOpen && isWithinOfficeHours();
 
   if (!user) return <p>Loading user data...</p>;
 
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
+
       <div>
         <Card className="flex flex-col justify-center items-center w-full text-center max-w-lg p-4 shadow-lg rounded-lg">
           <CardHeader>
             <h1 className="text-2xl font-bold">Attendance</h1>
           </CardHeader>
-          <CardContent>
-            <div className=" mb-6">
-              <h2 className="text-xl font-semibold capitalize">
-                Welcome, <span className="text-blue-600">{user.firstName}</span>
-              </h2>
-              {user.checkInTime && (
-                <p className="text-base text-gray-700">
-                  Check-In Time:{" "}
-                  {new Date(user.checkInTime).toLocaleTimeString()}
-                </p>
-              )}
+
+          {loading && (
+            <div className="w-full my-4">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-gray-500 mt-2">Loading...</p>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                disabled={ !isOfficeOpen || checkedIn}
-                onClick={handleCheckIn}
-                className="px-4 py-2 text-lg"
-              >
-                Check-In
-              </Button>
-              <Button
-                variant="default"
-                disabled={!isOfficeOpen || !checkedIn || checkedOut}
-                onClick={handleCheckOut}
-                className="px-4 py-2 text-lg"
-              >
-                Check-Out
-              </Button>
-            </div>
-          </CardContent>
-          <CardFooter className=" text-gray-500 text-sm mt-4">
-            {isOfficeOpen
-              ? "Check-in is only allowed during office hours."
-              : "The office is closed today."}
-          </CardFooter>
+          )}
+          {!loading ? (
+            <>
+              <CardContent>
+                <div className=" mb-6">
+                  <h2 className="text-xl font-semibold capitalize">
+                    Welcome,{" "}
+                    <span className="text-blue-600">{user.firstName}</span>
+                  </h2>
+                  {user.checkInTime && (
+                    <p className="text-base text-gray-700">
+                      Check-In Time:{" "}
+                      {new Date(user.checkInTime).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    disabled={!isOfficeOpen || checkedIn}
+                    onClick={handleCheckIn}
+                    className="px-4 py-2 text-lg"
+                  >
+                    Check-In
+                  </Button>
+                  <Button
+                    variant="default"
+                    disabled={!isOfficeOpen || !checkedIn || checkedOut}
+                    onClick={handleCheckOut}
+                    className="px-4 py-2 text-lg"
+                  >
+                    Check-Out
+                  </Button>
+                </div>
+              </CardContent>
+              <CardFooter className=" text-gray-500 text-sm mt-4">
+                {isOfficeOpen
+                  ? "Check-in is only allowed during office hours."
+                  : "The office is closed today."}
+              </CardFooter>
+            </>
+          ) : (
+            !loading && <p>Server Error. Try Again</p>
+          )}
         </Card>
       </div>
     </>

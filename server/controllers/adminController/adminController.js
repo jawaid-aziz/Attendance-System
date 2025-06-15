@@ -27,7 +27,6 @@ exports.getUsers = async (req, res) => {
             isActive = null;
           }
         }
-        console.log("isActive satatus:", isActive);
 
         // Return user with computed attendance status
         return {
