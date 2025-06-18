@@ -8,7 +8,7 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
-  FolderDot
+  FolderDot,
 } from "lucide-react";
 import { useId } from "../Context/IdProvider";
 import {
@@ -27,7 +27,6 @@ export function AppSidebar({ role }) {
   const { id } = useId();
   const navigate = useNavigate();
 
-  
   const [openMenus, setOpenMenus] = useState({});
 
   const menuItems = [
@@ -55,17 +54,13 @@ export function AppSidebar({ role }) {
           },
         ]
       : []),
-          {
+    {
       title: "Projects",
       icon: FolderDot,
       children: [
-        ...(role == "admin"
-          ? [
-            {title: "Add", url: ``},
-          ]
-          : []),
-        {title: "View", url: ``},
-        {title: "Tasks", url: ``},
+        ...(role == "admin" ? [{ title: "Add", url: `/add-project` }] : []),
+        { title: "View", url: `/projects` },
+        { title: "Tasks", url: `/tasks` },
       ],
     },
     {
@@ -102,7 +97,6 @@ export function AppSidebar({ role }) {
   return (
     <Sidebar>
       <SidebarContent className="bg-cornflower-blue-300">
-        
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm text-l">
             OnTime Attendance
@@ -111,10 +105,9 @@ export function AppSidebar({ role }) {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  
                   <div
                     className={`flex items-center justify-between p-1 gap-2 rounded-md ${
-                      item.children ? "" : "hover:bg-gray-100" 
+                      item.children ? "" : "hover:bg-gray-100"
                     }`}
                   >
                     {item.url && !item.children ? (
@@ -149,7 +142,6 @@ export function AppSidebar({ role }) {
                     )}
                   </div>
 
-                  
                   {item.children && openMenus[item.title] && (
                     <SidebarMenu className="ml-1">
                       {item.children.map((child) => (
@@ -169,7 +161,6 @@ export function AppSidebar({ role }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>

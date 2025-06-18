@@ -19,6 +19,8 @@ const {
 const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
 const { getOfficeSchedule, saveOfficeSchedule } = require("../controllers/adminController/configOfficeTiming");
 
+const {createProject} = require("../controllers/adminController/projectContoller");
+
 const router = express.Router();
 
 router.post("/add", authenticateToken, authorizeAdmin, addUser);
@@ -39,5 +41,7 @@ router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, removeAllow
 router.get("/getOfficeTiming",  getOfficeSchedule);
 router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, saveOfficeSchedule);
 
+//Project Routes
+router.post("/createProject", authenticateToken, authorizeAdmin, createProject);
 
 module.exports = router;
