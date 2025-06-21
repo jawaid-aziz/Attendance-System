@@ -11,7 +11,8 @@ exports.createProject = async (req, res) => {
       priority,
       status,
       attachments,
-      progress
+      progress,
+      comments
     } = req.body;
 
     // Validate required fields
@@ -19,18 +20,26 @@ exports.createProject = async (req, res) => {
       return res.status(400).json({ message: "Project name and description are required." });
     }
 
-    // Create new project
+    const fixedComments = (comments || []).map((comment) => ({
+      text: comment.text,
+      user: req.user.id,
+      date: new Date()
+    }));
+
+
     const newProject = new Project({
       name,
       desc,
-      createdBy: req.user.id, // Make sure you're using auth middleware
+      createdBy: req.user.id,
       assignedTo,
       deadline,
       priority,
       status,
       attachments,
-      progress
+      progress,
+      comments: fixedComments,
     });
+
 
     const savedProject = await newProject.save();
 

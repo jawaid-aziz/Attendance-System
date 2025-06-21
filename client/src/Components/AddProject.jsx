@@ -141,7 +141,7 @@ export const AddProject = () => {
         progress: 0,
       });
     } catch (err) {
-      console.error("❌ Error creating project:", err);
+      toast.error("Error creating project:", err);
     }
   };
 
