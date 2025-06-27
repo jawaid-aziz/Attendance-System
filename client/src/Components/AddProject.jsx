@@ -39,13 +39,6 @@ export const AddProject = () => {
   const [fileName, setFileName] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
 
-  // Mocked user list - later fetch from API
-  const allUsers = [
-    { _id: "1", name: "Javaid" },
-    { _id: "2", name: "Ali" },
-    { _id: "3", name: "Hina" },
-  ];
-
   const [users, setUsers] = useState([]);
 
   const fetchAllUsers = async () => {

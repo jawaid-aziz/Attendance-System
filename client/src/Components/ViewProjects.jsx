@@ -1,9 +1,12 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 
 export const ViewProjects = () => {
+
+  const [allProjects, setAllProjects] = useState([]);
+
   const projects = [
     {
       _id: "1",
@@ -43,19 +46,41 @@ export const ViewProjects = () => {
     }
   ]
 
+    const fetchAllProjects = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/projects/viewAll", {
+        method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+      });
+      
+      const data = await response.json();
+      console.log(data);
+      setAllProjects(data.projects);
+
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchAllProjects()
+  }, []);
+
   return (
     <div className="p-6">
       <h2 className="text-3xl font-bold mb-6">My Assigned Projects</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((proj) => (
+        {allProjects.map((proj) => (
           <Card key={proj._id} className="hover:shadow-xl transition rounded-xl">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-xl">{proj.name}</CardTitle>
                 <Badge variant="outline" className="capitalize">{proj.priority}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{proj.desc}</p>
+              {/* <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{proj.desc}</p> */}
             </CardHeader>
 
             <CardContent className="text-sm space-y-1 text-muted-foreground">
