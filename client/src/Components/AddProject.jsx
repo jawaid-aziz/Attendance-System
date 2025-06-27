@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,33 @@ export const AddProject = () => {
     { _id: "2", name: "Ali" },
     { _id: "3", name: "Hina" },
   ];
+
+  const [users, setUsers] = useState([]);
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/admin/user", {
+        method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+      });
+
+      const data = await response.json();
+      setUsers(data.employees);
+
+    }catch(error){
+      toast.error("Failed to fetch employee data", { duration: 5000 });
+    }
+  }
+
+  useEffect(() => {
+    fetchAllUsers()
+  }, []);
+
+    useEffect(() => {
+    console.log(users);
+  }, [users]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -246,9 +273,9 @@ export const AddProject = () => {
                   <SelectValue placeholder="Select user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allUsers.map((user) => (
+                  {users.map((user) => (
                     <SelectItem key={user._id} value={user._id}>
-                      {user.name}
+                      {`${user.firstName} ${user.lastName}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -263,13 +290,13 @@ export const AddProject = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               {projectData.assignedTo.map((id) => {
-                const user = allUsers.find((u) => u._id === id);
+                const user = users.find((u) => u._id === id);
                 return (
                   <div
                     key={id}
                     className="bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
                   >
-                    <span>{user?.name || "Unknown"}</span>
+                    <span>{user?.firstName || "Unknown"}</span>
                     <X
                       className="w-3 h-3 cursor-pointer"
                       onClick={() => removeAssignedUser(id)}
