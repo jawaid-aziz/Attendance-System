@@ -38,12 +38,12 @@ const Login = () => {
 
       // Parse response JSON
       const data = await response.json();
-      const { token, user } = data; // Ensure backend sends both token and user
+      const { token, user } = data;
 
       // Store token, role, and id in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
-      localStorage.setItem("id", user.id); // Adjust key if necessary
+      localStorage.setItem("id", user.id);
       console.log(
         "Token, role, and id stored in localStorage:",
         token,

@@ -6,7 +6,7 @@ export const Home = () => {
   const { id, loading: idLoading } = useId();
 
   if (idLoading) {
-    return <div>Loading...</div>; // Optional: Replace with a spinner
+    return <div>Loading...</div>;
   }
 
   if (!id) {
@@ -15,7 +15,7 @@ export const Home = () => {
 
   return (
     <div className="container mx-auto p-4 flex">
-      {/* Main Content - Center Aligned */}
+      
       <div className="flex-1 flex flex-col items-center justify-start ml-4">
         <Clocking id={id} />
       </div>

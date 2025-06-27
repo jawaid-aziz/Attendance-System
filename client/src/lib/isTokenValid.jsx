@@ -1,4 +1,4 @@
-import { jwtDecode } from "jwt-decode";// Install using: npm install jwt-decode
+import { jwtDecode } from "jwt-decode";
 
 export const isTokenValid = () => {
   const token = localStorage.getItem("token");

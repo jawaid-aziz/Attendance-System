@@ -1,4 +1,3 @@
-// src/utils/decodeJWT.js
 export const decodeJWT = (token) => {
     try {
       const payload = token.split(".")[1];
