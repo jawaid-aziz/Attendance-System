@@ -2,49 +2,13 @@ import React, { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
+import { useNavigate } from "react-router-dom"
 
 export const ViewProjects = () => {
 
-  const [allProjects, setAllProjects] = useState([]);
+  const navigate = useNavigate();
 
-  const projects = [
-    {
-      _id: "1",
-      name: "Employee Dashboard UI",
-      desc: "Redesign the dashboard with modern UI and better UX.",
-      status: "in progress",
-      progress: 45,
-      priority: "high",
-      deadline: new Date("2025-07-01")
-    },
-    {
-      _id: "2",
-      name: "API Integration",
-      desc: "Integrate project module with attendance and auth APIs.",
-      status: "not started",
-      progress: 0,
-      priority: "medium",
-      deadline: new Date("2025-07-15")
-    },
-    {
-      _id: "3",
-      name: "Onboarding Automation",
-      desc: "Auto-assign tasks to new employees after sign-up.",
-      status: "completed",
-      progress: 100,
-      priority: "low",
-      deadline: new Date("2025-06-10")
-    },
-    {
-      _id: "4",
-      name: "Bug Fixes - Project Module",
-      desc: "Fix bugs in project creation and attachment upload.",
-      status: "in progress",
-      progress: 70,
-      priority: "critical",
-      deadline: new Date("2025-06-20")
-    }
-  ]
+  const [allProjects, setAllProjects] = useState([]);
 
     const fetchAllProjects = async () => {
     try {
@@ -74,7 +38,7 @@ export const ViewProjects = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {allProjects.map((proj) => (
-          <Card key={proj._id} className="hover:shadow-xl transition rounded-xl">
+          <Card key={proj._id} onClick={() => navigate(`/project/${proj._id}`)} className="hover:shadow-xl transition rounded-xl cursor-pointer">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-xl">{proj.name}</CardTitle>

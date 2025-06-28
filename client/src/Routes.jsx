@@ -85,7 +85,7 @@ export const AllRoutes = [
         element: <ViewProjects />,
       },
       {
-        path: "project:id",
+        path: "project/:id",
         element: <Project />,
       },
       {
