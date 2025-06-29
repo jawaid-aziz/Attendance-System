@@ -130,7 +130,7 @@ export const AddProject = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        "http://localhost:5000/admin/createProject",
+        "http://localhost:5000/projects/createProject",
         {
           method: "POST",
           headers: {

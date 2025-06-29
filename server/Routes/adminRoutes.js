@@ -42,6 +42,5 @@ router.get("/getOfficeTiming",  getOfficeSchedule);
 router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, saveOfficeSchedule);
 
 //Project Routes
-router.post("/createProject", authenticateToken, authorizeAdmin, createProject);
 
 module.exports = router;
