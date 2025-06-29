@@ -13,7 +13,7 @@ import OfficeTimings from "./Components/OfficeTimings";
 import { AddProject } from "./Components/AddProject";
 import { ViewProjects } from "./Components/ViewProjects";
 import { Project } from "./Components/Project";
-import { addTask } from "./Components/AddTask";
+import { AddTask } from "./Components/AddTask";
 import { Tasks } from "./Components/Tasks";
 import { isTokenValid } from "@/lib/isTokenValid";
 import { Navigate } from "react-router-dom";
@@ -91,7 +91,7 @@ export const AllRoutes = [
       },
       {
         path: "add-task",
-        element: <addTask/>
+        element: <AddTask/>,
       },
       {
         path: "tasks",

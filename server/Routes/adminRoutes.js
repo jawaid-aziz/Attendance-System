@@ -19,8 +19,6 @@ const {
 const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
 const { getOfficeSchedule, saveOfficeSchedule } = require("../controllers/adminController/configOfficeTiming");
 
-const {createProject} = require("../controllers/adminController/projectContoller");
-
 const router = express.Router();
 
 router.post("/add", authenticateToken, authorizeAdmin, addUser);
