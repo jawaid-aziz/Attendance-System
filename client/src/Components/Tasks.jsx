@@ -1,9 +1,34 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 
 export const Tasks = () => {
+
+    const [allTasks, setAllTasks] = useState([]);
+  
+      const fetchAllTasks = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/tasks/viewAll", {
+          method: "GET",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        
+        const data = await response.json();
+        console.log(data);
+        setAllTasks(data.tasks);
+  
+      }catch(error){
+        console.log(error);
+      }
+    }
+  
+    useEffect(() => {
+      fetchAllTasks()
+    }, []);
+
   const tasks = [
     {
       _id: "t1",
@@ -40,7 +65,7 @@ export const Tasks = () => {
       <h2 className="text-3xl font-bold mb-6">My Assigned Tasks</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map((task) => (
+        {allTasks.map((task) => (
           <Card key={task._id} className="rounded-xl hover:shadow-lg transition">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -50,12 +75,12 @@ export const Tasks = () => {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {task.description}
+                {task.desc}
               </p>
             </CardHeader>
             <CardContent className="text-sm space-y-1 text-muted-foreground">
               <p>
-                <span className="font-medium text-black">Project:</span> {task.project}
+                <span className="font-medium text-black">Project:</span> {task.project.name}
               </p>
               <p>
                 <span className="font-medium text-black">Status:</span>{" "}
