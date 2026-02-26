@@ -1,26 +1,20 @@
-const { networkInterfaces } = require("os");
+const os = require("os");
 
 const validateOfficeIP = (req, res, next) => {
   const allowedRouterIPs = (process.env.ALLOWED_ROUTER_IPS || "").split(",");
 
-  // Get network interfaces
-  const interfaces = networkInterfaces();
-  let gatewayIP = "";
+let gatewayIP = null;
+const interfaces = os.networkInterfaces();
 
-  for (const name in interfaces) {
-    for (const iface of interfaces[name]) {
-      if (
-        iface.family === "IPv4" && // Check only IPv4
-        !iface.internal && // Ignore internal/localhost addresses
-        iface.netmask === "255.255.255.0" && // Match standard subnet mask
-        iface.address.startsWith("192.168") // Focus on specific subnet
-      ) {
-        gatewayIP = iface.address;
-        break;
-      }
+for (const name in interfaces) {
+  for (const iface of interfaces[name]) {
+    if (iface.family === "IPv4" && !iface.internal) {
+      gatewayIP = iface.address;
+      break;
     }
-    if (gatewayIP) break; // Stop searching once a valid gateway is found
   }
+  if (gatewayIP) break;
+}
 
   console.log("Detected Router Gateway IP:", gatewayIP);
 
