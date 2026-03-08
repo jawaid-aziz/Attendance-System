@@ -17,15 +17,11 @@ import { AddTask } from "./Components/AddTask";
 import { Tasks } from "./Components/Tasks";
 import { isTokenValid } from "@/lib/isTokenValid";
 import { Navigate } from "react-router-dom";
-import LandingPage from "./LandingPage";
+
 export const AllRoutes = [
   {
     path: "/login",
     element: isTokenValid() ? <Navigate to="/" /> : <Login />, // Redirect if token is valid
-  },
-  {
-    path: "/landing",
-    element: <LandingPage />
   },
   {
     path: "/",
