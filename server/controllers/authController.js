@@ -49,3 +49,92 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ message: "Failed to login", error: error.message });
   }
 };
+
+// User Signup
+exports.signupUser = async (req, res) => {
+  const { firstName, lastName, email, phone, salary, address, password, role } =
+    req.body;
+
+  // Manual validation
+  if (!firstName || firstName.length < 2) {
+    return res
+      .status(400)
+      .json({ message: "First name must be at least 2 characters long" });
+  }
+  if (!lastName || lastName.length < 2) {
+    return res
+      .status(400)
+      .json({ message: "Last name must be at least 2 characters long" });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email address" });
+  }
+  const phoneRegex = /^[0-9]{8,15}$/;
+  if (!phone || !phoneRegex.test(phone)) {
+    return res.status(400).json({ message: "Invalid phone number" });
+  }
+  if (!salary || isNaN(salary) || salary <= 0) {
+    return res.status(400).json({ message: "Salary must be a positive number" });
+  }
+  if (!address || address.trim().length < 5) {
+    return res
+      .status(400)
+      .json({ message: "Address must be at least 5 characters long" });
+  }
+  if (!password || password.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters long" });
+  }
+  const allowedRoles = ["admin", "employee"];
+  const userRole = role || "employee";
+  if (!allowedRoles.includes(userRole)) {
+    return res
+      .status(400)
+      .json({ message: `Role must be one of the following: ${allowedRoles.join(", ")}` });
+  }
+
+  try {
+    // Check if a user with the given email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      phone,
+      salary,
+      address,
+      password: hashedPassword,
+      role: userRole,
+    });
+
+    await newUser.save();
+
+    const token = generateToken(newUser, newUser.role);
+
+    res.status(201).json({
+      message: "Signup successful",
+      token,
+      user: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+        email: newUser.email,
+        phone: newUser.phone,
+        salary: newUser.salary,
+        address: newUser.address,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to signup", error: error.message });
+  }
+};

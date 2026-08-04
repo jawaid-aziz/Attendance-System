@@ -18,11 +18,6 @@ const checkIn = async (req, res) => {
       return res.status(400).json({ message: "Invalid employee ID" });
     }
 
-    const io = req.io;
-    if (!io) {
-      console.error("Socket.IO instance is not available on req.");
-    }
-
     const timezoneName = process.env.TIMEZONE || "Asia/Karachi";
     const serverTime = dayjs().tz(timezoneName);
     const unixTime = serverTime.unix(); // Convert to seconds since epoch
@@ -182,15 +177,6 @@ const checkIn = async (req, res) => {
     });
 
     await attendance.save();
-
-    // Emit status update via Socket.IO
-    if (io) {
-      io.emit("status update", {
-        employeeId: employeeId.toString(),
-        isActive: true,
-      });
-      console.log("Emitting employee ID:", employeeId.toString());
-    }
 
     res.status(200).json({
       message: "Check-in successful",

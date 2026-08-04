@@ -8,14 +8,6 @@ dayjs.extend(timezone);
 const checkOut = async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const io = req.io;
-
-    if (!io) {
-      console.warn("Socket.IO instance not found in request.");
-      return res
-        .status(500)
-        .json({ message: "Server error. Notification system unavailable." });
-    }
 
     const GRACE_PERIOD_HOURS = 2;
     const timezoneName = process.env.TIMEZONE || "UTC";
@@ -89,8 +81,6 @@ const checkOut = async (req, res) => {
     attendance.isActive = false;
 
     await attendance.save();
-    // Notify admins of status change
-    io.emit("status update", { employeeId, isActive: false });
 
     res.status(200).json({ message: "Check-out successful", attendance });
   } catch (error) {

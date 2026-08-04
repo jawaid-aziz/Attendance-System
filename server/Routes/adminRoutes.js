@@ -39,6 +39,4 @@ router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, removeAllow
 router.get("/getOfficeTiming",  getOfficeSchedule);
 router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, saveOfficeSchedule);
 
-//Project Routes
-
 module.exports = router;

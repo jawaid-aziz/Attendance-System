@@ -117,6 +117,18 @@ const Login = () => {
               <Button type="submit" className="w-full">
                 Login
               </Button>
+              <div className="mt-4 text-center text-sm text-gray-600">
+                <span>
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/signup")}
+                    className="text-blue-600 underline"
+                  >
+                    Sign Up
+                  </button>
+                </span>
+              </div>
             </form>
           </CardContent>
         </Card>

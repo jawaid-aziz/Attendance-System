@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -32,57 +31,54 @@ const EmployeesData = () => {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const socketUrl = "http://localhost:5000"; // Backend URL
+  const apiUrl = "http://localhost:5000"; // Backend URL
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate progress during data fetch
-    const interval = setInterval(() => {
+    let isFirstLoad = true;
+
+    // Simulate progress during initial data fetch
+    const progressInterval = setInterval(() => {
       setProgress((prev) => (prev < 95 ? prev + 5 : prev));
     }, 100);
 
-    // Fetch initial employee data
     const fetchEmployees = async () => {
       try {
-        const response = await fetch(`${socketUrl}/admin/user`, {
+        const response = await fetch(`${apiUrl}/admin/user`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
 
+        if (!response.ok) throw new Error("Failed to fetch");
+
         const data = await response.json();
         setEmployees(data.employees);
         setLoading(false);
       } catch (error) {
-        toast.error("Failed to fetch employee data", { duration: 5000 });
-        setLoading(false);
+        if (isFirstLoad) {
+          toast.error("Failed to fetch employee data", { duration: 5000 });
+          setLoading(false);
+        }
       } finally {
-        clearInterval(interval);
-        setProgress(100);
+        if (isFirstLoad) {
+          clearInterval(progressInterval);
+          setProgress(100);
+          isFirstLoad = false;
+        }
       }
     };
 
     fetchEmployees();
 
-    // Initialize WebSocket connection
-    const socket = io(socketUrl);
+    // Poll for live status updates every 15 seconds
+    const pollInterval = setInterval(fetchEmployees, 15000);
 
-    // Listen for status updates
-    socket.on("status update", (data) => {
-      setEmployees((prevEmployees) =>
-        prevEmployees.map((employee) => {
-          if (employee._id === data.employeeId) {
-            return { ...employee, isActive: data.isActive };
-          }
-          return employee;
-        })
-      );
-    });
-
-    // Cleanup WebSocket connection on unmount
+    // Cleanup polling on unmount
     return () => {
-      socket.disconnect();
+      clearInterval(progressInterval);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -109,7 +105,7 @@ const EmployeesData = () => {
     setDeleting(true);
     try {
       const res = await fetch(
-        `${socketUrl}/admin/delete/${employeeToDelete._id}`,
+        `${apiUrl}/admin/delete/${employeeToDelete._id}`,
         {
           method: "DELETE",
           headers: {

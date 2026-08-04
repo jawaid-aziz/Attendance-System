@@ -1,4 +1,5 @@
 import Login from "./Pages/Login";
+import Signup from "./Pages/Signup";
 import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
@@ -10,11 +11,6 @@ import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
 import OfficeTimings from "./Components/OfficeTimings";
-import { AddProject } from "./Components/AddProject";
-import { ViewProjects } from "./Components/ViewProjects";
-import { Project } from "./Components/Project";
-import { AddTask } from "./Components/AddTask";
-import { Tasks } from "./Components/Tasks";
 import { isTokenValid } from "@/lib/isTokenValid";
 import { Navigate } from "react-router-dom";
 
@@ -22,6 +18,10 @@ export const AllRoutes = [
   {
     path: "/login",
     element: isTokenValid() ? <Navigate to="/" /> : <Login />, // Redirect if token is valid
+  },
+  {
+    path: "/signup",
+    element: isTokenValid() ? <Navigate to="/" /> : <Signup />, // Redirect if token is valid
   },
   {
     path: "/",
@@ -76,26 +76,6 @@ export const AllRoutes = [
       {
         path: "officeTime",
         element: <OfficeTimings />,
-      },
-      {
-        path: "add-project",
-        element: <AddProject />,
-      },
-      {
-        path: "projects",
-        element: <ViewProjects />,
-      },
-      {
-        path: "project/:id",
-        element: <Project />,
-      },
-      {
-        path: "add-task",
-        element: <AddTask/>,
-      },
-      {
-        path: "tasks",
-        element: <Tasks />,
       },
     ],
   },

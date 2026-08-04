@@ -8,8 +8,6 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
-  FolderDot,
-  ListTodo,
 } from "lucide-react";
 import { useId } from "../Context/IdProvider";
 import {
@@ -55,22 +53,6 @@ export function AppSidebar({ role }) {
           },
         ]
       : []),
-    {
-      title: "Projects",
-      icon: FolderDot,
-      children: [
-        ...(role == "admin" ? [{ title: "Add", url: `/add-project` }] : []),
-        { title: "View", url: `/projects` },
-      ],
-    },
-    {
-      title: "Tasks",
-      icon: ListTodo,
-      children: [
-        ...(role == "admin" ? [{ title: "Add", url: `/add-task` }] : []),
-        { title: "View", url: `/tasks` },
-      ],
-    },
     {
       title: "Settings",
       icon: Settings,
