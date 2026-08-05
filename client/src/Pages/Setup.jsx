@@ -62,6 +62,7 @@ export const Setup = () => {
       if (data.slug) localStorage.setItem("slug", data.slug);
       setRole(data.user.role);
       setId(data.user.id);
+      window.dispatchEvent(new Event("auth-changed"));
       navigate(getHomePath());
     } catch (err) {
       setError("Something went wrong. Please try again.");

@@ -57,6 +57,7 @@ const Login = () => {
       // Update context
       setRole(user.role);
       setId(user.id);
+      window.dispatchEvent(new Event("auth-changed"));
       navigate(getHomePath());
     } catch (err) {
       setError("Something went wrong. Please try again.");

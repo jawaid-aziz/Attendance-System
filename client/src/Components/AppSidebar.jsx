@@ -22,9 +22,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
+import { useCompany } from "../Context/CompanyProvider";
 
 export function AppSidebar({ role }) {
   const navigate = useNavigate();
+  const { company } = useCompany();
 
   const [openMenus, setOpenMenus] = useState({});
 
@@ -83,6 +85,7 @@ export function AppSidebar({ role }) {
     localStorage.removeItem("role");
     localStorage.removeItem("id");
     localStorage.removeItem("slug");
+    window.dispatchEvent(new Event("auth-changed"));
     console.log("Token, role, and id removed from localStorage.");
     navigate("/login");
   };
@@ -99,7 +102,9 @@ export function AppSidebar({ role }) {
       <SidebarContent className="bg-cornflower-blue-300">
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm text-l">
-            OnTime Attendance
+            {role === "superadmin"
+              ? "OnTime Attendance"
+              : company?.name || "OnTime Attendance"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

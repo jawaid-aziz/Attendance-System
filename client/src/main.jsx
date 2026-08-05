@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { RoleProvider } from "./Context/RoleProvider.jsx";
 import { IdProvider } from "./Context/IdProvider.jsx";
+import { CompanyProvider } from "./Context/CompanyProvider.jsx";
 import { ThemeProvider } from "./Context/theme-provider.jsx";
 import { AllRoutes } from "./Routes.jsx";
 import "./index.css";
@@ -16,9 +17,11 @@ function Main() {
     <StrictMode>
       <IdProvider>
         <RoleProvider>
-          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-            <RouterProvider router={router} />
-          </ThemeProvider>
+          <CompanyProvider>
+            <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+              <RouterProvider router={router} />
+            </ThemeProvider>
+          </CompanyProvider>
         </RoleProvider>
       </IdProvider>
     </StrictMode>

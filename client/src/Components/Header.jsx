@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -8,18 +9,40 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Menu, UserCircle } from "lucide-react";
+import { LogOut, Menu, UserCircle, Building2 } from "lucide-react";
+import { useCompany } from "../Context/CompanyProvider";
 
-export const Header = ({ role }) => {
+export const Header = ({ role, id }) => {
   const navigate = useNavigate();
   const slug = localStorage.getItem("slug") || "";
   const base = slug ? `/${slug}` : "";
+  const { company } = useCompany();
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    const token = localStorage.getItem("token");
+    fetch(`http://localhost:5000/byId/getUser/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => setFirstName(data.user?.firstName || ""))
+      .catch(() => setFirstName(""));
+  }, [id]);
+
+  const isSuperadmin = role === "superadmin";
+  const roleLabel = isSuperadmin
+    ? "Super Admin Panel"
+    : role === "admin"
+    ? "Admin Dashboard"
+    : "User Dashboard";
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("id");
     localStorage.removeItem("slug");
+    window.dispatchEvent(new Event("auth-changed"));
     console.log("Token, role, and id removed from localStorage.");
     navigate("/login");
   };
@@ -35,20 +58,28 @@ export const Header = ({ role }) => {
         </SidebarTrigger>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-800 tracking-wide">
-          {role === "superadmin"
-            ? "Super Admin Panel"
-            : role === "admin"
-            ? "Admin Dashboard"
-            : "User Dashboard"}
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-gray-800 tracking-wide flex items-center justify-center gap-2">
+          {!isSuperadmin && company?.name && (
+            <Building2 className="h-6 w-6 text-cornflower-blue-700" />
+          )}
+          {isSuperadmin || !company?.name ? roleLabel : company.name}
         </h1>
+        {!isSuperadmin && company?.name && (
+          <p className="text-sm text-gray-500">{roleLabel}</p>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
         <div className="hidden">
           <ModeToggle />
         </div>
+
+        {firstName && (
+          <span className="text-sm text-gray-600 hidden md:inline">
+            Hi, {firstName}
+          </span>
+        )}
 
         {/* Profile Dropdown */}
         <DropdownMenu>
