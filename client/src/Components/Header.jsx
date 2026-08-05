@@ -9,11 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Menu, UserCircle } from "lucide-react";
-import { useId } from "@/Context/IdProvider";
 
 export const Header = ({ role }) => {
   const navigate = useNavigate();
-  const { id } = useId();
   const slug = localStorage.getItem("slug") || "";
   const base = slug ? `/${slug}` : "";
 
@@ -61,7 +59,7 @@ export const Header = ({ role }) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
-              onClick={() => navigate(`${base}/profile/${id}`)}
+              onClick={() => navigate(`${base}/profile`)}
               className="cursor-pointer"
             >
               Profile

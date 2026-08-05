@@ -303,7 +303,7 @@ const Companies = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c._id}`)}>
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c.slug}`)}>
                           View
                         </Button>
                         {c.status === "active" ? (

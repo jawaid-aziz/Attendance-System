@@ -1,14 +1,61 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
+const net = require("net");
+const shared = require("nodemailer/lib/shared");
+
+// nodemailer resolves SMTP hosts over IPv4 only, which fails on networks where
+// the IPv4 route to the mail host is blocked but IPv6 works. Prefer AAAA records.
+const ipv6Cache = new Map();
+const originalResolveHostname = shared.resolveHostname;
+shared.resolveHostname = (options, callback) => {
+  if (!options.host || net.isIP(options.host)) {
+    return originalResolveHostname(options, callback);
+  }
+  const host = options.host;
+  if (ipv6Cache.has(host)) {
+    return callback(null, ipv6Cache.get(host));
+  }
+  new dns.Resolver().resolve6(host, (err, addresses) => {
+    if (!err && addresses && addresses.length) {
+      const value = {
+        host: addresses[0],
+        servername: options.servername || host,
+      };
+      ipv6Cache.set(host, value);
+      return callback(null, value);
+    }
+    return originalResolveHostname(options, callback);
+  });
+};
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
 });
+
+const sendWithRetry = async (mailOptions, attempts = 3) => {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      return info;
+    } catch (error) {
+      const last = attempt === attempts;
+      console.error(
+        `Mail attempt ${attempt}/${attempts} failed: ${error.code || error.message}`
+      );
+      if (last) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    }
+  }
+};
 
 // Skip sending when disabled or when SMTP credentials are not configured
 const shouldSend = () =>
@@ -35,7 +82,7 @@ const sendCredentialsEmail = async (receiver, name, password) => {
   }
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const info = await sendWithRetry(mailOptions);
     console.log("Email sent: ", info.response);
   } catch (error) {
     console.error("Error sending mail: ", error);
@@ -61,7 +108,7 @@ const sendSetupLinkEmail = async (receiver, name, link) => {
   }
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const info = await sendWithRetry(mailOptions);
     console.log("Setup email sent: ", info.response);
   } catch (error) {
     console.error("Error sending setup mail: ", error);

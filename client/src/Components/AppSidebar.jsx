@@ -11,7 +11,6 @@ import {
   Building2,
   UserPlus,
 } from "lucide-react";
-import { useId } from "../Context/IdProvider";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +24,6 @@ import {
 import { useState } from "react";
 
 export function AppSidebar({ role }) {
-  const { id } = useId();
   const navigate = useNavigate();
 
   const [openMenus, setOpenMenus] = useState({});
@@ -49,7 +47,7 @@ export function AppSidebar({ role }) {
       title: "Attendance",
       icon: ClipboardList,
       children: [
-        { title: "View Attendance", url: `${base}/attendance-history/${id}` },
+        { title: "View Attendance", url: `${base}/attendance-history` },
       ],
     },
     ...(role === "admin"
@@ -68,7 +66,7 @@ export function AppSidebar({ role }) {
       title: "Settings",
       icon: Settings,
       children: [
-        { title: "Profile", url: `${base}/profile/${id}` },
+        { title: "Profile", url: `${base}/profile` },
         ...(role === "admin"
           ? [
               { title: "Timezone", url: `${base}/timezone` },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 import { Button } from "@/Components/ui/button";
@@ -11,7 +11,7 @@ import { useId } from "../Context/IdProvider";
 import { getHomePath } from "@/lib/getHomePath";
 
 export const Setup = () => {
-  const { token } = useParams();
+  const { token, slug } = useParams();
   const navigate = useNavigate();
   const { setRole } = useRole();
   const { setId } = useId();
@@ -19,6 +19,19 @@ export const Setup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // One-time setup token, kept out of the address bar. It is stashed in
+  // sessionStorage the moment the page loads, then the URL is stripped.
+  const setupToken = token || sessionStorage.getItem("setupToken") || null;
+
+  useEffect(() => {
+    if (token) {
+      sessionStorage.setItem("setupToken", token);
+      const stripped = slug ? `/${slug}/setup` : "/setup";
+      navigate(stripped, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSetup = async (e) => {
     e.preventDefault();
@@ -30,7 +43,7 @@ export const Setup = () => {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:5000/auth/setup/${token}`,
+        `http://localhost:5000/auth/setup/${setupToken}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -42,6 +55,7 @@ export const Setup = () => {
         setError(data.message || "Something went wrong.");
         return;
       }
+      sessionStorage.removeItem("setupToken");
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("id", data.user.id);
@@ -55,6 +69,27 @@ export const Setup = () => {
       setSubmitting(false);
     }
   };
+
+  if (!setupToken) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="w-full px-6 py-4 flex items-center gap-2">
+          <Clock className="h-6 w-6 text-cornflower-blue-700" />
+          <h1 className="text-xl font-bold text-cornflower-blue-700">onTime</h1>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-6">
+          <Card className="w-full max-w-sm">
+            <CardContent className="pt-6">
+              <p className="text-center text-gray-600">
+                This setup link is invalid. Please use the link from the email
+                you received.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

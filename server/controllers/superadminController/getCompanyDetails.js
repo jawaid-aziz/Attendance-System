@@ -4,11 +4,13 @@ const User = require("../../models/User");
 
 exports.getCompanyDetails = async (req, res) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid company id" });
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "Company id or slug is required" });
     }
 
-    const company = await Company.findById(req.params.id);
+    const query = mongoose.isValidObjectId(id) ? { _id: id } : { slug: id };
+    const company = await Company.findOne(query);
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }

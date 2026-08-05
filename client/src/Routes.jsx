@@ -6,7 +6,6 @@ import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
 import { Home } from "./Pages/Home";
-import { DeleteEmployee } from "./Components/DeleteEmployee";
 import { Profile } from "./Components/Profile";
 import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
@@ -42,7 +41,15 @@ export const AllRoutes = [
     element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
   },
   {
+    path: "/setup",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+  },
+  {
     path: "/:slug/setup/:token",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+  },
+  {
+    path: "/:slug/setup",
     element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
   },
   {
@@ -58,12 +65,16 @@ export const AllRoutes = [
         element: <Companies />,
       },
       {
-        path: "company/:id",
+        path: "company/:slug",
         element: <CompanyDetail />,
       },
       {
         path: "invite",
         element: <InviteSuperAdmin />,
+      },
+      {
+        path: "profile/:name?",
+        element: <Profile />,
       },
     ],
   },
@@ -80,11 +91,11 @@ export const AllRoutes = [
         element: <Home />,
       },
       {
-        path: "attendance-history/:id",
+        path: "attendance-history/:name?",
         element: <AttendanceHistory />,
       },
       {
-        path: "profile/:id",
+        path: "profile/:name?",
         element: <Profile />,
       },
     ],
@@ -104,10 +115,6 @@ export const AllRoutes = [
       {
         path: "employees-data",
         element: <EmployeesData />,
-      },
-      {
-        path: "delete/:id",
-        element: <DeleteEmployee />,
       },
       {
         path: "timezone",

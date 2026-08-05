@@ -16,7 +16,7 @@ const apiUrl = "http://localhost:5000";
 const token = () => localStorage.getItem("token");
 
 const CompanyDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ const CompanyDetail = () => {
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await fetch(`${apiUrl}/superadmin/companies/${id}`, {
+        const res = await fetch(`${apiUrl}/superadmin/companies/${slug}`, {
           headers: { Authorization: `Bearer ${token()}` },
         });
         if (!res.ok) throw new Error("Failed to fetch company");
@@ -38,7 +38,7 @@ const CompanyDetail = () => {
       }
     };
     fetchDetail();
-  }, [id]);
+  }, [slug]);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!company) return <div className="p-6">Company not found.</div>;

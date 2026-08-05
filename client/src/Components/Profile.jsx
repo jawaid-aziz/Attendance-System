@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
+import { useTargetUser } from "../hooks/useTargetUser";
+import { slugifyName } from "@/lib/slugifyName";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,8 +17,10 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 
 export const Profile = () => {
-  const { id } = useParams();
+  const { name } = useParams();
+  const navigate = useNavigate();
   const { role } = useRole();
+  const { targetId } = useTargetUser();
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
@@ -31,6 +35,8 @@ export const Profile = () => {
   });
 
   useEffect(() => {
+    if (!targetId) return;
+
     const fetchUser = async () => {
       setLoading(true);
       setProgress(0);
@@ -41,7 +47,7 @@ export const Profile = () => {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${id}`,
+          `http://localhost:5000/byId/getUser/${targetId}`,
           {
             method: "GET",
             headers: {
@@ -66,7 +72,7 @@ export const Profile = () => {
         });
       } catch (err) {
         toast.error(err.message, { duration: 5000 });
-        setFormData({ ...formData}); // Fallback if error
+        setFormData({ ...formData }); // Fallback if error
       } finally {
         clearInterval(interval);
         setProgress(100);
@@ -75,7 +81,24 @@ export const Profile = () => {
     };
 
     fetchUser();
-  }, [id]);
+  }, [targetId]);
+
+  // Keep the address bar readable: show whose profile is being viewed as a
+  // "first-last" name slug instead of any raw id.
+  useEffect(() => {
+    if (!name && formData.firstName) {
+      const nameSlug = slugifyName(formData.firstName, formData.lastName);
+      if (nameSlug) {
+        const slug = localStorage.getItem("slug");
+        const base = slug ? `/${slug}` : "";
+        navigate(`${base}/profile/${nameSlug}`, {
+          replace: true,
+          state: { userId: targetId },
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, formData.firstName, formData.lastName, targetId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -94,7 +117,7 @@ export const Profile = () => {
         salary: Number(formData.salary) || 0, // Ensure salary is a valid number
       };
 
-      const response = await fetch(`http://localhost:5000/admin/edit/${id}`, {
+      const response = await fetch(`http://localhost:5000/admin/edit/${targetId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

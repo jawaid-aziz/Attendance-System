@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useTargetUser } from "../hooks/useTargetUser";
+import { slugifyName } from "@/lib/slugifyName";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
@@ -31,12 +33,15 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 
 const AttendanceHistory = () => {
-  const { id } = useParams();
+  const { name } = useParams();
+  const navigate = useNavigate();
+  const { targetId } = useTargetUser();
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,10 +60,12 @@ const AttendanceHistory = () => {
   );
 
   useEffect(() => {
+    if (!targetId) return;
+
     const fetchUser = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${id}`,
+          `http://localhost:5000/byId/getUser/${targetId}`,
           {
             method: "GET",
             headers: {
@@ -73,13 +80,30 @@ const AttendanceHistory = () => {
 
         const data = await response.json();
         setFirstName(`for ${data.user.firstName}`);
+        setLastName(data.user.lastName || "");
       } catch (err) {
         toast.error(err.message, { duration: 5000 });
       }
     };
 
     fetchUser();
-  }, [id]);
+  }, [targetId]);
+
+  // Show whose attendance is being viewed as a name slug in the address bar.
+  useEffect(() => {
+    if (!name && firstName && targetId) {
+      const nameSlug = slugifyName(firstName.replace(/^for /, ""), lastName);
+      if (nameSlug) {
+        const slug = localStorage.getItem("slug");
+        const base = slug ? `/${slug}` : "";
+        navigate(`${base}/attendance-history/${nameSlug}`, {
+          replace: true,
+          state: { userId: targetId },
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, firstName, lastName, targetId]);
 
   const fetchAttendanceRecords = async () => {
     setLoading(true);
@@ -91,7 +115,7 @@ const AttendanceHistory = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/attend/records/${id}`,
+        `http://localhost:5000/attend/records/${targetId}`,
         {
           method: "GET",
           headers: {
@@ -116,8 +140,9 @@ const AttendanceHistory = () => {
   };
 
   useEffect(() => {
+    if (!targetId) return;
     fetchAttendanceRecords();
-  }, []);
+  }, [targetId]);
 
   useEffect(() => {
     // Filter records based on selected year and month

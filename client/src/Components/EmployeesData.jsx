@@ -24,6 +24,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import toast, { Toaster } from "react-hot-toast";
+import { slugifyName } from "@/lib/slugifyName";
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
@@ -85,8 +86,11 @@ const EmployeesData = () => {
     };
   }, []);
 
-  const handleViewProfile = (id) => {
-    navigate(`${base}/profile/${id}`);
+  const handleViewProfile = (employee) => {
+    const nameSlug = slugifyName(employee.firstName, employee.lastName);
+    navigate(`${base}/profile/${nameSlug || "user"}`, {
+      state: { userId: employee._id },
+    });
   };
 
   if (loading) {
@@ -133,8 +137,11 @@ const EmployeesData = () => {
     }
   };
 
-  const handleViewAttendance = (id) => {
-    navigate(`${base}/attendance-history/${id}`);
+  const handleViewAttendance = (employee) => {
+    const nameSlug = slugifyName(employee.firstName, employee.lastName);
+    navigate(`${base}/attendance-history/${nameSlug || "user"}`, {
+      state: { userId: employee._id },
+    });
   };
 
   return (
@@ -172,7 +179,7 @@ const EmployeesData = () => {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleViewProfile(_id)}
+                          onClick={() => handleViewProfile(employee)}
                         >
                           View Profile
                         </Button>
@@ -219,7 +226,7 @@ const EmployeesData = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewAttendance(_id)}
+                          onClick={() => handleViewAttendance(employee)}
                         >
                           Attendance
                         </Button>
