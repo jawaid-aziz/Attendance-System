@@ -31,6 +31,11 @@ const AttendanceSchema = new mongoose.Schema({
     ],
   },
   deductions: { type: Number, default: 0 }, // Salary deductions for the day
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    index: true,
+  },
 });
 
 module.exports = mongoose.model("Attendance", AttendanceSchema);

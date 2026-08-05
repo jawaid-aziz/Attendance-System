@@ -1,5 +1,7 @@
 import Login from "./Pages/Login";
-import Signup from "./Pages/Signup";
+import { Landing } from "./Pages/Landing";
+import { GetStarted } from "./Pages/GetStarted";
+import { Setup } from "./Pages/Setup";
 import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
@@ -11,20 +13,62 @@ import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
 import OfficeTimings from "./Components/OfficeTimings";
+import Companies from "./Components/Superadmin/Companies";
+import CompanyDetail from "./Components/Superadmin/CompanyDetail";
+import InviteSuperAdmin from "./Components/Superadmin/InviteSuperAdmin";
 import { isTokenValid } from "@/lib/isTokenValid";
+import { getHomePath } from "@/lib/getHomePath";
 import { Navigate } from "react-router-dom";
 
 export const AllRoutes = [
   {
-    path: "/login",
-    element: isTokenValid() ? <Navigate to="/" /> : <Login />, // Redirect if token is valid
+    path: "/",
+    element: <Landing />,
   },
   {
-    path: "/signup",
-    element: isTokenValid() ? <Navigate to="/" /> : <Signup />, // Redirect if token is valid
+    path: "/start",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <GetStarted />,
+  },
+  {
+    path: "/login",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Login />,
+  },
+  {
+    path: "/:slug/login",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Login />,
+  },
+  {
+    path: "/setup/:token",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+  },
+  {
+    path: "/:slug/setup/:token",
+    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
   },
   {
     path: "/",
+    element: (
+      <ProtectedRoute roles={["superadmin"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "companies",
+        element: <Companies />,
+      },
+      {
+        path: "company/:id",
+        element: <CompanyDetail />,
+      },
+      {
+        path: "invite",
+        element: <InviteSuperAdmin />,
+      },
+    ],
+  },
+  {
+    path: "/:slug",
     element: (
       <ProtectedRoute roles={["admin", "employee"]}>
         <Layout />
@@ -32,7 +76,7 @@ export const AllRoutes = [
     ),
     children: [
       {
-        path: "/",
+        index: true,
         element: <Home />,
       },
       {
@@ -46,7 +90,7 @@ export const AllRoutes = [
     ],
   },
   {
-    path: "/",
+    path: "/:slug",
     element: (
       <ProtectedRoute roles={["admin"]}>
         <Layout />

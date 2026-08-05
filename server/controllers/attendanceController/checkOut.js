@@ -1,4 +1,6 @@
 const Attendance = require("../../models/Attendance");
+const User = require("../../models/User");
+const Company = require("../../models/Company");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
@@ -9,42 +11,67 @@ const checkOut = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
+    const employee = await User.findById(employeeId);
+    if (!employee || !employee.companyId) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Only the employee themselves or a same-company admin can check out
+    const isSelf = employeeId === req.user.id;
+    const sameCompany =
+      req.user.companyId &&
+      employee.companyId &&
+      req.user.companyId.toString() === employee.companyId.toString();
+    if (!isSelf && !sameCompany) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Cannot check out for this employee" });
+    }
+
+    const company = await Company.findById(employee.companyId);
+    if (!company || company.status === "suspended") {
+      return res
+        .status(403)
+        .json({ message: "Company access unavailable." });
+    }
+
     const GRACE_PERIOD_HOURS = 2;
-    const timezoneName = process.env.TIMEZONE || "UTC";
+    const timezoneName = company.timezone || "UTC";
     const serverTime = dayjs().tz(timezoneName);
     const unixTime = serverTime.unix();
-    // const workEndHour = parseInt(process.env.WORK_END_HOUR, 10) || 17;
+    const today = serverTime.format("dddd");
 
-    // // Calculate exact work end time and no-checkout deadline
-    // const workEndTime = serverTime.startOf("day").hour(workEndHour); // e.g., 17:00
-    // const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // e.g., 19:00
-    const today = serverTime.format("dddd"); // Get the current day name
-
-    // Parse OFFICE_SCHEDULE from .env
-    const officeSchedule = JSON.parse(process.env.OFFICE_SCHEDULE || "{}");
+    const officeSchedule = company.officeSchedule || {};
     const todaySchedule = officeSchedule[today];
 
     if (!todaySchedule) {
-      return res.status(400).json({ message: "Office schedule is not configured for today." });
+      return res
+        .status(400)
+        .json({ message: "Office schedule is not configured for today." });
     }
 
     if (!todaySchedule.isOpen) {
-      return res.status(400).json({ message: "The office is closed today. Cannot check out." });
+      return res
+        .status(400)
+        .json({ message: "The office is closed today. Cannot check out." });
     }
 
-    const [workEndHour, workEndMinute] = todaySchedule.endTime.split(":").map(Number);
-    // const GRACE_PERIOD_HOURS = parseInt(process.env.GRACE_PERIOD_HOURS, 10) || 2;
+    const [workEndHour, workEndMinute] = todaySchedule.endTime
+      .split(":")
+      .map(Number);
 
-    // Calculate work end time and grace period deadline
-    const workEndTime = serverTime.startOf("day").hour(workEndHour).minute(workEndMinute); // Office end time
-    const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour"); // Grace period end time
+    const workEndTime = serverTime
+      .startOf("day")
+      .hour(workEndHour)
+      .minute(workEndMinute);
+    const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour");
 
-    const startOfToday = serverTime.startOf("day").unix(); // Start of the day
-    const endOfToday = serverTime.endOf("day").unix(); // End of the day
+    const startOfToday = serverTime.startOf("day").unix();
+    const endOfToday = serverTime.endOf("day").unix();
 
-    // Find today's attendance
     const attendance = await Attendance.findOne({
       employee: employeeId,
+      companyId: company._id,
       checkIn: { $gte: startOfToday, $lt: endOfToday },
     });
 
@@ -74,7 +101,7 @@ const checkOut = async (req, res) => {
     } else if (serverTime.isBefore(workEndTime)) {
       checkOutstatus = "Check Out before Time";
     }
-    // Update attendance record
+
     attendance.checkOut = unixTime;
     attendance.checkOutstatus = checkOutstatus;
     attendance.deductions = deductions;

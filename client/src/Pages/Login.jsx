@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
+import { getHomePath } from "@/lib/getHomePath";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/Components/ui/card";
@@ -13,6 +14,7 @@ const Login = () => {
   const [errorMessage, setError] = useState(null);
   const { setId } = useId();
   const { setRole } = useRole();
+  const { slug } = useParams();
 
   const navigate = useNavigate();
 
@@ -25,7 +27,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, slug: slug || undefined }),
       });
 
       // const data = await response.json();
@@ -44,6 +46,7 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
       localStorage.setItem("id", user.id);
+      if (data.slug) localStorage.setItem("slug", data.slug);
       console.log(
         "Token, role, and id stored in localStorage:",
         token,
@@ -54,7 +57,7 @@ const Login = () => {
       // Update context
       setRole(user.role);
       setId(user.id);
-      navigate(`/`);
+      navigate(getHomePath());
     } catch (err) {
       setError("Something went wrong. Please try again.");
     }
@@ -119,13 +122,13 @@ const Login = () => {
               </Button>
               <div className="mt-4 text-center text-sm text-gray-600">
                 <span>
-                  Don't have an account?{" "}
+                  New company?{" "}
                   <button
                     type="button"
-                    onClick={() => navigate("/signup")}
+                    onClick={() => navigate("/start")}
                     className="text-blue-600 underline"
                   >
-                    Sign Up
+                    Get Started
                   </button>
                 </span>
               </div>

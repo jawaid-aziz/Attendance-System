@@ -1,42 +1,26 @@
-const fs = require("fs");
-const path = require("path");
-
-// Path to .env file
-const ENV_FILE_PATH = path.resolve(__dirname, "../../.env");
-
-// Helper to read/write .env file
-const updateEnvFile = (key, value) => {
-  const envData = fs.readFileSync(ENV_FILE_PATH, "utf8");
-  const envVars = envData.split("\n").filter((line) => line.trim());
-
-  const newEnvVars = envVars.map((line) => {
-    if (line.startsWith(`${key}=`)) {
-      return `${key}=${value}`;
-    }
-    return line;
-  });
-
-  // If key not found, append it
-  if (!newEnvVars.some((line) => line.startsWith(`${key}=`))) {
-    newEnvVars.push(`${key}=${value}`);
-  }
-
-  fs.writeFileSync(ENV_FILE_PATH, newEnvVars.join("\n"), "utf8");
-};
+const Company = require("../../models/Company");
+const { getCompany } = require("../../common/getCompany");
 
 // API Handlers
-const getAllowedIPs = (req, res) => {
-  const allowedIPs = process.env.ALLOWED_ROUTER_IPS || "";
-  res.json({ allowedIPs: allowedIPs.split(",").filter(Boolean) });
+const getAllowedIPs = async (req, res) => {
+  try {
+    const company = await getCompany(req);
+    if (!company) {
+      return res.status(400).json({ message: "No company context." });
+    }
+    res.json({ allowedIPs: company.allowedRouterIPs });
+  } catch (error) {
+    console.error("Error fetching allowed IPs:", error.message);
+    res.status(500).json({ message: "Failed to fetch allowed IPs" });
+  }
 };
 
-const addAllowedIP = (req, res) => {
+const addAllowedIP = async (req, res) => {
   const { ip } = req.body;
   if (!ip) {
     return res.status(400).json({ message: "IP address is required" });
   }
 
-  // Ensure IP is valid
   const ipRegex =
     /^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$/;
 
@@ -44,34 +28,48 @@ const addAllowedIP = (req, res) => {
     return res.status(400).json({ message: "Invalid IP address format" });
   }
 
-  const currentIPs = (process.env.ALLOWED_ROUTER_IPS || "")
-    .split(",")
-    .filter((ip) => ip.trim() !== ""); // Remove empty strings
+  try {
+    const company = await getCompany(req);
+    if (!company) {
+      return res.status(400).json({ message: "No company context." });
+    }
 
-  if (currentIPs.includes(ip)) {
-    return res.status(400).json({ message: "IP address already exists" });
+    if (company.allowedRouterIPs.includes(ip)) {
+      return res.status(400).json({ message: "IP address already exists" });
+    }
+
+    company.allowedRouterIPs.push(ip);
+    await company.save();
+
+    res.json({ message: "IP added successfully", allowedIPs: company.allowedRouterIPs });
+  } catch (error) {
+    console.error("Error adding allowed IP:", error.message);
+    res.status(500).json({ message: "Failed to add allowed IP" });
   }
-
-  currentIPs.push(ip);
-  updateEnvFile("ALLOWED_ROUTER_IPS", currentIPs.join(","));
-  process.env.ALLOWED_ROUTER_IPS = currentIPs.join(",");
-
-  res.json({ message: "IP added successfully", allowedIPs: currentIPs });
 };
 
-const removeAllowedIP = (req, res) => {
+const removeAllowedIP = async (req, res) => {
   const { ip } = req.body;
   if (!ip) {
     return res.status(400).json({ message: "IP address is required" });
   }
 
-  const currentIPs = (process.env.ALLOWED_ROUTER_IPS || "").split(",");
-  const updatedIPs = currentIPs.filter((item) => item !== ip);
+  try {
+    const company = await getCompany(req);
+    if (!company) {
+      return res.status(400).json({ message: "No company context." });
+    }
 
-  updateEnvFile("ALLOWED_ROUTER_IPS", updatedIPs.join(","));
-  process.env.ALLOWED_ROUTER_IPS = updatedIPs.join(",");
+    company.allowedRouterIPs = company.allowedRouterIPs.filter(
+      (item) => item !== ip
+    );
+    await company.save();
 
-  res.json({ message: "IP removed successfully", allowedIPs: updatedIPs });
+    res.json({ message: "IP removed successfully", allowedIPs: company.allowedRouterIPs });
+  } catch (error) {
+    console.error("Error removing allowed IP:", error.message);
+    res.status(500).json({ message: "Failed to remove allowed IP" });
+  }
 };
 
 module.exports = { getAllowedIPs, addAllowedIP, removeAllowedIP };

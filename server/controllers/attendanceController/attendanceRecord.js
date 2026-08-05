@@ -1,5 +1,6 @@
 const Attendance = require("../../models/Attendance");
 const Employee = require("../../models/User");
+const Company = require("../../models/Company");
 const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const utc = require("dayjs/plugin/utc");
@@ -10,18 +11,34 @@ dayjs.extend(timezone);
 const attendanceRecord = async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const timezoneName = process.env.TIMEZONE || "Asia/Karachi";
-
-    const attendanceRecords = await Attendance.find({
-      employee: employeeId,
-    });
-
 
     // Fetch employee details
     const employee = await Employee.findById(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
+
+    // Only the employee themselves or their company admin can view records
+    const isSelf = employeeId === req.user.id;
+    const sameCompany =
+      req.user.companyId &&
+      employee.companyId &&
+      req.user.companyId.toString() === employee.companyId.toString();
+    if (!isSelf && !sameCompany) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Cannot access these records" });
+    }
+
+    const company = employee.companyId
+      ? await Company.findById(employee.companyId)
+      : null;
+    const timezoneName = company?.timezone || "Asia/Karachi";
+
+    const attendanceRecords = await Attendance.find({
+      employee: employeeId,
+      ...(employee.companyId ? { companyId: employee.companyId } : {}),
+    });
 
     // Convert checkIn Unix time to server time and calculate total deductions
     let totalDeductions = 0;

@@ -1,10 +1,14 @@
+const crypto = require("crypto");
 const User = require("../models/User");
+const Company = require("../models/Company");
 const bcrypt = require("bcryptjs");
 const { generateToken } = require("../utils/tokenUtils");
+const { slugify } = require("../common/slugify");
+const { sendSetupLinkEmail } = require("../utils/sendMail");
 
 // User Login
 exports.loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, slug } = req.body;
 
   // Manual validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,11 +33,42 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // If a tenant slug was provided, verify the user belongs to that company
+    if (slug) {
+      const company = await Company.findOne({ slug });
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      if (!user.companyId || user.companyId.toString() !== company._id.toString()) {
+        return res
+          .status(403)
+          .json({ message: "This account does not belong to this company" });
+      }
+    }
+
+    // Block login if the user's company is suspended
+    if (user.companyId) {
+      const company = await Company.findById(user.companyId);
+      if (company && company.status === "suspended") {
+        return res
+          .status(403)
+          .json({ message: "Your company account is suspended." });
+      }
+    }
+
     const token = generateToken(user, user.role);
+
+    // Resolve the company slug for tenant URLs
+    let slugForUser = null;
+    if (user.companyId) {
+      const company = await Company.findById(user.companyId);
+      slugForUser = company ? company.slug : null;
+    }
 
     res.status(200).json({
       message: "Login successful",
       token,
+      slug: slugForUser,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -43,6 +78,7 @@ exports.loginUser = async (req, res) => {
         phone: user.phone,
         salary: user.salary,
         address: user.address,
+        companyId: user.companyId || null,
       },
     });
   } catch (error) {
@@ -50,91 +86,144 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// User Signup
-exports.signupUser = async (req, res) => {
-  const { firstName, lastName, email, phone, salary, address, password, role } =
-    req.body;
+// Company registration (tenant onboarding) — creates the company and an
+// admin account that must be activated via the emailed setup link
+exports.registerCompany = async (req, res) => {
+  const {
+    companyName,
+    totalEmployees,
+    timezone,
+    adminFirstName,
+    adminLastName,
+    adminEmail,
+  } = req.body;
 
-  // Manual validation
-  if (!firstName || firstName.length < 2) {
-    return res
-      .status(400)
-      .json({ message: "First name must be at least 2 characters long" });
+  if (!companyName || !companyName.trim()) {
+    return res.status(400).json({ message: "Company name is required" });
   }
-  if (!lastName || lastName.length < 2) {
-    return res
-      .status(400)
-      .json({ message: "Last name must be at least 2 characters long" });
+  if (!adminFirstName || !adminFirstName.trim()) {
+    return res.status(400).json({ message: "Admin first name is required" });
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({ message: "Invalid email address" });
+  if (!adminEmail || !emailRegex.test(adminEmail)) {
+    return res.status(400).json({ message: "Invalid admin email address" });
   }
-  const phoneRegex = /^[0-9]{8,15}$/;
-  if (!phone || !phoneRegex.test(phone)) {
-    return res.status(400).json({ message: "Invalid phone number" });
+
+  try {
+    const existing = await User.findOne({ email: adminEmail });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists" });
+    }
+
+    // Ensure the slug is unique
+    const baseSlug = slugify(companyName) || "company";
+    let slug = baseSlug;
+    let counter = 2;
+    while (await Company.findOne({ slug })) {
+      slug = `${baseSlug}-${counter++}`;
+    }
+
+    const company = await Company.create({
+      name: companyName.trim(),
+      slug,
+      totalEmployees: Number(totalEmployees) > 0 ? Number(totalEmployees) : 0,
+      timezone: timezone || "Asia/Karachi",
+      status: "active",
+    });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const admin = await User.create({
+      firstName: adminFirstName.trim(),
+      lastName: (adminLastName || "").trim() || adminFirstName.trim(),
+      email: adminEmail,
+      phone: "",
+      salary: 0,
+      address: "",
+      password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
+      role: "admin",
+      companyId: company._id,
+      setupToken: token,
+      setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+
+    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${token}`;
+    await sendSetupLinkEmail(adminEmail, `${admin.firstName} ${admin.lastName}`, link);
+
+    res.status(201).json({
+      message:
+        "Account created! Check your email for a link to set your password.",
+      company: {
+        id: company._id,
+        name: company.name,
+        slug: company.slug,
+      },
+      admin: {
+        id: admin._id,
+        email: admin.email,
+      },
+    });
+  } catch (error) {
+    console.error("Error registering company:", error.message);
+    res.status(500).json({ message: "Failed to create account" });
   }
-  if (!salary || isNaN(salary) || salary <= 0) {
-    return res.status(400).json({ message: "Salary must be a positive number" });
-  }
-  if (!address || address.trim().length < 5) {
-    return res
-      .status(400)
-      .json({ message: "Address must be at least 5 characters long" });
+};
+
+// Complete account setup from the one-time emailed link
+exports.completeSetup = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: "Setup token is required" });
   }
   if (!password || password.length < 6) {
     return res
       .status(400)
       .json({ message: "Password must be at least 6 characters long" });
   }
-  const allowedRoles = ["admin", "employee"];
-  const userRole = role || "employee";
-  if (!allowedRoles.includes(userRole)) {
-    return res
-      .status(400)
-      .json({ message: `Role must be one of the following: ${allowedRoles.join(", ")}` });
-  }
 
   try {
-    // Check if a user with the given email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User with this email already exists" });
+    const user = await User.findOne({ setupToken: token });
+    if (!user) {
+      return res.status(404).json({ message: "Invalid or expired setup link" });
+    }
+    if (user.setupTokenExpires && user.setupTokenExpires < new Date()) {
+      return res.status(400).json({ message: "Setup link has expired" });
     }
 
-    // Hash the password before storing
-    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(password, 10);
+    user.setupToken = null;
+    user.setupTokenExpires = null;
+    await user.save();
 
-    const newUser = new User({
-      firstName,
-      lastName,
-      email,
-      phone,
-      salary,
-      address,
-      password: hashedPassword,
-      role: userRole,
-    });
+    const jwtToken = generateToken(user, user.role);
 
-    await newUser.save();
+    let slug = null;
+    if (user.companyId) {
+      const company = await Company.findById(user.companyId);
+      slug = company ? company.slug : null;
+    }
 
-    const token = generateToken(newUser, newUser.role);
-
-    res.status(201).json({
-      message: "Signup successful",
-      token,
+    res.status(200).json({
+      message: "Password set successfully",
+      token: jwtToken,
+      slug,
       user: {
-        id: newUser._id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: newUser.role,
-        email: newUser.email,
-        phone: newUser.phone,
-        salary: newUser.salary,
-        address: newUser.address,
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        email: user.email,
+        phone: user.phone,
+        salary: user.salary,
+        address: user.address,
+        companyId: user.companyId || null,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Failed to signup", error: error.message });
+    console.error("Error completing setup:", error.message);
+    res.status(500).json({ message: "Failed to set password" });
   }
 };

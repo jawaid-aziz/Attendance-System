@@ -5,6 +5,9 @@ import toast, { Toaster } from "react-hot-toast";
 export const DeleteEmployee = () => {
   const { id } = useParams(); // Get user ID from the route
   const navigate = useNavigate(); // For navigation after deletion
+  const base = localStorage.getItem("slug")
+    ? `/${localStorage.getItem("slug")}`
+    : "";
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -57,7 +60,7 @@ export const DeleteEmployee = () => {
       }
 
       toast.success("User deleted successfully!", { duration: 5000 });
-      navigate("/employees-data");
+      navigate(`${base}/employees-data`);
     } catch (err) {
       toast.error(`Error deleting user: ${err.message}`, { duration: 5000 });
     }

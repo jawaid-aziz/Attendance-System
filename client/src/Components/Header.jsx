@@ -14,11 +14,14 @@ import { useId } from "@/Context/IdProvider";
 export const Header = ({ role }) => {
   const navigate = useNavigate();
   const { id } = useId();
-  
+  const slug = localStorage.getItem("slug") || "";
+  const base = slug ? `/${slug}` : "";
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("id");
+    localStorage.removeItem("slug");
     console.log("Token, role, and id removed from localStorage.");
     navigate("/login");
   };
@@ -36,7 +39,11 @@ export const Header = ({ role }) => {
 
       <div>
         <h1 className="text-2xl font-semibold text-gray-800 tracking-wide">
-          {role === "admin" ? "Admin Dashboard" : "User Dashboard"}
+          {role === "superadmin"
+            ? "Super Admin Panel"
+            : role === "admin"
+            ? "Admin Dashboard"
+            : "User Dashboard"}
         </h1>
       </div>
 
@@ -54,7 +61,7 @@ export const Header = ({ role }) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
-              onClick={() => navigate(`/profile/${id}`)}
+              onClick={() => navigate(`${base}/profile/${id}`)}
               className="cursor-pointer"
             >
               Profile

@@ -41,7 +41,12 @@ const Clocking = () => {
 
   const fetchAttendanceStatus = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/attend/status/${id}`);
+      const response = await fetch(`http://localhost:5000/attend/status/${id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       if (!response.ok)
         toast.error(`HTTP error! Status: ${response.status}`, {
           duration: 5000,

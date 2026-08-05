@@ -8,6 +8,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
+  Building2,
+  UserPlus,
 } from "lucide-react";
 import { useId } from "../Context/IdProvider";
 import {
@@ -28,17 +30,26 @@ export function AppSidebar({ role }) {
 
   const [openMenus, setOpenMenus] = useState({});
 
-  const menuItems = [
+  const slug = localStorage.getItem("slug") || "";
+  const base = slug ? `/${slug}` : "";
+
+  const menuItems =
+    role === "superadmin"
+      ? [
+          { title: "Companies", url: "/companies", icon: Building2 },
+          { title: "Invite Super Admin", url: "/invite", icon: UserPlus },
+        ]
+      : [
     {
       title: "Home",
-      url: "/",
+      url: `${base}/`,
       icon: Home,
     },
     {
       title: "Attendance",
       icon: ClipboardList,
       children: [
-        { title: "View Attendance", url: `/attendance-history/${id}` },
+        { title: "View Attendance", url: `${base}/attendance-history/${id}` },
       ],
     },
     ...(role === "admin"
@@ -47,8 +58,8 @@ export function AppSidebar({ role }) {
             title: "Employees",
             icon: Users,
             children: [
-              { title: "Employees List", url: "/employees-data" },
-              { title: "Add Employee", url: "/add-employee" },
+              { title: "Employees List", url: `${base}/employees-data` },
+              { title: "Add Employee", url: `${base}/add-employee` },
             ],
           },
         ]
@@ -57,22 +68,23 @@ export function AppSidebar({ role }) {
       title: "Settings",
       icon: Settings,
       children: [
-        { title: "Profile", url: `/profile/${id}` },
+        { title: "Profile", url: `${base}/profile/${id}` },
         ...(role === "admin"
           ? [
-              { title: "Timezone", url: `/timezone` },
-              { title: "Configuration", url: `/config` },
-              { title: "Office Timing", url: `/officeTime` },
+              { title: "Timezone", url: `${base}/timezone` },
+              { title: "Configuration", url: `${base}/config` },
+              { title: "Office Timing", url: `${base}/officeTime` },
             ]
           : []),
       ],
     },
-  ];
+      ];
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("id");
+    localStorage.removeItem("slug");
     console.log("Token, role, and id removed from localStorage.");
     navigate("/login");
   };

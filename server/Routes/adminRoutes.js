@@ -7,10 +7,8 @@ const {
 } = require("../controllers/adminController/adminController");
 const authenticateToken = require("../middleware/authMiddleware");
 const authorizeAdmin = require("../middleware/authorizeAdmin");
-const { getTimezone } = require("../controllers/TimezoneController/Timezone");
-const {
-  updateTimezone,
-} = require("../controllers/TimezoneController/Timezone");
+const authorizeCompany = require("../middleware/authorizeCompany");
+const { getTimezone, updateTimezone } = require("../controllers/TimezoneController/Timezone");
 
 const {
   getDeductions,
@@ -25,18 +23,15 @@ router.post("/add", authenticateToken, authorizeAdmin, addUser);
 router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
 router.delete("/delete/:id", authenticateToken, authorizeAdmin, deleteUser);
 router.get("/user", authenticateToken, authorizeAdmin, getUsers);
-router.get("/getTime", authenticateToken, authorizeAdmin, getTimezone);
-// Route to update the timezone
-router.post("/updateTime", authenticateToken, authorizeAdmin, updateTimezone);
-//route for deduction logic
-router.get("/getDeductions", authenticateToken, authorizeAdmin, getDeductions);
-router.post("/updateDeductions",authenticateToken,authorizeAdmin,updateDeductions);
-//route for router ip configuration
-router.get("/getAllowedIP", authenticateToken, authorizeAdmin, getAllowedIPs);
-router.post("/addAllowedIP", authenticateToken, authorizeAdmin, addAllowedIP);
-router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, removeAllowedIP);
-//office timing setting
-router.get("/getOfficeTiming",  getOfficeSchedule);
-router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, saveOfficeSchedule);
+router.get("/getTime", authenticateToken, authorizeAdmin, authorizeCompany, getTimezone);
+router.post("/updateTime", authenticateToken, authorizeAdmin, authorizeCompany, updateTimezone);
+router.get("/getDeductions", authenticateToken, authorizeAdmin, authorizeCompany, getDeductions);
+router.post("/updateDeductions", authenticateToken, authorizeAdmin, authorizeCompany, updateDeductions);
+router.get("/getAllowedIP", authenticateToken, authorizeAdmin, authorizeCompany, getAllowedIPs);
+router.post("/addAllowedIP", authenticateToken, authorizeAdmin, authorizeCompany, addAllowedIP);
+router.delete("/removeAllowedIP", authenticateToken, authorizeAdmin, authorizeCompany, removeAllowedIP);
+//office timing setting (employees also read the schedule)
+router.get("/getOfficeTiming", authenticateToken, authorizeCompany, getOfficeSchedule);
+router.post("/saveOfficeTiming", authenticateToken, authorizeAdmin, authorizeCompany, saveOfficeSchedule);
 
 module.exports = router;

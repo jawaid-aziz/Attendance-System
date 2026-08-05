@@ -11,6 +11,19 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const isSelf = user._id.toString() === req.user.id;
+    const sameCompany =
+      req.user.companyId &&
+      user.companyId &&
+      req.user.companyId.toString() === user.companyId.toString();
+    const isSuperadmin = req.user.role === "superadmin";
+
+    if (!isSelf && !sameCompany && !isSuperadmin) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Cannot access this user" });
+    }
+
     res.status(200).json({
       user: {
         id: user._id,
@@ -21,6 +34,7 @@ exports.getUserById = async (req, res) => {
         salary: user.salary,
         address: user.address,
         role: user.role,
+        companyId: user.companyId || null,
       },
     });
   } catch (error) {

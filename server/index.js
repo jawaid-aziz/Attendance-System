@@ -7,6 +7,7 @@ const authRoutes = require("./Routes/authRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const attendanceRoutes = require("./Routes/attendanceRoutes");
 const commonRoutes = require("./Routes/commonRoutes")
+const superadminRoutes = require("./Routes/superadminRoutes")
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/attend", attendanceRoutes);
 app.use("/byId", commonRoutes);
+app.use("/superadmin", superadminRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

@@ -33,6 +33,9 @@ const EmployeesData = () => {
   const [progress, setProgress] = useState(0);
   const apiUrl = "http://localhost:5000"; // Backend URL
   const navigate = useNavigate();
+  const base = localStorage.getItem("slug")
+    ? `/${localStorage.getItem("slug")}`
+    : "";
 
   useEffect(() => {
     let isFirstLoad = true;
@@ -83,7 +86,7 @@ const EmployeesData = () => {
   }, []);
 
   const handleViewProfile = (id) => {
-    navigate(`/profile/${id}`);
+    navigate(`${base}/profile/${id}`);
   };
 
   if (loading) {
@@ -131,7 +134,7 @@ const EmployeesData = () => {
   };
 
   const handleViewAttendance = (id) => {
-    navigate(`/attendance-history/${id}`);
+    navigate(`${base}/attendance-history/${id}`);
   };
 
   return (

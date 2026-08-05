@@ -1,13 +1,23 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
-const sendCredentialsEmail = require("../../utils/sendMail");
+const Company = require("../../models/Company");
+const { sendCredentialsEmail } = require("../../utils/sendMail");
 
 const mongoose = require("mongoose");
+
+const isSameCompany = (userIdCompanyId, targetCompanyId) =>
+  userIdCompanyId &&
+  targetCompanyId &&
+  userIdCompanyId.toString() === targetCompanyId.toString();
+
 // Get Users Controller
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find({});
+    // Company admins see only their own employees; superadmins see all
+    const scopeCompanyId = req.user.companyId || req.query.companyId;
+    const filter = scopeCompanyId ? { companyId: scopeCompanyId } : {};
+    const users = await User.find(filter);
     const employees = await Promise.all(
       users.map(async (user) => {
         // Find the most recent attendance record
@@ -86,6 +96,19 @@ exports.addUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email already exists" });
     }
 
+    // Company admins add to their own company; superadmins pass companyId
+    const companyId =
+      req.user.role === "superadmin" ? req.body.companyId : req.user.companyId;
+
+    if (!companyId) {
+      return res.status(400).json({ message: "Company ID is required" });
+    }
+
+    const company = await Company.findById(companyId);
+    if (!company || company.status === "suspended") {
+      return res.status(400).json({ message: "Company not found or inactive" });
+    }
+
     // Hash the password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -99,6 +122,7 @@ exports.addUser = async (req, res) => {
       address,
       password: hashedPassword,
       role,
+      companyId,
     });
 
     // Save the user to the database
@@ -118,6 +142,7 @@ exports.addUser = async (req, res) => {
         salary: newUser.salary,
         address: newUser.address,
         role: newUser.role,
+        companyId: newUser.companyId,
       },
     });
   } catch (error) {
@@ -169,6 +194,16 @@ exports.editUser = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Company admins can only edit users inside their company
+    if (
+      req.user.role !== "superadmin" &&
+      !isSameCompany(req.user.companyId, user.companyId)
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Cannot edit users outside your company" });
     }
 
     // Update fields
@@ -224,12 +259,25 @@ exports.deleteUser = async (req, res) => {
 
   try {
     // Find and delete the user by ID
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findById(userId);
 
     // If user not found
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Company admins can only delete users inside their company
+    if (
+      req.user.role !== "superadmin" &&
+      !isSameCompany(req.user.companyId, user.companyId)
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Cannot delete users outside your company" });
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
 
     // Delete all attendance records for the user
     const attendanceDeletionResult = await Attendance.deleteMany({ employee: userId });
