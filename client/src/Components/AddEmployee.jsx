@@ -20,7 +20,6 @@ const AddEmployeeForm = () => {
     phone: "",
     salary: "",
     address: "",
-    password: "",
     role: "employee",
   });
 
@@ -56,7 +55,7 @@ const AddEmployeeForm = () => {
         toast.error(errorData.message || "Failed to add employee.", { duration: 5000 });
       }
 
-      toast.success("Employee added successfully!", { duration: 5000 });
+      toast.success("Employee added! A setup link was sent to their email.", { duration: 6000 });
       setFormData({
         firstName: "",
         lastName: "",
@@ -64,7 +63,6 @@ const AddEmployeeForm = () => {
         phone: "",
         salary: "",
         address: "",
-        password: "",
         role: "employee",
       });
     } catch (error) {
@@ -170,20 +168,6 @@ const AddEmployeeForm = () => {
                   onChange={handleChange}
                   required
                   placeholder="Enter employee address"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-medium mb-1">
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter employee password"
                 />
               </div>
 

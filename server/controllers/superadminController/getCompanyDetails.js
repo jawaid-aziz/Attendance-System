@@ -16,7 +16,7 @@ exports.getCompanyDetails = async (req, res) => {
     }
 
     const users = await User.find({ companyId: company._id }).select(
-      "firstName lastName email phone role salary companyId createdAt"
+      "firstName lastName email phone role companyId createdAt"
     );
 
     res.json({ company, users });

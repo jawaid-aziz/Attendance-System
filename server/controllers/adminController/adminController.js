@@ -1,8 +1,9 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
 const Company = require("../../models/Company");
-const { sendCredentialsEmail } = require("../../utils/sendMail");
+const { sendSetupLinkEmail } = require("../../utils/sendMail");
 
 const mongoose = require("mongoose");
 
@@ -58,7 +59,7 @@ exports.getUsers = async (req, res) => {
 
 // Add User Controller
 exports.addUser = async (req, res) => {
-  const { firstName, lastName, email, phone, salary, address, password, role } = req.body;
+  const { firstName, lastName, email, phone, salary, address, role } = req.body;
 
   // Manual Validation
   if (!firstName || firstName.length < 2) {
@@ -80,9 +81,6 @@ exports.addUser = async (req, res) => {
   }
   if (!address || address.trim().length < 5) {
     return res.status(400).json({ message: "Address must be at least 5 characters long" });
-  }
-  if (!password || password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters long" });
   }
   const allowedRoles = ["admin", "employee"]; // Define allowed roles
   if (!role || !allowedRoles.includes(role)) {
@@ -109,10 +107,10 @@ exports.addUser = async (req, res) => {
       return res.status(400).json({ message: "Company not found or inactive" });
     }
 
-    // Hash the password before storing
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // The user sets their own password via an emailed one-time setup link,
+    // so no plaintext password is ever sent or stored.
+    const setupToken = crypto.randomBytes(32).toString("hex");
 
-    // Create the new user object
     const newUser = new User({
       firstName,
       lastName,
@@ -120,19 +118,23 @@ exports.addUser = async (req, res) => {
       phone,
       salary,
       address,
-      password: hashedPassword,
+      password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
       role,
       companyId,
+      setupToken,
+      setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
     // Save the user to the database
     await newUser.save();
 
-    // Send credentials via email
-    sendCredentialsEmail(email, `${firstName} ${lastName}`, password);
+    // Send a one-time setup link via email
+    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${setupToken}`;
+    await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
+    console.log(`Setup link generated for ${email}: ${link}`);
 
     res.status(201).json({
-      message: "User added successfully",
+      message: "User added successfully. A setup link was sent to their email.",
       user: {
         id: newUser._id,
         firstName: newUser.firstName,

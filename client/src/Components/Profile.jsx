@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
+import { useId } from "../Context/IdProvider";
 import { useTargetUser } from "../hooks/useTargetUser";
 import { slugifyName } from "@/lib/slugifyName";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,9 +21,17 @@ export const Profile = () => {
   const { name } = useParams();
   const navigate = useNavigate();
   const { role } = useRole();
+  const { id: ownId } = useId();
   const { targetId } = useTargetUser();
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+
+  const [pwForm, setPwForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [pwSubmitting, setPwSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -134,6 +143,39 @@ export const Profile = () => {
       toast.success("User data updated successfully!", { duration: 5000 });
     } catch (err) {
       toast.error(err.message, { duration: 5000 });
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      toast.error("New passwords do not match", { duration: 5000 });
+      return;
+    }
+    setPwSubmitting(true);
+    try {
+      const response = await fetch("http://localhost:5000/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          currentPassword: pwForm.currentPassword,
+          newPassword: pwForm.newPassword,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.message || "Failed to update password", { duration: 5000 });
+        return;
+      }
+      toast.success(data.message || "Password updated successfully!", { duration: 5000 });
+      setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      toast.error(err.message, { duration: 5000 });
+    } finally {
+      setPwSubmitting(false);
     }
   };
 
@@ -274,6 +316,71 @@ export const Profile = () => {
           </form>
         </CardContent>
       </Card>
+
+      {targetId === ownId && (
+        <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
+          <CardHeader>
+            <h2 className="text-2xl font-semibold">Change Password</h2>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block mb-1 font-medium">
+                  Current Password
+                </label>
+                <Input
+                  type="password"
+                  name="currentPassword"
+                  value={pwForm.currentPassword}
+                  onChange={(e) =>
+                    setPwForm((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">New Password</label>
+                <Input
+                  type="password"
+                  name="newPassword"
+                  value={pwForm.newPassword}
+                  onChange={(e) =>
+                    setPwForm((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  placeholder="At least 6 characters"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">
+                  Confirm New Password
+                </label>
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  value={pwForm.confirmPassword}
+                  onChange={(e) =>
+                    setPwForm((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={pwSubmitting} className="w-full">
+                {pwSubmitting ? "Updating..." : "Update Password"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 };

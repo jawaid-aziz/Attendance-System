@@ -71,7 +71,6 @@ const CompanyDetail = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Salary</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -80,7 +79,6 @@ const CompanyDetail = () => {
                     <TableCell>{`${u.firstName} ${u.lastName}`}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.role}</TableCell>
-                    <TableCell>{u.salary}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
