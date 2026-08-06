@@ -1,5 +1,14 @@
 const Company = require("../models/Company");
 
+// Resolve the requesting user's company (set by the authorizeCompany
+// middleware). Returns the Company document, or null if there is no
+// company context (e.g. superadmin).
+exports.getCompany = async (req) => {
+  if (req.company) return req.company;
+  if (!req.user || !req.user.companyId) return null;
+  return Company.findById(req.user.companyId);
+};
+
 // Fetch a company by its slug for the logged-in member (or superadmin).
 // Used by the client to personalize the dashboard (branding/name).
 exports.getCompanyBySlug = async (req, res) => {
