@@ -1,17 +1,17 @@
-const crypto = require("crypto");
 const User = require("../models/User");
 const Company = require("../models/Company");
 const bcrypt = require("bcryptjs");
 const { generateToken } = require("../utils/tokenUtils");
-const { slugify } = require("../common/slugify");
+const { serializeUser } = require("../common/getUser");
+const { isStrongPassword } = require("../common/password");
+const {
+  createCompanyWithUniqueSlug,
+  createUserWithSetupToken,
+  setupLinkFor,
+} = require("../common/onboarding");
 const { sendSetupLinkEmail } = require("../utils/sendMail");
-
-// At least 8 characters, with at least one letter and one number.
-const isStrongPassword = (password) => {
-  if (!password || typeof password !== "string") return false;
-  if (password.length < 8) return false;
-  return /[A-Za-z]/.test(password) && /\d/.test(password);
-};
+const { withTransaction } = require("../utils/withTransaction");
+const { isValidTimezone } = require("../common/validation");
 
 // User Login
 exports.loginUser = async (req, res) => {
@@ -29,7 +29,7 @@ exports.loginUser = async (req, res) => {
   }
 
   try {
-    // Check if the user exists with the given email and role
+    // Check if the user exists with the given email
     const user = await User.findOne({ email });
     // Generic message to avoid user enumeration
     if (!user) {
@@ -41,13 +41,18 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    // Fetch the user's company once and reuse it for the tenant-slug check,
+    // the status check, and the response slug.
+    const company = user.companyId
+      ? await Company.findById(user.companyId)
+      : null;
+
     // If a tenant slug was provided, verify the user belongs to that company
     if (slug) {
-      const company = await Company.findOne({ slug });
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      if (!user.companyId || user.companyId.toString() !== company._id.toString()) {
+      if (company.slug !== slug) {
         return res
           .status(403)
           .json({ message: "This account does not belong to this company" });
@@ -55,50 +60,28 @@ exports.loginUser = async (req, res) => {
     }
 
     // Block login if the user's company is suspended or deleted
-    if (user.companyId) {
-      const company = await Company.findById(user.companyId);
-      if (
-        company &&
-        ["suspended", "deleted"].includes(company.status)
-      ) {
-        return res
-          .status(403)
-          .json({ message: "Your company account is not active." });
-      }
+    if (company && ["suspended", "deleted"].includes(company.status)) {
+      return res
+        .status(403)
+        .json({ message: "Your company account is not active." });
     }
 
     const token = generateToken(user, user.role);
 
-    // Resolve the company slug for tenant URLs
-    let slugForUser = null;
-    if (user.companyId) {
-      const company = await Company.findById(user.companyId);
-      slugForUser = company ? company.slug : null;
-    }
-
     res.status(200).json({
       message: "Login successful",
       token,
-      slug: slugForUser,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        email: user.email,
-        phone: user.phone,
-        salary: user.salary,
-        address: user.address,
-        companyId: user.companyId || null,
-      },
+      slug: company ? company.slug : null,
+      user: serializeUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: "Failed to login", error: error.message });
+    console.error("Error logging in:", error.message);
+    res.status(500).json({ message: "Failed to login" });
   }
 };
 
 // Company registration (tenant onboarding) — creates the company and an
-// admin account that must be activated via the emailed setup link
+// admin account that must be activated via the emailed setup link.
 exports.registerCompany = async (req, res) => {
   const {
     companyName,
@@ -119,6 +102,11 @@ exports.registerCompany = async (req, res) => {
   if (!adminEmail || !emailRegex.test(adminEmail)) {
     return res.status(400).json({ message: "Invalid admin email address" });
   }
+  if (timezone && !isValidTimezone(timezone)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid timezone. Use a valid IANA zone, e.g. Asia/Karachi." });
+  }
 
   try {
     const existing = await User.findOne({ email: adminEmail });
@@ -128,43 +116,50 @@ exports.registerCompany = async (req, res) => {
         .json({ message: "User with this email already exists" });
     }
 
-    // Ensure the slug is unique
-    const baseSlug = slugify(companyName) || "company";
-    let slug = baseSlug;
-    let counter = 2;
-    while (await Company.findOne({ slug })) {
-      slug = `${baseSlug}-${counter++}`;
+    // Company + admin must be created atomically (no orphaned tenants).
+    const { company, admin, setupToken } = await withTransaction(
+      async (session) => {
+        const company = await createCompanyWithUniqueSlug(
+          {
+            name: companyName.trim(),
+            totalEmployees:
+              Number(totalEmployees) > 0 ? Number(totalEmployees) : 0,
+            timezone: timezone || "Asia/Karachi",
+            status: "active",
+          },
+          session
+        );
+        const { user: admin, setupToken } = await createUserWithSetupToken(
+          {
+            firstName: adminFirstName.trim(),
+            lastName: (adminLastName || "").trim() || adminFirstName.trim(),
+            email: adminEmail,
+            phone: "",
+            salary: 0,
+            address: "",
+            role: "admin",
+            companyId: company._id,
+          },
+          session
+        );
+        return { company, admin, setupToken };
+      }
+    );
+
+    const link = setupLinkFor(setupToken);
+    let emailFailed = false;
+    try {
+      await sendSetupLinkEmail(adminEmail, `${admin.firstName} ${admin.lastName}`, link);
+    } catch (error) {
+      console.error("Failed to send setup email:", error.message);
+      emailFailed = true;
     }
 
-    const company = await Company.create({
-      name: companyName.trim(),
-      slug,
-      totalEmployees: Number(totalEmployees) > 0 ? Number(totalEmployees) : 0,
-      timezone: timezone || "Asia/Karachi",
-      status: "active",
-    });
-
-    const token = crypto.randomBytes(32).toString("hex");
-    const admin = await User.create({
-      firstName: adminFirstName.trim(),
-      lastName: (adminLastName || "").trim() || adminFirstName.trim(),
-      email: adminEmail,
-      phone: "",
-      salary: 0,
-      address: "",
-      password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
-      role: "admin",
-      companyId: company._id,
-      setupToken: token,
-      setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
-    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${token}`;
-    await sendSetupLinkEmail(adminEmail, `${admin.firstName} ${admin.lastName}`, link);
-
     res.status(201).json({
-      message:
-        "Account created! Check your email for a link to set your password.",
+      message: emailFailed
+        ? "Account created, but the setup email could not be sent."
+        : "Account created! Check your email for a link to set your password.",
+      emailFailed,
       company: {
         id: company._id,
         name: company.name,
@@ -173,6 +168,7 @@ exports.registerCompany = async (req, res) => {
       admin: {
         id: admin._id,
         email: admin.email,
+        ...(emailFailed ? { setupLink: link } : {}),
       },
     });
   } catch (error) {
@@ -257,17 +253,7 @@ exports.completeSetup = async (req, res) => {
       message: "Password set successfully",
       token: jwtToken,
       slug,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        email: user.email,
-        phone: user.phone,
-        salary: user.salary,
-        address: user.address,
-        companyId: user.companyId || null,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     console.error("Error completing setup:", error.message);

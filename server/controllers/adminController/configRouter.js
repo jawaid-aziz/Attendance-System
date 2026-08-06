@@ -1,5 +1,8 @@
+const net = require("net");
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
+
+const normalizeIP = (ip) => (typeof ip === "string" ? ip.trim() : "");
 
 // API Handlers
 const getAllowedIPs = async (req, res) => {
@@ -16,15 +19,12 @@ const getAllowedIPs = async (req, res) => {
 };
 
 const addAllowedIP = async (req, res) => {
-  const { ip } = req.body;
+  const ip = normalizeIP(req.body.ip);
   if (!ip) {
     return res.status(400).json({ message: "IP address is required" });
   }
-
-  const ipRegex =
-    /^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$/;
-
-  if (!ipRegex.test(ip)) {
+  // Supports both IPv4 and IPv6.
+  if (net.isIP(ip) === 0) {
     return res.status(400).json({ message: "Invalid IP address format" });
   }
 
@@ -34,11 +34,15 @@ const addAllowedIP = async (req, res) => {
       return res.status(400).json({ message: "No company context." });
     }
 
-    if (company.allowedRouterIPs.includes(ip)) {
+    const allowed = Array.isArray(company.allowedRouterIPs)
+      ? company.allowedRouterIPs.map(normalizeIP)
+      : [];
+    if (allowed.includes(ip)) {
       return res.status(400).json({ message: "IP address already exists" });
     }
 
-    company.allowedRouterIPs.push(ip);
+    allowed.push(ip);
+    company.allowedRouterIPs = allowed;
     await company.save();
 
     res.json({ message: "IP added successfully", allowedIPs: company.allowedRouterIPs });
@@ -49,9 +53,12 @@ const addAllowedIP = async (req, res) => {
 };
 
 const removeAllowedIP = async (req, res) => {
-  const { ip } = req.body;
+  const ip = normalizeIP(req.body.ip);
   if (!ip) {
     return res.status(400).json({ message: "IP address is required" });
+  }
+  if (net.isIP(ip) === 0) {
+    return res.status(400).json({ message: "Invalid IP address format" });
   }
 
   try {
@@ -60,9 +67,10 @@ const removeAllowedIP = async (req, res) => {
       return res.status(400).json({ message: "No company context." });
     }
 
-    company.allowedRouterIPs = company.allowedRouterIPs.filter(
-      (item) => item !== ip
-    );
+    company.allowedRouterIPs = (Array.isArray(company.allowedRouterIPs)
+      ? company.allowedRouterIPs
+      : []
+    ).filter((item) => normalizeIP(item) !== ip);
     await company.save();
 
     res.json({ message: "IP removed successfully", allowedIPs: company.allowedRouterIPs });

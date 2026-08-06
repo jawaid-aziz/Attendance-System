@@ -1,17 +1,12 @@
 const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
-const dayjs = require("dayjs");
-const timezone = require("dayjs/plugin/timezone");
-const utc = require("dayjs/plugin/utc");
 const mongoose = require("mongoose");
+const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 const {
   LATE_GRACE_MINUTES,
   lateCheckInDeduction,
 } = require("../../common/deductions");
-
-dayjs.extend(timezone);
-dayjs.extend(utc);
 
 const checkIn = async (req, res) => {
   try {
@@ -38,15 +33,15 @@ const checkIn = async (req, res) => {
         .json({ message: "Forbidden: Cannot check in for this employee" });
     }
 
-    const company = employee.companyId
-      ? await Company.findById(employee.companyId)
-      : null;
+    const company =
+      req.company || (employee.companyId
+        ? await Company.findById(employee.companyId)
+        : null);
     if (!company || ["suspended", "deleted"].includes(company.status)) {
       return res.status(403).json({ message: "Company access unavailable." });
     }
 
-    const timezoneName = company.timezone || "Asia/Karachi";
-    const serverTime = dayjs().tz(timezoneName);
+    const serverTime = dayjs().tz(getCompanyTimezone(company));
     const unixTime = serverTime.unix();
     const today = serverTime.format("dddd");
     const dayStart = serverTime.startOf("day").toDate();
@@ -94,22 +89,25 @@ const checkIn = async (req, res) => {
 
     // Atomic upsert keyed on (employee, day). The unique index on these two
     // fields guarantees a single attendance row per employee per day, even
-    // under concurrent requests.
+    // under concurrent requests. Matching `checkIn: null` means an absent row
+    // (created by the sweeper) is claimed as a valid late check-in instead of
+    // being reported as "already checked in".
     let attendance;
-    let lastErrorObject;
     try {
       const result = await Attendance.findOneAndUpdate(
-        { employee: employeeId, day: dayStart },
+        { employee: employeeId, day: dayStart, checkIn: null },
         {
+          $set: {
+            checkIn: unixTime,
+            checkInstatus,
+            isActive: true,
+            deductions,
+          },
           $setOnInsert: {
             employee: employeeId,
             firstName: employee.firstName,
             date: serverTime.toDate(),
             day: dayStart,
-            checkIn: unixTime,
-            checkInstatus,
-            isActive: true,
-            deductions,
             companyId: company._id,
           },
         },
@@ -121,7 +119,6 @@ const checkIn = async (req, res) => {
         }
       );
       attendance = result.value;
-      lastErrorObject = result.lastErrorObject;
     } catch (err) {
       // Duplicate key: a concurrent request already created today's record.
       if (err && err.code === 11000) {
@@ -132,7 +129,7 @@ const checkIn = async (req, res) => {
       throw err;
     }
 
-    if (lastErrorObject && lastErrorObject.updatedExisting) {
+    if (!attendance) {
       return res
         .status(400)
         .json({ message: "You have already checked in today." });

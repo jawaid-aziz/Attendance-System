@@ -1,12 +1,8 @@
 const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
-const dayjs = require("dayjs");
-const utc = require("dayjs/plugin/utc");
-const timezone = require("dayjs/plugin/timezone");
 const { noCheckOutDeduction } = require("../../common/deductions");
-dayjs.extend(utc);
-dayjs.extend(timezone);
+const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 
 const GRACE_PERIOD_HOURS = 2;
 const ON_TIME_TOLERANCE_MINUTES = 30;
@@ -32,15 +28,15 @@ const checkOut = async (req, res) => {
         .json({ message: "Forbidden: Cannot check out for this employee" });
     }
 
-    const company = await Company.findById(employee.companyId);
+    const company =
+      req.company || (await Company.findById(employee.companyId));
     if (!company || ["suspended", "deleted"].includes(company.status)) {
       return res
         .status(403)
         .json({ message: "Company access unavailable." });
     }
 
-    const timezoneName = company.timezone || "UTC";
-    const serverTime = dayjs().tz(timezoneName);
+    const serverTime = dayjs().tz(getCompanyTimezone(company));
     const unixTime = serverTime.unix();
     const today = serverTime.format("dddd");
     const dayStart = serverTime.startOf("day").toDate();

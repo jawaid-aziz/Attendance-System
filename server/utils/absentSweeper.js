@@ -1,13 +1,8 @@
 const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 const Company = require("../models/Company");
-const dayjs = require("dayjs");
-const timezone = require("dayjs/plugin/timezone");
-const utc = require("dayjs/plugin/utc");
 const { absentDeduction } = require("../common/deductions");
-
-dayjs.extend(timezone);
-dayjs.extend(utc);
+const { dayjs, getCompanyTimezone } = require("./dayjs");
 
 // Mark employees absent once the working day has ended and they never checked
 // in. Runs as an hourly cron. Enable on a SINGLE worker only (set
@@ -16,8 +11,7 @@ const markAbsentForNonCheckIns = async () => {
   const companies = await Company.find({ status: "active" });
 
   for (const company of companies) {
-    const timezoneName = company.timezone || "Asia/Karachi";
-    const serverTime = dayjs().tz(timezoneName);
+    const serverTime = dayjs().tz(getCompanyTimezone(company));
     const today = serverTime.format("dddd");
     const dayStart = serverTime.startOf("day").toDate();
 

@@ -65,32 +65,6 @@ const shouldSend = () =>
 
 const mailFrom = process.env.EMAIL_FROM || `"onTime" <${process.env.EMAIL_USER || ""}>`;
 
-const sendCredentialsEmail = async (receiver, name, password) => {
-  const mailOptions = {
-    from: mailFrom,
-    to: receiver,
-    subject: "Your Login Credentials",
-    html: `
-            <h2>Welcome to the team, ${name}!</h2>
-            <p>You’ve been added to the system.</p>
-            <p><b>Email:</b> ${receiver}</p>
-            <p><b>Password:</b> ${password}</p>
-        `,
-  };
-
-  if (!shouldSend()) {
-    console.log("SKIP_EMAIL: skipping credentials email to", receiver);
-    return;
-  }
-
-  try {
-    const info = await sendWithRetry(mailOptions);
-    console.log("Email sent: ", info.response);
-  } catch (error) {
-    console.error("Error sending mail: ", error);
-  }
-};
-
 const sendSetupLinkEmail = async (receiver, name, link) => {
   const mailOptions = {
     from: mailFrom,
@@ -106,15 +80,14 @@ const sendSetupLinkEmail = async (receiver, name, link) => {
 
   if (!shouldSend()) {
     console.log("SKIP_EMAIL: skipping setup link email to", receiver);
-    return;
+    return { ok: false, skipped: true };
   }
 
-  try {
-    const info = await sendWithRetry(mailOptions);
-    console.log("Setup email sent: ", info.response);
-  } catch (error) {
-    console.error("Error sending setup mail: ", error);
-  }
+  // Throws after retries are exhausted so callers can report email failure
+  // honestly instead of claiming the link was delivered.
+  const info = await sendWithRetry(mailOptions);
+  console.log("Setup email sent: ", info.response);
+  return { ok: true };
 };
 
-module.exports = { sendCredentialsEmail, sendSetupLinkEmail };
+module.exports = { sendSetupLinkEmail };

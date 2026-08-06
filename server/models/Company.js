@@ -26,4 +26,8 @@ const CompanySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Services the hourly sweeper ({ status: "active" }) and the tenant list
+// ({ status: { $ne: "deleted" } }, sort by createdAt desc).
+CompanySchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model("Company", CompanySchema);

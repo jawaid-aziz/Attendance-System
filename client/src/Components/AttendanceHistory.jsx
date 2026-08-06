@@ -36,7 +36,7 @@ import toast, { Toaster } from "react-hot-toast";
 const AttendanceHistory = () => {
   const { name } = useParams();
   const navigate = useNavigate();
-  const { targetId } = useTargetUser();
+  const { targetId, status } = useTargetUser();
   const [records, setRecords] = useState([]);
   const [availableYears, setAvailableYears] = useState([]);
   const [summary, setSummary] = useState({
@@ -81,6 +81,7 @@ const AttendanceHistory = () => {
 
         if (!response.ok) {
           toast.error("Failed to fetch user data", { duration: 5000 });
+          return;
         }
 
         const data = await response.json();
@@ -175,6 +176,15 @@ const AttendanceHistory = () => {
     }
     return yearOptions;
   };
+
+  if (status === "error") {
+    return (
+      <>
+        <Toaster position="bottom-right" reverseOrder={false} />
+        <p className="p-6 text-red-600">User not found.</p>
+      </>
+    );
+  }
 
   return (
     <>

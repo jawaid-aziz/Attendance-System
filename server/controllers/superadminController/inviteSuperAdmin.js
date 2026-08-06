@@ -1,6 +1,8 @@
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
+const {
+  createUserWithSetupToken,
+  setupLinkFor,
+} = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
 
 exports.inviteSuperAdmin = async (req, res) => {
@@ -25,26 +27,30 @@ exports.inviteSuperAdmin = async (req, res) => {
         .json({ message: "User with this email already exists" });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const user = await User.create({
+    const { user, setupToken } = await createUserWithSetupToken({
       firstName,
       lastName,
       email,
       phone: "",
       salary: 0,
       address: "",
-      password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
       role: "superadmin",
-      setupToken: token,
-      setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${token}`;
-    await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
-    console.log(`Setup link generated for ${email}: ${link}`);
+    const link = setupLinkFor(setupToken);
+    let emailFailed = false;
+    try {
+      await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
+    } catch (error) {
+      console.error("Failed to send setup email:", error.message);
+      emailFailed = true;
+    }
 
     res.status(201).json({
-      message: "Invitation sent",
+      message: emailFailed
+        ? "Invitation created, but the setup email could not be sent."
+        : "Invitation sent",
+      emailFailed,
       user: {
         id: user._id,
         firstName: user.firstName,

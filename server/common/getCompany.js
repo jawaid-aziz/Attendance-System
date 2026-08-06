@@ -5,7 +5,12 @@ const Company = require("../models/Company");
 // company context (e.g. superadmin).
 exports.getCompany = async (req) => {
   if (req.company) return req.company;
-  if (!req.user || !req.user.companyId) return null;
+  if (!req.user) return null;
+  // Superadmins operate on tenants via ?companyId=.
+  if (req.user.role === "superadmin" && req.query.companyId) {
+    return Company.findById(req.query.companyId);
+  }
+  if (!req.user.companyId) return null;
   return Company.findById(req.user.companyId);
 };
 

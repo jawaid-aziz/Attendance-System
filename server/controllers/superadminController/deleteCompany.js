@@ -22,7 +22,7 @@ exports.deleteCompany = async (req, res) => {
     res.json({
       message: "Company marked as deleted",
       company: {
-        _id: company._id,
+        id: company._id,
         name: company.name,
         slug: company.slug,
         status: company.status,

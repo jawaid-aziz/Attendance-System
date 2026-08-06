@@ -1,9 +1,13 @@
-const crypto = require("crypto");
 const Company = require("../../models/Company");
 const User = require("../../models/User");
-const bcrypt = require("bcryptjs");
-const { slugify } = require("../../common/slugify");
+const { isValidTimezone } = require("../../common/validation");
+const {
+  createCompanyWithUniqueSlug,
+  createUserWithSetupToken,
+  setupLinkFor,
+} = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
+const { withTransaction } = require("../../utils/withTransaction");
 
 exports.createCompany = async (req, res) => {
   try {
@@ -20,70 +24,78 @@ exports.createCompany = async (req, res) => {
     if (!name) {
       return res.status(400).json({ message: "Company name is required" });
     }
+    // Admin details must be provided together (or not at all).
+    if ((adminEmail && !adminFirstName) || (!adminEmail && adminFirstName)) {
+      return res.status(400).json({
+        message: "adminEmail and adminFirstName must be provided together",
+      });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (adminEmail && !emailRegex.test(adminEmail)) {
+      return res.status(400).json({ message: "Invalid admin email address" });
+    }
+    if (timezone && !isValidTimezone(timezone)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid timezone. Use a valid IANA zone, e.g. Asia/Karachi." });
+    }
 
-    // Validate the admin email BEFORE creating the company so a duplicate
-    // email cannot leave an orphaned company behind.
-    if (adminEmail) {
-      const existing = await User.findOne({ email: adminEmail });
-      if (existing) {
-        return res.status(400).json({ message: "Admin email already in use" });
+    // Company + optional admin created atomically (no orphaned tenants).
+    const { company, admin, setupToken } = await withTransaction(async (session) => {
+      const company = await createCompanyWithUniqueSlug(
+        {
+          name,
+          slug: slug || name,
+          totalEmployees: Number(totalEmployees) > 0 ? Number(totalEmployees) : 0,
+          timezone: timezone || "Asia/Karachi",
+          createdBy: req.user.id,
+        },
+        session
+      );
+
+      if (!adminEmail) return { company, admin: null, setupToken: null };
+
+      // Company admins are activated via an emailed one-time setup link,
+      // matching the self-serve onboarding and superadmin invite flows.
+      const { user: admin, setupToken } = await createUserWithSetupToken(
+        {
+          firstName: adminFirstName,
+          lastName: adminLastName || adminFirstName,
+          email: adminEmail,
+          phone: "",
+          salary: 0,
+          address: "",
+          role: "admin",
+          companyId: company._id,
+        },
+        session
+      );
+      return { company, admin, setupToken };
+    });
+
+    let setupLink = null;
+    let emailFailed = false;
+    if (setupToken) {
+      setupLink = setupLinkFor(setupToken);
+      try {
+        await sendSetupLinkEmail(
+          adminEmail,
+          `${admin.firstName} ${admin.lastName}`,
+          setupLink
+        );
+      } catch (error) {
+        console.error("Failed to send setup email:", error.message);
+        emailFailed = true;
       }
     }
 
-    let companySlug = slugify(slug || name);
-    if (!companySlug) {
-      return res.status(400).json({ message: "Invalid company slug" });
-    }
-
-    // Ensure slug uniqueness
-    let uniqueSlug = companySlug;
-    let counter = 2;
-    while (await Company.findOne({ slug: uniqueSlug })) {
-      uniqueSlug = `${companySlug}-${counter++}`;
-    }
-
-    const company = await Company.create({
-      name,
-      slug: uniqueSlug,
-      totalEmployees: totalEmployees || 0,
-      timezone: timezone || "Asia/Karachi",
-      createdBy: req.user.id,
-    });
-
-    // Company admins are activated via an emailed one-time setup link,
-    // matching the self-serve onboarding and superadmin invite flows.
-    let admin = null;
-    let setupLink = null;
-    if (adminEmail && adminFirstName) {
-
-      const token = crypto.randomBytes(32).toString("hex");
-      admin = await User.create({
-        firstName: adminFirstName,
-        lastName: adminLastName || adminFirstName,
-        email: adminEmail,
-        phone: "",
-        salary: 0,
-        address: "",
-        password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
-        role: "admin",
-        companyId: company._id,
-        setupToken: token,
-        setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      });
-
-      setupLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${token}`;
-      await sendSetupLinkEmail(
-        adminEmail,
-        `${admin.firstName} ${admin.lastName}`,
-        setupLink
-      );
-      console.log(`Setup link generated for ${adminEmail}: ${setupLink}`);
-    }
-
     res.status(201).json({
-      message: "Company created successfully",
+      message: emailFailed
+        ? "Company created successfully, but the admin setup email could not be sent."
+        : "Company created successfully",
+      emailFailed,
       company: {
-        _id: company._id,
+        id: company._id,
         name: company.name,
         slug: company.slug,
         status: company.status,
@@ -94,7 +106,7 @@ exports.createCompany = async (req, res) => {
             id: admin._id,
             email: admin.email,
             role: admin.role,
-            setupLink,
+            ...(setupLink ? { setupLink } : {}),
           }
         : null,
     });

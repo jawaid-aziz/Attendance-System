@@ -19,6 +19,12 @@ import { isTokenValid } from "@/lib/isTokenValid";
 import { getHomePath } from "@/lib/getHomePath";
 import { Navigate } from "react-router-dom";
 
+// Evaluated at render time (not module load) so the login/setup guards track
+// the current auth state instead of being frozen at app start.
+const PublicOnly = ({ children }) => {
+  return isTokenValid() ? <Navigate to={getHomePath()} replace /> : children;
+};
+
 export const AllRoutes = [
   {
     path: "/",
@@ -26,31 +32,59 @@ export const AllRoutes = [
   },
   {
     path: "/start",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <GetStarted />,
+    element: (
+      <PublicOnly>
+        <GetStarted />
+      </PublicOnly>
+    ),
   },
   {
     path: "/login",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Login />,
+    element: (
+      <PublicOnly>
+        <Login />
+      </PublicOnly>
+    ),
   },
   {
     path: "/:slug/login",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Login />,
+    element: (
+      <PublicOnly>
+        <Login />
+      </PublicOnly>
+    ),
   },
   {
     path: "/setup/:token",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+    element: (
+      <PublicOnly>
+        <Setup />
+      </PublicOnly>
+    ),
   },
   {
     path: "/setup",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+    element: (
+      <PublicOnly>
+        <Setup />
+      </PublicOnly>
+    ),
   },
   {
     path: "/:slug/setup/:token",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+    element: (
+      <PublicOnly>
+        <Setup />
+      </PublicOnly>
+    ),
   },
   {
     path: "/:slug/setup",
-    element: isTokenValid() ? <Navigate to={getHomePath()} /> : <Setup />,
+    element: (
+      <PublicOnly>
+        <Setup />
+      </PublicOnly>
+    ),
   },
   {
     path: "/",

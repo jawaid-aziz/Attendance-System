@@ -19,9 +19,7 @@ exports.getDeductions = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching deductions settings:", error.message);
-    res
-      .status(500)
-      .json({ message: "Failed to fetch deductions settings", error: error.message });
+    res.status(500).json({ message: "Failed to fetch deductions settings" });
   }
 };
 
@@ -33,13 +31,15 @@ exports.getDeductions = async (req, res) => {
 exports.updateDeductions = async (req, res) => {
   const { deductionsEnabled, deductionRate } = req.body;
 
-  if (
-    typeof deductionsEnabled !== "boolean" ||
-    typeof deductionRate !== "number"
-  ) {
+  if (typeof deductionsEnabled !== "boolean" || typeof deductionRate !== "number") {
     return res
       .status(400)
       .json({ message: "Invalid data types for deductionsEnabled or deductionRate." });
+  }
+  if (deductionRate < 0 || deductionRate > 100) {
+    return res
+      .status(400)
+      .json({ message: "deductionRate must be between 0 and 100." });
   }
 
   try {
@@ -52,15 +52,9 @@ exports.updateDeductions = async (req, res) => {
     company.deductionRate = deductionRate;
     await company.save();
 
-    console.log(
-      `Updated deductions for company ${company.slug}: enabled=${deductionsEnabled}, rate=${deductionRate}`
-    );
-
     res.status(200).json({ message: "Deductions settings updated successfully." });
   } catch (error) {
     console.error("Error updating deductions settings:", error.message);
-    res
-      .status(500)
-      .json({ message: "Failed to update deductions settings", error: error.message });
+    res.status(500).json({ message: "Failed to update deductions settings" });
   }
 };

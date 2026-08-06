@@ -17,7 +17,7 @@ const authorizeCompany = async (req, res, next) => {
     }
 
     const company = await Company.findById(companyId);
-    if (!company || company.status === "suspended") {
+    if (!company || ["suspended", "deleted"].includes(company.status)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Company is not active." });

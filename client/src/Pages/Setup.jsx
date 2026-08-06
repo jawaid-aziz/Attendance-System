@@ -60,7 +60,7 @@ export const Setup = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("id", data.user.id);
-      if (data.slug) localStorage.setItem("slug", data.slug);
+      localStorage.setItem("slug", data.slug || "");
       setRole(data.user.role);
       setId(data.user.id);
       window.dispatchEvent(new Event("auth-changed"));

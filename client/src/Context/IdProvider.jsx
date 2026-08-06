@@ -3,16 +3,20 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const IdContext = createContext();
 
+const readId = () => localStorage.getItem('id');
+
 export const IdProvider = ({ children }) => {
-  const [id, setId] = useState(null);
+  const [id, setId] = useState(readId());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedId = localStorage.getItem('id');
-    if (storedId) {
-      setId(storedId);
-    }
+    setId(readId());
     setLoading(false);
+
+    // Keep the context in sync with login/logout without a reload.
+    const onAuth = () => setId(readId());
+    window.addEventListener('auth-changed', onAuth);
+    return () => window.removeEventListener('auth-changed', onAuth);
   }, []);
 
   return (

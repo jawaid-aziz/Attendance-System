@@ -31,9 +31,12 @@ const validateOfficeIP = async (req, res, next) => {
     }
 
     const company = await Company.findById(companyId);
-    if (!company || company.status === "suspended" || company.status === "deleted") {
+    if (!company || ["suspended", "deleted"].includes(company.status)) {
       return res.status(403).json({ message: "Company access unavailable." });
     }
+
+    // Reused by checkIn/checkOut so the company is only fetched once per request.
+    req.company = company;
 
     const allowed = Array.isArray(company.allowedRouterIPs)
       ? company.allowedRouterIPs

@@ -16,23 +16,23 @@ const Clocking = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isAllowedTime, setIsAllowedTime] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
-  const [checkedOut, setCheckedOut] = useState();
+  const [checkedOut, setCheckedOut] = useState(false);
 
-  const [officeSchedule, setOfficeSchedule] = useState(null);
   const [currentDaySchedule, setCurrentDaySchedule] = useState(null);
-  // Check if the current time is within allowed hours
 
   const fetchServerTime = async () => {
     try {
-      const response = await fetch(`${API_URL}/attend/server-time`);
+      const slug = localStorage.getItem("slug") || "";
+      const query = slug ? `?slug=${encodeURIComponent(slug)}` : "";
+      const response = await fetch(`${API_URL}/attend/server-time${query}`);
       if (!response.ok) {
         toast.error("Failed to fetch server time.", { duration: 5000 });
+        return;
       }
 
       const data = await response.json();
-      setIsAllowedTime(data.isAllowedTime); // Server determines allowed time
+      // Server determines allowed time from the company's own schedule.
     } catch (error) {
       toast.error(`Error fetching server time: ${error.message}`, {
         duration: 5000,
@@ -48,17 +48,16 @@ const Clocking = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      if (!response.ok)
+      if (!response.ok) {
         toast.error(`HTTP error! Status: ${response.status}`, {
           duration: 5000,
         });
+        return;
+      }
 
       const data = await response.json();
-      setCheckedIn(data.checkedIn);
-      if ((data.checkedIn && data.checkedOut) === true) {
-        setCheckedIn(true);
-        setCheckedOut(true);
-      }
+      setCheckedIn(!!data.checkedIn);
+      setCheckedOut(!!data.checkedOut);
     } catch (error) {
       toast.error(`Error fetching attendance status: ${error.message}`, {
         duration: 5000,
@@ -90,11 +89,7 @@ const Clocking = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched Office Schedule:", data);
         const schedule = data.schedule || data; // tolerate legacy shape
-        setOfficeSchedule(schedule);
-
-        // Resolve "today" in the company timezone, not the client's locale.
         const timezoneName = data.timezone || "Asia/Karachi";
         const today = new Date().toLocaleDateString("en-US", {
           timeZone: timezoneName,
@@ -105,7 +100,6 @@ const Clocking = () => {
         toast.error(`Error fetching office schedule: ${error.message}`, {
           duration: 5000,
         });
-        console.error("Error fetching office schedule:", error);
       }
     };
 
@@ -133,6 +127,7 @@ const Clocking = () => {
 
         if (!response.ok) {
           toast.error("Failed to fetch user data.", { duration: 5000 });
+          return;
         }
 
         const data = await response.json();
@@ -173,12 +168,6 @@ const Clocking = () => {
         return;
       }
 
-      const data = await response.json();
-
-      setUser((prev) => ({
-        ...prev,
-        // checkInTime: new Date(data.attendance.date),
-      }));
       fetchAttendanceStatus();
       toast.success("Check-in successful!", { duration: 5000 });
     } catch (error) {
@@ -210,13 +199,6 @@ const Clocking = () => {
         return;
       }
 
-      const data = await response.json();
-
-      setUser((prev) => ({
-        ...prev,
-        // checkInTime: null,
-      }));
-
       // Re-fetch attendance status
       await fetchAttendanceStatus();
 
@@ -227,7 +209,7 @@ const Clocking = () => {
       });
     }
   };
-  //
+
   const isOfficeOpen = currentDaySchedule?.isOpen;
 
   if (!user) return <p>Loading user data...</p>;
@@ -289,7 +271,7 @@ const Clocking = () => {
               </CardFooter>
             </>
           ) : (
-            !loading && <p>Server Error. Try Again</p>
+            <p>Server Error. Try Again</p>
           )}
         </Card>
       </div>

@@ -23,7 +23,7 @@ export const Profile = () => {
   const navigate = useNavigate();
   const { role } = useRole();
   const { id: ownId } = useId();
-  const { targetId } = useTargetUser();
+  const { targetId, status } = useTargetUser();
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
@@ -68,6 +68,7 @@ export const Profile = () => {
 
         if (!response.ok) {
           toast.error("Failed to fetch user data", { duration: 5000 });
+          return;
         }
 
         const data = await response.json();
@@ -82,7 +83,6 @@ export const Profile = () => {
         });
       } catch (err) {
         toast.error(err.message, { duration: 5000 });
-        setFormData({ ...formData }); // Fallback if error
       } finally {
         clearInterval(interval);
         setProgress(100);
@@ -139,6 +139,7 @@ export const Profile = () => {
       if (!response.ok) {
         const errorData = await response.json();
         toast.error(errorData.message || "Failed to update user data", { duration: 5000 });
+        return;
       }
 
       toast.success("User data updated successfully!", { duration: 5000 });
@@ -180,9 +181,13 @@ export const Profile = () => {
     }
   };
 
+  if (status === "error") {
+    return <p className="p-6 text-red-600">User not found.</p>;
+  }
+
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-6 space-y-4">
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-gray-500 mt-2">Loading...</p>
       </div>

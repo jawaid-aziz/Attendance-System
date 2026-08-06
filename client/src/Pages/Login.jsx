@@ -47,7 +47,7 @@ const Login = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
       localStorage.setItem("id", user.id);
-      if (data.slug) localStorage.setItem("slug", data.slug);
+      localStorage.setItem("slug", data.slug || "");
 
       // Update context
       setRole(user.role);

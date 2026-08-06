@@ -15,6 +15,12 @@ exports.setCompanyStatus = async (req, res) => {
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
+    // Deletion is terminal; it cannot be undone through this endpoint.
+    if (company.status === "deleted") {
+      return res
+        .status(400)
+        .json({ message: "Deleted companies cannot change status" });
+    }
 
     company.status = status;
     await company.save();

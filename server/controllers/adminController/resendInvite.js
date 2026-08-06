@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const User = require("../../models/User");
-const Company = require("../../models/Company");
+const { setupLinkFor } = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
 
 // Regenerate and re-email a one-time setup link for a user who never set
@@ -31,12 +31,20 @@ exports.resendInvite = async (req, res) => {
     user.setupTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
 
-    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${token}`;
-    await sendSetupLinkEmail(user.email, `${user.firstName} ${user.lastName}`, link);
+    const link = setupLinkFor(token);
+    let emailFailed = false;
+    try {
+      await sendSetupLinkEmail(user.email, `${user.firstName} ${user.lastName}`, link);
+    } catch (error) {
+      console.error("Failed to resend setup email:", error.message);
+      emailFailed = true;
+    }
 
     res.status(200).json({
-      message: "Setup link re-sent.",
-      setupLink: link,
+      message: emailFailed
+        ? "Setup link regenerated, but the email could not be sent."
+        : "Setup link re-sent.",
+      emailFailed,
     });
   } catch (error) {
     console.error("Error resending invite:", error.message);

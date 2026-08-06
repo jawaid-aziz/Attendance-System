@@ -7,16 +7,22 @@ exports.listCompanies = async (req, res) => {
       createdAt: -1,
     });
 
-    const counts = await User.aggregate([
-      { $match: { companyId: { $ne: null } } },
-      { $group: { _id: "$companyId", total: { $sum: 1 } } },
-    ]);
+    // Count only the users belonging to the companies being returned. $in is
+    // index-served, unlike a $ne: null scan over the whole collection.
+    const companyIds = companies.map((c) => c._id);
+    const counts =
+      companyIds.length > 0
+        ? await User.aggregate([
+            { $match: { companyId: { $in: companyIds } } },
+            { $group: { _id: "$companyId", total: { $sum: 1 } } },
+          ])
+        : [];
     const countMap = {};
     counts.forEach((c) => (countMap[c._id] = c.total));
 
     res.json({
       companies: companies.map((c) => ({
-        _id: c._id,
+        id: c._id,
         name: c.name,
         slug: c.slug,
         status: c.status,

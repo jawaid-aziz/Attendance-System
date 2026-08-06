@@ -1,5 +1,6 @@
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
+const { isValidOfficeSchedule } = require("../../common/validation");
 
 // Get office schedule for the requesting company
 const getOfficeSchedule = async (req, res) => {
@@ -22,8 +23,11 @@ const getOfficeSchedule = async (req, res) => {
 const saveOfficeSchedule = async (req, res) => {
   const { schedule } = req.body;
 
-  if (!schedule || typeof schedule !== "object") {
-    return res.status(400).json({ message: "Invalid schedule data." });
+  if (!isValidOfficeSchedule(schedule)) {
+    return res.status(400).json({
+      message:
+        "Invalid schedule data. Each day must have isOpen (boolean) and, when open, startTime/endTime in HH:mm format.",
+    });
   }
 
   try {

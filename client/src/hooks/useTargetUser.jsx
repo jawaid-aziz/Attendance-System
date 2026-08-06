@@ -14,7 +14,6 @@ export const useTargetUser = () => {
 
   const [targetId, setTargetId] = useState(null);
   const [status, setStatus] = useState("loading");
-
   useEffect(() => {
     let active = true;
     setStatus("loading");
@@ -45,8 +44,8 @@ export const useTargetUser = () => {
         })
         .catch(() => {
           if (active) {
-            setTargetId(ownId);
-            setStatus("ready");
+            setTargetId(null);
+            setStatus("error");
           }
         });
       return () => {

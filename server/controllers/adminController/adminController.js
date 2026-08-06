@@ -1,25 +1,24 @@
 const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const dayjs = require("dayjs");
-const utc = require("dayjs/plugin/utc");
-const timezone = require("dayjs/plugin/timezone");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
 const Company = require("../../models/Company");
+const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
+const { isStrongPassword } = require("../../common/password");
+const {
+  createUserWithSetupToken,
+  setupLinkFor,
+} = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
+const { withTransaction } = require("../../utils/withTransaction");
 
 const mongoose = require("mongoose");
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const isSameCompany = (userIdCompanyId, targetCompanyId) =>
   userIdCompanyId &&
   targetCompanyId &&
   userIdCompanyId.toString() === targetCompanyId.toString();
 
-const isCompanyActive = (company) =>
-  company && company.status === "active";
+const isCompanyActive = (company) => company && company.status === "active";
 
 // Get Users Controller
 exports.getUsers = async (req, res) => {
@@ -34,21 +33,22 @@ exports.getUsers = async (req, res) => {
     if (!company || !isCompanyActive(company)) {
       return res.status(400).json({ message: "Company not found or inactive" });
     }
-    const timezoneName = company.timezone || "Asia/Karachi";
-    const todayStart = dayjs().tz(timezoneName).startOf("day").toDate();
+    const todayStart = dayjs()
+      .tz(getCompanyTimezone(company))
+      .startOf("day")
+      .toDate();
 
-    // Single aggregation instead of N+1 per-user attendance lookups.
+    // Single aggregation instead of N+1 per-user attendance lookups. The
+    // $lookup uses an equality join (index-served by the { employee, day }
+    // index) rather than a correlated $expr scan.
     const employees = await User.aggregate([
       { $match: { companyId: company._id } },
       {
         $lookup: {
           from: "attendances",
-          let: { empId: "$_id" },
-          pipeline: [
-            { $match: { $expr: { $eq: ["$employee", "$$empId"] } } },
-            { $sort: { day: -1, date: -1 } },
-            { $limit: 1 },
-          ],
+          localField: "_id",
+          foreignField: "employee",
+          pipeline: [{ $sort: { day: -1 } }, { $limit: 1 }],
           as: "lastAttendance",
         },
       },
@@ -83,7 +83,7 @@ exports.getUsers = async (req, res) => {
     res.status(200).json({ employees });
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Error fetching users", error: error.message });
+    res.status(500).json({ message: "Error fetching users" });
   }
 };
 
@@ -102,12 +102,13 @@ exports.addUser = async (req, res) => {
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({ message: "Invalid email address" });
   }
-  const phoneRegex = /^[0-9]{8,15}$/; // Accepts 10-15 digit phone numbers
+  const phoneRegex = /^[0-9]{8,15}$/; // Accepts 8-15 digit phone numbers
   if (!phone || !phoneRegex.test(phone)) {
     return res.status(400).json({ message: "Invalid phone number" });
   }
-  if (!salary || isNaN(salary) || salary <= 0) {
-    return res.status(400).json({ message: "Salary must be a positive number" });
+  const salaryNumber = Number(salary);
+  if (!Number.isFinite(salaryNumber) || salaryNumber < 0) {
+    return res.status(400).json({ message: "Salary must be a non-negative number" });
   }
   if (!address || address.trim().length < 5) {
     return res.status(400).json({ message: "Address must be at least 5 characters long" });
@@ -137,35 +138,33 @@ exports.addUser = async (req, res) => {
       return res.status(400).json({ message: "Company not found or inactive" });
     }
 
-    // The user sets their own password via an emailed one-time setup link,
-    // so no plaintext password is ever sent or stored.
-    const setupToken = crypto.randomBytes(32).toString("hex");
-
-    const newUser = new User({
+    // The user sets their own password via an emailed one-time setup link.
+    const { user: newUser, setupToken } = await createUserWithSetupToken({
       firstName,
       lastName,
       email,
       phone,
-      salary,
+      salary: salaryNumber,
       address,
-      password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
       role,
       companyId,
-      setupToken,
-      setupTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Save the user to the database
-    await newUser.save();
-
     // Send a one-time setup link via email
-    const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup/${setupToken}`;
-    await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
-    console.log(`Setup link generated for ${email}: ${link}`);
+    const link = setupLinkFor(setupToken);
+    let emailFailed = false;
+    try {
+      await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
+    } catch (error) {
+      console.error("Failed to send setup email:", error.message);
+      emailFailed = true;
+    }
 
     res.status(201).json({
-      message: "User added successfully. A setup link was sent to their email.",
-      setupLink: link,
+      message: emailFailed
+        ? "User added successfully, but the setup email could not be sent."
+        : "User added successfully. A setup link was sent to their email.",
+      emailFailed,
       user: {
         id: newUser._id,
         firstName: newUser.firstName,
@@ -180,7 +179,7 @@ exports.addUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to add user", error: error.message });
+    res.status(500).json({ message: "Failed to add user" });
   }
 };
 
@@ -208,14 +207,16 @@ exports.editUser = async (req, res) => {
   if (phone && !phoneRegex.test(phone)) {
     return res.status(400).json({ message: "Invalid phone number" });
   }
-  if (salary && (isNaN(salary) || salary <= 0)) {
-    return res.status(400).json({ message: "Salary must be a positive number" });
+  if (salary !== undefined && (!Number.isFinite(Number(salary)) || Number(salary) < 0)) {
+    return res.status(400).json({ message: "Salary must be a non-negative number" });
   }
   if (address && address.trim().length < 5) {
     return res.status(400).json({ message: "Address must be at least 5 characters long" });
   }
-  if (password && password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters long" });
+  if (password && !isStrongPassword(password)) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters with a letter and a number" });
   }
   const allowedRoles = ["admin", "employee"];
   if (role && !allowedRoles.includes(role)) {
@@ -239,12 +240,22 @@ exports.editUser = async (req, res) => {
         .json({ message: "Forbidden: Cannot edit users outside your company" });
     }
 
+    // Guard against taking over another account's email
+    if (email && email !== user.email) {
+      const emailTaken = await User.exists({ email, _id: { $ne: userId } });
+      if (emailTaken) {
+        return res
+          .status(400)
+          .json({ message: "A user with this email already exists" });
+      }
+    }
+
     // Update fields
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (email) user.email = email;
     if (phone) user.phone = phone;
-    if (salary) user.salary = salary;
+    if (salary !== undefined) user.salary = Number(salary);
     if (address) user.address = address;
     if (role) {
       user.role = role;
@@ -262,6 +273,14 @@ exports.editUser = async (req, res) => {
     // Save the updated user object to the database
     await user.save();
 
+    // Keep the denormalized name on attendance rows in sync on rename.
+    if (firstName || lastName) {
+      await Attendance.updateMany(
+        { employee: user._id },
+        { $set: { firstName: user.firstName } }
+      );
+    }
+
     res.status(200).json({
       message: "User updated successfully",
       user: {
@@ -277,7 +296,7 @@ exports.editUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to update user", error: error.message });
+    res.status(500).json({ message: "Failed to update user" });
   }
 };
 
@@ -296,12 +315,17 @@ exports.deleteUser = async (req, res) => {
   }
 
   try {
-    // Find and delete the user by ID
+    // Find the user by ID
     const user = await User.findById(userId);
-
-    // If user not found
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Refuse self-deletion
+    if (user._id.toString() === req.user.id) {
+      return res
+        .status(400)
+        .json({ message: "You cannot delete your own account" });
     }
 
     // Company admins can only delete users inside their company
@@ -314,17 +338,33 @@ exports.deleteUser = async (req, res) => {
         .json({ message: "Forbidden: Cannot delete users outside your company" });
     }
 
-    // Delete the user
-    await User.findByIdAndDelete(userId);
+    // Never delete the company's last admin
+    if (user.role === "admin" && user.companyId) {
+      const adminCount = await User.countDocuments({
+        companyId: user.companyId,
+        role: "admin",
+      });
+      if (adminCount <= 1) {
+        return res
+          .status(400)
+          .json({ message: "Cannot delete the last admin of the company" });
+      }
+    }
 
-    // Delete all attendance records for the user
-    const attendanceDeletionResult = await Attendance.deleteMany({ employee: userId });
+    // Delete the user and their attendance atomically.
+    const { attendanceDeletedCount } = await withTransaction(async (session) => {
+      await User.deleteOne({ _id: user._id }, session ? { session } : {});
+      const result = await Attendance.deleteMany(
+        { employee: user._id },
+        session ? { session } : {}
+      );
+      return { attendanceDeletedCount: result.deletedCount };
+    });
 
-    // Respond with success
     res.status(200).json({
       message: "User and associated attendance records deleted successfully",
       deletedUser: {
-        _id: user._id,
+        id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -333,11 +373,10 @@ exports.deleteUser = async (req, res) => {
         address: user.address,
         role: user.role,
       },
-      attendanceDeletedCount: attendanceDeletionResult.deletedCount,
+      attendanceDeletedCount,
     });
   } catch (error) {
     console.error("Error deleting user and attendance records:", error);
-    res.status(500).json({ message: "Failed to delete user and attendance records", error: error.message });
+    res.status(500).json({ message: "Failed to delete user and attendance records" });
   }
 };
-

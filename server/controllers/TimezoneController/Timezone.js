@@ -1,5 +1,6 @@
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
+const { isValidTimezone } = require("../../common/validation");
 
 /**
  * @desc    Get the current timezone for the requesting company
@@ -32,6 +33,11 @@ exports.updateTimezone = async (req, res) => {
   if (!timezone) {
     return res.status(400).json({ message: "Timezone is required." });
   }
+  if (!isValidTimezone(timezone)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid timezone. Use a valid IANA zone, e.g. Asia/Karachi." });
+  }
 
   try {
     const company = await getCompany(req);
@@ -45,13 +51,8 @@ exports.updateTimezone = async (req, res) => {
     res
       .status(200)
       .json({ message: "Timezone updated successfully.", timezone });
-    console.log(
-      `Timezone updated for company ${company.slug} to: ${timezone}`
-    );
   } catch (error) {
     console.error("Error updating timezone:", error.message);
-    res
-      .status(500)
-      .json({ message: "Failed to update timezone", error: error.message });
+    res.status(500).json({ message: "Failed to update timezone" });
   }
 };

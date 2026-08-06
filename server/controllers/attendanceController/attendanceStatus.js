@@ -1,7 +1,7 @@
 const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
-const dayjs = require("dayjs");
+const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 
 const getAttendanceStatus = async (req, res) => {
   try {
@@ -26,8 +26,10 @@ const getAttendanceStatus = async (req, res) => {
     const company = employee.companyId
       ? await Company.findById(employee.companyId)
       : null;
-    const timezoneName = company?.timezone || "Asia/Karachi";
-    const serverTime = dayjs().tz(timezoneName);
+    if (!company || ["suspended", "deleted"].includes(company.status)) {
+      return res.status(403).json({ message: "Company access unavailable." });
+    }
+    const serverTime = dayjs().tz(getCompanyTimezone(company));
     const startOfToday = serverTime.startOf("day").toDate();
 
     // Find today's attendance using the day key (consistent with check-in)
