@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useId } from "../Context/IdProvider";
+import { API_URL } from "@/lib/config";
 import {
   Card,
   CardHeader,
@@ -25,7 +26,7 @@ const Clocking = () => {
 
   const fetchServerTime = async () => {
     try {
-      const response = await fetch("http://localhost:5000/attend/server-time");
+      const response = await fetch(`${API_URL}/attend/server-time`);
       if (!response.ok) {
         toast.error("Failed to fetch server time.", { duration: 5000 });
       }
@@ -41,7 +42,7 @@ const Clocking = () => {
 
   const fetchAttendanceStatus = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/attend/status/${id}`, {
+      const response = await fetch(`${API_URL}/attend/status/${id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -75,7 +76,7 @@ const Clocking = () => {
     const fetchOfficeSchedule = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/admin/getOfficeTiming",
+          `${API_URL}/admin/getOfficeTiming`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -90,12 +91,16 @@ const Clocking = () => {
 
         const data = await response.json();
         console.log("Fetched Office Schedule:", data);
-        setOfficeSchedule(data);
+        const schedule = data.schedule || data; // tolerate legacy shape
+        setOfficeSchedule(schedule);
 
+        // Resolve "today" in the company timezone, not the client's locale.
+        const timezoneName = data.timezone || "Asia/Karachi";
         const today = new Date().toLocaleDateString("en-US", {
+          timeZone: timezoneName,
           weekday: "long",
         });
-        setCurrentDaySchedule(data[today]);
+        setCurrentDaySchedule(schedule[today]);
       } catch (error) {
         toast.error(`Error fetching office schedule: ${error.message}`, {
           duration: 5000,
@@ -117,7 +122,7 @@ const Clocking = () => {
     const fetchUser = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${id}`,
+          `${API_URL}/byId/getUser/${id}`,
           {
             method: "GET",
             headers: {
@@ -150,7 +155,7 @@ const Clocking = () => {
   const handleCheckIn = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/attend/check-in/${id}`,
+        `${API_URL}/attend/check-in/${id}`,
         {
           method: "POST",
           headers: {
@@ -187,7 +192,7 @@ const Clocking = () => {
   const handleCheckOut = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/attend/check-out/${id}`,
+        `${API_URL}/attend/check-out/${id}`,
         {
           method: "POST",
           headers: {

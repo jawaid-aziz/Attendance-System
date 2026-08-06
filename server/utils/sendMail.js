@@ -63,9 +63,11 @@ const shouldSend = () =>
   !!process.env.EMAIL_USER &&
   !!process.env.EMAIL_PASS;
 
+const mailFrom = process.env.EMAIL_FROM || `"onTime" <${process.env.EMAIL_USER || ""}>`;
+
 const sendCredentialsEmail = async (receiver, name, password) => {
   const mailOptions = {
-    from: '"Admin" <javaidmemon24@gmail.com>',
+    from: mailFrom,
     to: receiver,
     subject: "Your Login Credentials",
     html: `
@@ -91,7 +93,7 @@ const sendCredentialsEmail = async (receiver, name, password) => {
 
 const sendSetupLinkEmail = async (receiver, name, link) => {
   const mailOptions = {
-    from: '"onTime" <javaidmemon24@gmail.com>',
+    from: mailFrom,
     to: receiver,
     subject: "Set up your onTime account",
     html: `

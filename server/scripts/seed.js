@@ -6,6 +6,15 @@ const Company = require("../models/Company");
 
 const seed = async () => {
   try {
+    // Refuse to run in production: the seed promotes users to superadmin and
+    // reassigns companyless users, which is destructive to real data.
+    if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOWED !== "true") {
+      console.error(
+        "Refusing to seed: NODE_ENV=production. Set SEED_ALLOWED=true to override."
+      );
+      process.exit(1);
+    }
+
     await mongoose.connect(process.env.MONGO_URL);
     console.log("Connected:", mongoose.connection.db.databaseName);
 

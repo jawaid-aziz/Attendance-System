@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
 export const DeleteEmployee = () => {
   const { id } = useParams(); // Get user ID from the route
@@ -15,7 +16,7 @@ export const DeleteEmployee = () => {
     const fetchUser = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${id}`,
+          `${API_URL}/byId/getUser/${id}`,
           {
             method: "GET",
             headers: {
@@ -47,7 +48,7 @@ export const DeleteEmployee = () => {
     if (!confirmation) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/admin/delete/${id}`, {
+      const response = await fetch(`${API_URL}/admin/delete/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

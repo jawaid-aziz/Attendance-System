@@ -11,7 +11,7 @@ exports.getCompanyDetails = async (req, res) => {
 
     const query = mongoose.isValidObjectId(id) ? { _id: id } : { slug: id };
     const company = await Company.findOne(query);
-    if (!company) {
+    if (!company || company.status === "deleted") {
       return res.status(404).json({ message: "Company not found" });
     }
 

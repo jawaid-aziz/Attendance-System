@@ -8,7 +8,10 @@ const getOfficeSchedule = async (req, res) => {
     if (!company) {
       return res.status(400).json({ message: "No company context." });
     }
-    res.json(company.officeSchedule);
+    res.json({
+      schedule: company.officeSchedule || {},
+      timezone: company.timezone || "Asia/Karachi",
+    });
   } catch (error) {
     console.error("Error fetching office schedule:", error.message);
     res.status(500).json({ message: "Failed to fetch office schedule." });

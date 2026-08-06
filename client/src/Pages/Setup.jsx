@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/Components/ui/alert";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
 import { getHomePath } from "@/lib/getHomePath";
+import { API_URL } from "@/lib/config";
 
 export const Setup = () => {
   const { token, slug } = useParams();
@@ -43,7 +44,7 @@ export const Setup = () => {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:5000/auth/setup/${setupToken}`,
+        `${API_URL}/auth/setup/${setupToken}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,7 +120,7 @@ export const Setup = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   autoComplete="new-password"
                   required
                 />

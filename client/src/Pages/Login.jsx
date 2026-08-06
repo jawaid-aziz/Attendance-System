@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
 import { getHomePath } from "@/lib/getHomePath";
+import { API_URL } from "@/lib/config";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/Components/ui/card";
@@ -22,7 +23,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,12 +48,6 @@ const Login = () => {
       localStorage.setItem("role", user.role);
       localStorage.setItem("id", user.id);
       if (data.slug) localStorage.setItem("slug", data.slug);
-      console.log(
-        "Token, role, and id stored in localStorage:",
-        token,
-        user.role,
-        user.id
-      );
 
       // Update context
       setRole(user.role);

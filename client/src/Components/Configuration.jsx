@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { API_URL } from "@/lib/config"
 
 export const Configuration = () => {
   // States for deduction configuration
@@ -19,7 +20,7 @@ export const Configuration = () => {
     const fetchDeductionConfiguration = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/admin/getDeductions",
+          `${API_URL}/admin/getDeductions`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -51,7 +52,7 @@ export const Configuration = () => {
     const fetchAllowedIPs = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/admin/getAllowedIP",
+          `${API_URL}/admin/getAllowedIP`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -95,7 +96,7 @@ export const Configuration = () => {
   const handleSaveDeductionConfiguration = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/admin/updateDeductions",
+        `${API_URL}/admin/updateDeductions`,
         {
           method: "POST",
           headers: {
@@ -128,7 +129,7 @@ export const Configuration = () => {
   // Handle adding a new IP
   const handleAddIP = async () => {
     try {
-      const response = await fetch("http://localhost:5000/admin/addAllowedIP", {
+      const response = await fetch(`${API_URL}/admin/addAllowedIP`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -155,7 +156,7 @@ export const Configuration = () => {
   const handleRemoveIP = async (ip) => {
     try {
       const response = await fetch(
-        "http://localhost:5000/admin/removeAllowedIP",
+        `${API_URL}/admin/removeAllowedIP`,
         {
           method: "DELETE",
           headers: {

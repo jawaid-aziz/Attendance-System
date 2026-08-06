@@ -6,6 +6,13 @@ const { generateToken } = require("../utils/tokenUtils");
 const { slugify } = require("../common/slugify");
 const { sendSetupLinkEmail } = require("../utils/sendMail");
 
+// At least 8 characters, with at least one letter and one number.
+const isStrongPassword = (password) => {
+  if (!password || typeof password !== "string") return false;
+  if (password.length < 8) return false;
+  return /[A-Za-z]/.test(password) && /\d/.test(password);
+};
+
 // User Login
 exports.loginUser = async (req, res) => {
   const { email, password, slug } = req.body;
@@ -15,22 +22,23 @@ exports.loginUser = async (req, res) => {
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({ message: "Invalid email address" });
   }
-  if (!password || password.length < 6) {
+  if (!password || !isStrongPassword(password)) {
     return res
       .status(400)
-      .json({ message: "Password must be at least 6 characters long" });
+      .json({ message: "Password must be at least 8 characters with a letter and a number" });
   }
 
   try {
     // Check if the user exists with the given email and role
     const user = await User.findOne({ email });
+    // Generic message to avoid user enumeration
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
     // Validate the password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     // If a tenant slug was provided, verify the user belongs to that company
@@ -46,13 +54,16 @@ exports.loginUser = async (req, res) => {
       }
     }
 
-    // Block login if the user's company is suspended
+    // Block login if the user's company is suspended or deleted
     if (user.companyId) {
       const company = await Company.findById(user.companyId);
-      if (company && company.status === "suspended") {
+      if (
+        company &&
+        ["suspended", "deleted"].includes(company.status)
+      ) {
         return res
           .status(403)
-          .json({ message: "Your company account is suspended." });
+          .json({ message: "Your company account is not active." });
       }
     }
 
@@ -177,10 +188,10 @@ exports.changePassword = async (req, res) => {
   if (!currentPassword) {
     return res.status(400).json({ message: "Current password is required" });
   }
-  if (!newPassword || newPassword.length < 6) {
+  if (!isStrongPassword(newPassword)) {
     return res
       .status(400)
-      .json({ message: "New password must be at least 6 characters long" });
+      .json({ message: "New password must be at least 8 characters with a letter and a number" });
   }
 
   try {
@@ -195,6 +206,7 @@ exports.changePassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
+    user.version = (user.version || 0) + 1; // revoke other sessions
     await user.save();
 
     res.status(200).json({ message: "Password updated successfully" });
@@ -212,10 +224,10 @@ exports.completeSetup = async (req, res) => {
   if (!token) {
     return res.status(400).json({ message: "Setup token is required" });
   }
-  if (!password || password.length < 6) {
+  if (!isStrongPassword(password)) {
     return res
       .status(400)
-      .json({ message: "Password must be at least 6 characters long" });
+      .json({ message: "Password must be at least 8 characters with a letter and a number" });
   }
 
   try {
@@ -230,6 +242,7 @@ exports.completeSetup = async (req, res) => {
     user.password = await bcrypt.hash(password, 10);
     user.setupToken = null;
     user.setupTokenExpires = null;
+    user.version = (user.version || 0) + 1;
     await user.save();
 
     const jwtToken = generateToken(user, user.role);

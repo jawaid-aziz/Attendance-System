@@ -46,8 +46,9 @@ import {
   AlertDialogTrigger,
 } from "@/Components/ui/alert-dialog";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
-const apiUrl = "http://localhost:5000";
+const apiUrl = API_URL;
 const token = () => localStorage.getItem("token");
 
 const timezones = [

@@ -11,8 +11,9 @@ import {
 } from "@/Components/ui/table";
 import { Badge } from "@/Components/ui/badge";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
-const apiUrl = "http://localhost:5000";
+const apiUrl = API_URL;
 const token = () => localStorage.getItem("token");
 
 const CompanyDetail = () => {

@@ -16,10 +16,12 @@ const {
 } = require("../controllers/adminController/configDeductions");
 const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
 const { getOfficeSchedule, saveOfficeSchedule } = require("../controllers/adminController/configOfficeTiming");
+const { resendInvite } = require("../controllers/adminController/resendInvite");
 
 const router = express.Router();
 
 router.post("/add", authenticateToken, authorizeAdmin, addUser);
+router.post("/resend-invite/:id", authenticateToken, authorizeAdmin, resendInvite);
 router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
 router.delete("/delete/:id", authenticateToken, authorizeAdmin, deleteUser);
 router.get("/user", authenticateToken, authorizeAdmin, getUsers);

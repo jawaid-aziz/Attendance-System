@@ -19,7 +19,7 @@ exports.getCompanyBySlug = async (req, res) => {
 
   try {
     const company = await Company.findOne({ slug });
-    if (!company) {
+    if (!company || company.status === "deleted") {
       return res.status(404).json({ message: "Company not found" });
     }
 

@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import toast, { Toaster } from "react-hot-toast";
 import { slugifyName } from "@/lib/slugifyName";
+import { API_URL } from "@/lib/config";
 
 const EmployeesData = () => {
   const [employees, setEmployees] = useState([]);
@@ -32,7 +33,7 @@ const EmployeesData = () => {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const apiUrl = "http://localhost:5000"; // Backend URL
+  const apiUrl = API_URL; // Backend URL
   const navigate = useNavigate();
   const base = localStorage.getItem("slug")
     ? `/${localStorage.getItem("slug")}`

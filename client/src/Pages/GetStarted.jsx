@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from "@/Components/ui/select";
 import timezoneData from "../Data/Timezones.json";
+import { API_URL } from "@/lib/config";
 
 const STEPS = ["Company", "Admin", "Done"];
 
@@ -53,7 +54,7 @@ export const GetStarted = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -261,7 +262,7 @@ export const GetStarted = () => {
                       <br />
                       Your workspace link will be{" "}
                       <strong>
-                        localhost:5173/{createdSlug}/login
+                        {window.location.origin}/{createdSlug}/login
                       </strong>
                       .
                     </>

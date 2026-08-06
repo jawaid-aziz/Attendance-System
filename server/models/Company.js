@@ -18,7 +18,7 @@ const CompanySchema = new mongoose.Schema(
     allowedRouterIPs: { type: [String], default: [] },
     status: {
       type: String,
-      enum: ["pending", "active", "suspended"],
+      enum: ["pending", "active", "suspended", "deleted"],
       default: "active",
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

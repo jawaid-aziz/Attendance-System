@@ -3,7 +3,9 @@ const User = require("../../models/User");
 
 exports.listCompanies = async (req, res) => {
   try {
-    const companies = await Company.find({}).sort({ createdAt: -1 });
+    const companies = await Company.find({ status: { $ne: "deleted" } }).sort({
+      createdAt: -1,
+    });
 
     const counts = await User.aggregate([
       { $match: { companyId: { $ne: null } } },

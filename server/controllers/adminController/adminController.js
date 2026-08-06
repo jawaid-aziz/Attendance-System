@@ -1,5 +1,8 @@
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
 const User = require("../../models/User");
 const Attendance = require("../../models/Attendance");
 const Company = require("../../models/Company");
@@ -7,49 +10,76 @@ const { sendSetupLinkEmail } = require("../../utils/sendMail");
 
 const mongoose = require("mongoose");
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const isSameCompany = (userIdCompanyId, targetCompanyId) =>
   userIdCompanyId &&
   targetCompanyId &&
   userIdCompanyId.toString() === targetCompanyId.toString();
+
+const isCompanyActive = (company) =>
+  company && company.status === "active";
 
 // Get Users Controller
 exports.getUsers = async (req, res) => {
   try {
     // Company admins see only their own employees; superadmins see all
     const scopeCompanyId = req.user.companyId || req.query.companyId;
-    const filter = scopeCompanyId ? { companyId: scopeCompanyId } : {};
-    const users = await User.find(filter);
-    const employees = await Promise.all(
-      users.map(async (user) => {
-        // Find the most recent attendance record
-        const attendance = await Attendance.findOne({ employee: user._id }).sort({ date: -1 });
+    if (!scopeCompanyId) {
+      return res.status(400).json({ message: "No company context." });
+    }
 
-        // Determine status based on attendance record
-        let isActive = null; // Default to null
-        if (attendance) {
-          const today = new Date().toISOString().split("T")[0]; // Current date in "YYYY-MM-DD"
-          const attendanceDate = new Date(attendance.date).toISOString().split("T")[0];
+    const company = await Company.findById(scopeCompanyId);
+    if (!company || !isCompanyActive(company)) {
+      return res.status(400).json({ message: "Company not found or inactive" });
+    }
+    const timezoneName = company.timezone || "Asia/Karachi";
+    const todayStart = dayjs().tz(timezoneName).startOf("day").toDate();
 
-          if (attendanceDate === today) {
-            // If the latest attendance record is for today
-            isActive = attendance.isActive ?? null; // Use `isActive`, fallback to null
-          } else {
-            // If the latest attendance record is not for today, mark as null (not checked in today)
-            isActive = null;
-          }
-        }
+    // Single aggregation instead of N+1 per-user attendance lookups.
+    const employees = await User.aggregate([
+      { $match: { companyId: company._id } },
+      {
+        $lookup: {
+          from: "attendances",
+          let: { empId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$employee", "$$empId"] } } },
+            { $sort: { day: -1, date: -1 } },
+            { $limit: 1 },
+          ],
+          as: "lastAttendance",
+        },
+      },
+      {
+        $addFields: {
+          lastAttendance: { $arrayElemAt: ["$lastAttendance", 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          firstName: 1,
+          lastName: 1,
+          role: 1,
+          isActive: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$lastAttendance", null] },
+                  { $eq: ["$lastAttendance.day", todayStart] },
+                ],
+              },
+              "$lastAttendance.isActive",
+              null,
+            ],
+          },
+        },
+      },
+      { $sort: { firstName: 1 } },
+    ]);
 
-        // Return user with computed attendance status
-        return {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          isActive: isActive,
-        };
-
-      })
-    );
     res.status(200).json({ employees });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -103,7 +133,7 @@ exports.addUser = async (req, res) => {
     }
 
     const company = await Company.findById(companyId);
-    if (!company || company.status === "suspended") {
+    if (!company || !isCompanyActive(company)) {
       return res.status(400).json({ message: "Company not found or inactive" });
     }
 
@@ -135,6 +165,7 @@ exports.addUser = async (req, res) => {
 
     res.status(201).json({
       message: "User added successfully. A setup link was sent to their email.",
+      setupLink: link,
       user: {
         id: newUser._id,
         firstName: newUser.firstName,
@@ -215,12 +246,17 @@ exports.editUser = async (req, res) => {
     if (phone) user.phone = phone;
     if (salary) user.salary = salary;
     if (address) user.address = address;
-    if (role) user.role = role;
+    if (role) {
+      user.role = role;
+      // Role changes revoke previously issued JWTs.
+      user.version = (user.version || 0) + 1;
+    }
 
     // Hash the new password if provided
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user.password = hashedPassword;
+      user.version = (user.version || 0) + 1;
     }
 
     // Save the updated user object to the database

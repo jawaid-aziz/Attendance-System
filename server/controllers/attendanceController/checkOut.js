@@ -4,8 +4,12 @@ const Company = require("../../models/Company");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
+const { noCheckOutDeduction } = require("../../common/deductions");
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+const GRACE_PERIOD_HOURS = 2;
+const ON_TIME_TOLERANCE_MINUTES = 30;
 
 const checkOut = async (req, res) => {
   try {
@@ -29,17 +33,17 @@ const checkOut = async (req, res) => {
     }
 
     const company = await Company.findById(employee.companyId);
-    if (!company || company.status === "suspended") {
+    if (!company || ["suspended", "deleted"].includes(company.status)) {
       return res
         .status(403)
         .json({ message: "Company access unavailable." });
     }
 
-    const GRACE_PERIOD_HOURS = 2;
     const timezoneName = company.timezone || "UTC";
     const serverTime = dayjs().tz(timezoneName);
     const unixTime = serverTime.unix();
     const today = serverTime.format("dddd");
+    const dayStart = serverTime.startOf("day").toDate();
 
     const officeSchedule = company.officeSchedule || {};
     const todaySchedule = officeSchedule[today];
@@ -66,13 +70,11 @@ const checkOut = async (req, res) => {
       .minute(workEndMinute);
     const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour");
 
-    const startOfToday = serverTime.startOf("day").unix();
-    const endOfToday = serverTime.endOf("day").unix();
-
+    // Find today's record
     const attendance = await Attendance.findOne({
       employee: employeeId,
       companyId: company._id,
-      checkIn: { $gte: startOfToday, $lt: endOfToday },
+      day: dayStart,
     });
 
     if (!attendance) {
@@ -85,31 +87,43 @@ const checkOut = async (req, res) => {
       return res.status(400).json({ message: "Already checked out today." });
     }
 
-    let checkOutstatus = attendance.checkOutstatus || "Pending";
+    let checkOutstatus;
     let deductions = attendance.deductions || 0;
 
-    if (serverTime.isAfter(noCheckOutDeadline)) {
-      checkOutstatus = "No Check-Out";
-      deductions += 2;
-    } else if (
-      serverTime.isAfter(workEndTime) &&
-      serverTime.isBefore(noCheckOutDeadline)
-    ) {
-      checkOutstatus = serverTime.isSame(workEndTime, "minute")
-        ? "Checked Out on Time"
-        : "Late Check-Out";
-    } else if (serverTime.isBefore(workEndTime)) {
+    if (serverTime.isBefore(workEndTime)) {
       checkOutstatus = "Check Out before Time";
+    } else if (serverTime.isAfter(noCheckOutDeadline)) {
+      checkOutstatus = "No Check-Out";
+      if (company.deductionEnabled) {
+        deductions += noCheckOutDeduction(employee.salary);
+      }
+    } else {
+      const lateMinutes = serverTime.diff(workEndTime, "minute");
+      checkOutstatus =
+        lateMinutes <= ON_TIME_TOLERANCE_MINUTES
+          ? "Checked Out on Time"
+          : "Late Check-Out";
     }
 
-    attendance.checkOut = unixTime;
-    attendance.checkOutstatus = checkOutstatus;
-    attendance.deductions = deductions;
-    attendance.isActive = false;
+    // Atomic guard so two concurrent requests cannot both "check out".
+    const updated = await Attendance.findOneAndUpdate(
+      { _id: attendance._id, checkOut: null },
+      {
+        $set: {
+          checkOut: unixTime,
+          checkOutstatus,
+          deductions,
+          isActive: false,
+        },
+      },
+      { new: true }
+    );
 
-    await attendance.save();
+    if (!updated) {
+      return res.status(400).json({ message: "Already checked out today." });
+    }
 
-    res.status(200).json({ message: "Check-out successful", attendance });
+    res.status(200).json({ message: "Check-out successful", attendance: updated });
   } catch (error) {
     console.error("Error in check-out:", error);
     res

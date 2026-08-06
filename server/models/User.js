@@ -17,6 +17,8 @@ const UserSchema = new mongoose.Schema({
   },
   setupToken: { type: String, default: null },
   setupTokenExpires: { type: Date, default: null },
+  // Bumped on role/password changes so previously issued JWTs are invalidated.
+  version: { type: Number, default: 0 },
 });
 
 module.exports = mongoose.model("User", UserSchema);

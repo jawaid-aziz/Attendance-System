@@ -21,6 +21,15 @@ exports.createCompany = async (req, res) => {
       return res.status(400).json({ message: "Company name is required" });
     }
 
+    // Validate the admin email BEFORE creating the company so a duplicate
+    // email cannot leave an orphaned company behind.
+    if (adminEmail) {
+      const existing = await User.findOne({ email: adminEmail });
+      if (existing) {
+        return res.status(400).json({ message: "Admin email already in use" });
+      }
+    }
+
     let companySlug = slugify(slug || name);
     if (!companySlug) {
       return res.status(400).json({ message: "Invalid company slug" });
@@ -46,13 +55,6 @@ exports.createCompany = async (req, res) => {
     let admin = null;
     let setupLink = null;
     if (adminEmail && adminFirstName) {
-      const existing = await User.findOne({ email: adminEmail });
-      if (existing) {
-        return res.status(400).json({
-          message: "Admin email already in use",
-          company,
-        });
-      }
 
       const token = crypto.randomBytes(32).toString("hex");
       admin = await User.create({

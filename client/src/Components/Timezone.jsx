@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
 export const Timezone = () => {
   const [timezones, setTimezones] = useState([]);
@@ -26,7 +27,7 @@ export const Timezone = () => {
   useEffect(() => {
     const fetchCurrentTimezone = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/getTime", {
+        const response = await fetch(`${API_URL}/admin/getTime`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -61,7 +62,7 @@ export const Timezone = () => {
   const saveTimezone = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/admin/updateTime", {
+      const response = await fetch(`${API_URL}/admin/updateTime`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

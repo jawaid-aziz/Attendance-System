@@ -11,14 +11,15 @@ dayjs.extend(timezone);
 const attendanceRecord = async (req, res) => {
   try {
     const { employeeId } = req.params;
+    const year = parseInt(req.query.year, 10);
+    const month = parseInt(req.query.month, 10); // 1-12
 
-    // Fetch employee details
+    // Only the employee themselves or their company admin can view records
     const employee = await Employee.findById(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Only the employee themselves or their company admin can view records
     const isSelf = employeeId === req.user.id;
     const sameCompany =
       req.user.companyId &&
@@ -35,56 +36,73 @@ const attendanceRecord = async (req, res) => {
       : null;
     const timezoneName = company?.timezone || "Asia/Karachi";
 
-    const attendanceRecords = await Attendance.find({
+    // Compute the set of years that have attendance records (cheap distinct).
+    const dateDocs = await Attendance.distinct("date", {
       employee: employeeId,
       ...(employee.companyId ? { companyId: employee.companyId } : {}),
     });
+    const availableYears = [...new Set(
+      dateDocs.map((d) => (d ? new Date(d).getUTCFullYear() : null))
+    )].filter((y) => y !== null).sort();
 
-    // Convert checkIn Unix time to server time and calculate total deductions
+    const filter = {
+      employee: employeeId,
+      ...(employee.companyId ? { companyId: employee.companyId } : {}),
+    };
+    if (year && month) {
+      const start = new Date(Date.UTC(year, month - 1, 1));
+      const end = new Date(Date.UTC(year, month, 1));
+      filter.date = { $gte: start, $lt: end };
+    }
+
+    const attendanceRecords = await Attendance.find(filter).sort({ date: 1 });
+
     let totalDeductions = 0;
     const convertedRecords = attendanceRecords.map((record) => {
       const checkInServerTime = record.checkIn
         ? dayjs
-          .unix(record.checkIn)
-          .tz(timezoneName)
-          .format("YYYY-MM-DD HH:mm:ss")
+            .unix(record.checkIn)
+            .tz(timezoneName)
+            .format("YYYY-MM-DD HH:mm:ss")
         : null;
 
       const checkOutServerTime = record.checkOut
         ? dayjs
-          .unix(record.checkOut)
-          .tz(timezoneName)
-          .format("YYYY-MM-DD HH:mm:ss")
+            .unix(record.checkOut)
+            .tz(timezoneName)
+            .format("YYYY-MM-DD HH:mm:ss")
         : null;
 
-      const deductionPercentage = (record.deductions || 0) / 100; // Convert to a fraction
-      totalDeductions += deductionPercentage;
+      totalDeductions += record.deductions || 0;
 
       return {
-        ...record._doc, // Spread the original record
+        ...record._doc,
         checkIn: checkInServerTime,
         checkOut: checkOutServerTime,
       };
     });
 
-    // Calculate total salary after deductions
-    const dailySalary = employee.salary / 30;
-    const totalDeductionAmount = totalDeductions * employee.salary;
-    const totalSalary = employee.salary - totalDeductionAmount;
+    // Deductions are absolute currency amounts; cap the monthly salary at 0.
+    const totalDeductionsRounded = Math.round(totalDeductions * 100) / 100;
+    const netSalary = Math.max(
+      0,
+      Math.round((employee.salary - totalDeductionsRounded) * 100) / 100
+    );
 
     res.status(200).json({
       message: "Attendance records fetched successfully",
       records: convertedRecords,
-      totalSalary,
+      availableYears,
+      totalDeductions: totalDeductionsRounded,
+      monthlySalary: employee.salary,
+      netSalary,
     });
   } catch (error) {
     console.error("Error fetching attendance records:", error);
-    res
-      .status(500)
-      .json({
-        message: "Error fetching attendance records",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error fetching attendance records",
+      error: error.message,
+    });
   }
 };
 

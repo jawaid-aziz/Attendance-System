@@ -26,16 +26,15 @@ const getAttendanceStatus = async (req, res) => {
     const company = employee.companyId
       ? await Company.findById(employee.companyId)
       : null;
-    const timezoneName = company?.timezone || "UTC";
+    const timezoneName = company?.timezone || "Asia/Karachi";
     const serverTime = dayjs().tz(timezoneName);
     const startOfToday = serverTime.startOf("day").toDate();
-    const endOfToday = serverTime.endOf("day").toDate();
 
-    // Find today's attendance
+    // Find today's attendance using the day key (consistent with check-in)
     const attendance = await Attendance.findOne({
       employee: employeeId,
       ...(employee.companyId ? { companyId: employee.companyId } : {}),
-      date: { $gte: startOfToday, $lt: endOfToday },
+      day: startOfToday,
     });
 
     if (!attendance) {

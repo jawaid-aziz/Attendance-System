@@ -1,5 +1,6 @@
 // src/Context/CompanyProvider.jsx
 import { createContext, useContext, useEffect, useState } from "react";
+import { API_URL } from "../lib/config";
 
 const CompanyContext = createContext({
   company: null,
@@ -31,7 +32,7 @@ export const CompanyProvider = ({ children }) => {
       }
 
       setLoading(true);
-      fetch(`http://localhost:5000/company/${encodeURIComponent(slug)}`, {
+      fetch(`${API_URL}/byId/company/${encodeURIComponent(slug)}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))

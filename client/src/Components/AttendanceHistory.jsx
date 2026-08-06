@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTargetUser } from "../hooks/useTargetUser";
 import { slugifyName } from "@/lib/slugifyName";
+import { API_URL } from "@/lib/config";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
@@ -37,7 +38,12 @@ const AttendanceHistory = () => {
   const navigate = useNavigate();
   const { targetId } = useTargetUser();
   const [records, setRecords] = useState([]);
-  const [filteredRecords, setFilteredRecords] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [summary, setSummary] = useState({
+    totalDeductions: 0,
+    monthlySalary: 0,
+    netSalary: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -46,15 +52,14 @@ const AttendanceHistory = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
-  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
-  const [deduction, setDeduction] = useState();
+  const totalPages = Math.max(1, Math.ceil(records.length / recordsPerPage));
 
   // Year and Month selectors
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // Compute Paginated Records
-  const paginatedRecords = filteredRecords.slice(
+  const paginatedRecords = records.slice(
     (currentPage - 1) * recordsPerPage,
     currentPage * recordsPerPage
   );
@@ -65,7 +70,7 @@ const AttendanceHistory = () => {
     const fetchUser = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${targetId}`,
+          `${API_URL}/byId/getUser/${targetId}`,
           {
             method: "GET",
             headers: {
@@ -114,8 +119,12 @@ const AttendanceHistory = () => {
     }, 100);
 
     try {
+      const params = new URLSearchParams({
+        year: String(selectedYear),
+        month: String(selectedMonth),
+      });
       const response = await fetch(
-        `http://localhost:5000/attend/records/${targetId}`,
+        `${API_URL}/attend/records/${targetId}?${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -125,11 +134,17 @@ const AttendanceHistory = () => {
       );
       if (!response.ok) {
         toast.error(`Failed to fetch attendance records.`);
+        return;
       }
       const data = await response.json();
-      console.log(data.records);
       setRecords(data.records || []);
-      setFilteredRecords(data.records || []);
+      setAvailableYears(data.availableYears || []);
+      setSummary({
+        totalDeductions: data.totalDeductions || 0,
+        monthlySalary: data.monthlySalary || 0,
+        netSalary: data.netSalary || 0,
+      });
+      setCurrentPage(1);
     } catch (err) {
       toast.error(err.message, { duration: 5000 });
     } finally {
@@ -142,20 +157,8 @@ const AttendanceHistory = () => {
   useEffect(() => {
     if (!targetId) return;
     fetchAttendanceRecords();
-  }, [targetId]);
-
-  useEffect(() => {
-    // Filter records based on selected year and month
-    const filtered = records.filter((record) => {
-      const recordDate = new Date(record.checkIn);
-      return (
-        recordDate.getFullYear() === selectedYear &&
-        recordDate.getMonth() + 1 === selectedMonth
-      );
-    });
-    setFilteredRecords(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
-  }, [selectedYear, selectedMonth, records]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetId, selectedYear, selectedMonth]);
 
   const formatDate = (dateString, options) => {
     if (!dateString) return "Not Available";
@@ -163,32 +166,14 @@ const AttendanceHistory = () => {
   };
 
   const generateYearOptions = () => {
-    if (!records.length) return [];
-
-    // Extract valid years from the `checkIn` field
-    const years = records
-      .map((record) => {
-        const date = new Date(record.date);
-        return date instanceof Date && !isNaN(date) ? date.getFullYear() : null;
-      })
-      .filter((year) => year !== null); // Remove invalid years
-
-    if (!years.length) return [];
-
-    const earliestYear = Math.min(...years); // Find the earliest valid year
+    if (!availableYears.length) return [];
     const currentYear = new Date().getFullYear();
-
-    // Generate years from the earliest year to the current year + 1
+    const earliestYear = Math.min(...availableYears);
     const yearOptions = [];
     for (let year = earliestYear; year <= currentYear; year++) {
       yearOptions.push(year);
     }
-
     return yearOptions;
-  };
-
-  const roundDownToOneDecimalPlace = (number) => {
-    return Math.floor(number * 10) / 10;
   };
 
   return (
@@ -247,7 +232,7 @@ const AttendanceHistory = () => {
           </div>
         )}
 
-        {!loading && filteredRecords.length > 0 ? (
+        {!loading && records.length > 0 ? (
           <>
             <ScrollArea className="rounded-md border p-4">
               <Table className="w-full">
@@ -267,7 +252,7 @@ const AttendanceHistory = () => {
                   {paginatedRecords.map((record, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        {formatDate(record.checkIn, {
+                        {formatDate(record.date || record.checkIn, {
                           weekday: "long",
                           day: "numeric",
                           month: "long",
@@ -288,7 +273,7 @@ const AttendanceHistory = () => {
                       </TableCell>
                       <TableCell>{record.checkInstatus}</TableCell>
                       <TableCell>
-                        {roundDownToOneDecimalPlace(record.deductions)}
+                        {record.deductions ? `Rs. ${record.deductions}` : "0"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -296,6 +281,20 @@ const AttendanceHistory = () => {
               </Table>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
+
+            {summary.monthlySalary > 0 && (
+              <div className="mt-4 p-3 rounded-md border bg-gray-50 text-sm">
+                <p>
+                  Monthly salary: <strong>Rs. {summary.monthlySalary}</strong>
+                </p>
+                <p>
+                  Deductions: <strong>Rs. {summary.totalDeductions}</strong>
+                </p>
+                <p>
+                  Net payable: <strong>Rs. {summary.netSalary}</strong>
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 flex justify-center">
               <Pagination>

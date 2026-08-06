@@ -4,6 +4,7 @@ import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
 import { useTargetUser } from "../hooks/useTargetUser";
 import { slugifyName } from "@/lib/slugifyName";
+import { API_URL } from "@/lib/config";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ export const Profile = () => {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/byId/getUser/${targetId}`,
+          `${API_URL}/byId/getUser/${targetId}`,
           {
             method: "GET",
             headers: {
@@ -126,7 +127,7 @@ export const Profile = () => {
         salary: Number(formData.salary) || 0, // Ensure salary is a valid number
       };
 
-      const response = await fetch(`http://localhost:5000/admin/edit/${targetId}`, {
+      const response = await fetch(`${API_URL}/admin/edit/${targetId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +155,7 @@ export const Profile = () => {
     }
     setPwSubmitting(true);
     try {
-      const response = await fetch("http://localhost:5000/auth/change-password", {
+      const response = await fetch(`${API_URL}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

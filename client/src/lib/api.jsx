@@ -1,13 +1,20 @@
 import { isTokenExpired } from "./tokenExpire";
-import { useNavigate } from "react-router-dom";
+import { API_URL } from "./config";
+
+// Small helper for authenticated fetch calls. No hooks here — on an invalid
+// or expired token it clears storage and redirects to the login page.
+const redirectToLogin = () => {
+  localStorage.clear();
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+};
 
 export const apiFetch = async (url, options = {}) => {
   const token = localStorage.getItem("token");
-  const navigate = useNavigate();
 
   if (!token || isTokenExpired(token)) {
-    localStorage.clear();
-    navigate("/"); // Redirect to login page
+    redirectToLogin();
     throw new Error("Token expired. Please log in again.");
   }
 
@@ -17,10 +24,14 @@ export const apiFetch = async (url, options = {}) => {
     ...options.headers,
   };
 
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(`${API_URL}${url}`, { ...options, headers });
 
   if (!response.ok) {
-    const errorData = await response.json();
+    if (response.status === 401) {
+      redirectToLogin();
+      throw new Error("Session expired. Please log in again.");
+    }
+    const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Something went wrong.");
   }
 

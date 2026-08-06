@@ -9,7 +9,7 @@
 //   useEffect(() => {
 //     const fetchOfficeTimings = async () => {
 //       try {
-//         const response = await fetch("http://localhost:5000/admin/getOfficeTimings", {
+//         const response = await fetch(`${API_URL}/admin/getOfficeTimings`, {
 //           headers: {
 //             Authorization: `Bearer ${localStorage.getItem("token")}`,
 //           },
@@ -43,7 +43,7 @@
 
 //   const handleSave = async () => {
 //     try {
-//       const response = await fetch("http://localhost:5000/admin/updateOfficeTimings", {
+//       const response = await fetch(`${API_URL}/admin/updateOfficeTimings`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -120,6 +120,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
 const OfficeTimings = () => {
   // Initial state with 7 days (Monday to Sunday)
@@ -149,7 +150,7 @@ const OfficeTimings = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:5000/admin/getOfficeTiming",
+          `${API_URL}/admin/getOfficeTiming`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -160,9 +161,10 @@ const OfficeTimings = () => {
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched office schedule:", data);
+          const schedule = data.schedule || data; // tolerate legacy shape
 
           const filteredSchedule = daysOfWeek.reduce((acc, day) => {
-            acc[day] = data[day] || officeSchedule[day];
+            acc[day] = schedule[day] || officeSchedule[day];
             return acc;
           }, {});
 
@@ -210,7 +212,7 @@ const OfficeTimings = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/admin/saveOfficeTiming",
+        `${API_URL}/admin/saveOfficeTiming`,
         {
           method: "POST",
           headers: {

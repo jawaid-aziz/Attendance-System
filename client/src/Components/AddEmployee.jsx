@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "@/lib/config";
 
 const AddEmployeeForm = () => {
   const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ const AddEmployeeForm = () => {
     }, 100);
 
     try {
-      const response = await fetch("http://localhost:5000/admin/add", {
+      const response = await fetch(`${API_URL}/admin/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

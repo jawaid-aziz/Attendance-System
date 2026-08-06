@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useId } from "../Context/IdProvider";
+import { API_URL } from "../lib/config";
 
 // Resolve which user a profile/attendance page should show, without putting
 // any raw id in the URL. Priority: id passed via navigation state, then the
@@ -28,7 +29,7 @@ export const useTargetUser = () => {
 
     if (name) {
       fetch(
-        `http://localhost:5000/byId/getUserByName/${encodeURIComponent(name)}`,
+        `${API_URL}/byId/getUserByName/${encodeURIComponent(name)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

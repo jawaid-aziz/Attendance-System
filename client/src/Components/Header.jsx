@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Menu, UserCircle, Building2 } from "lucide-react";
 import { useCompany } from "../Context/CompanyProvider";
+import { API_URL } from "@/lib/config";
 
 export const Header = ({ role, id }) => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export const Header = ({ role, id }) => {
   useEffect(() => {
     if (!id) return;
     const token = localStorage.getItem("token");
-    fetch(`http://localhost:5000/byId/getUser/${id}`, {
+    fetch(`${API_URL}/byId/getUser/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
