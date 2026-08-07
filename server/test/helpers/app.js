@@ -2,6 +2,10 @@
 // dotenv won't override existing vars, so these win over server/.env.
 process.env.JWT_SECRET =
   process.env.JWT_SECRET || "test-secret-that-is-longer-than-thirty-two-characters!";
+// index.js's validateEnv() refuses to boot without MONGO_URL. Tests never use
+// it (startDb() connects to the in-memory MongoDB), but it must be present so
+// the app module loads at all — CI has no server/.env.
+process.env.MONGO_URL = process.env.MONGO_URL || "mongodb://localhost:27017/test";
 process.env.RATE_LIMIT_LOGIN = process.env.RATE_LIMIT_LOGIN || "1000";
 process.env.RATE_LIMIT_AUTH = process.env.RATE_LIMIT_AUTH || "1000";
 process.env.SKIP_EMAIL = "true";
