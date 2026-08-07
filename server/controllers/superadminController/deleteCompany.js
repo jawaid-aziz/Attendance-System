@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Company = require("../../models/Company");
+const logger = require("../../utils/logger");
 
 // Soft-delete a company. Data (users/attendance) is preserved so a misclick
 // cannot permanently destroy payroll history. Deleted companies are excluded
@@ -29,7 +30,7 @@ exports.deleteCompany = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error deleting company:", error.message);
+    logger.error("Error deleting company:", error.message);
     res.status(500).json({ message: "Failed to delete company" });
   }
 };

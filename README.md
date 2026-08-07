@@ -1,1 +1,143 @@
-The Office Attendance System is a web-based application designed to manage and monitor employee attendance for a workplace. The system ensures strict adherence to time policies and incorporates salary adjustments based on attendance. The application is built using React.js, Express.js, and Tailwind CSS.
+# Attendance System (onTime)
+
+Web-based attendance tracking with automatic salary deductions. Employees
+check in/out against a per-company office schedule; the system flags late
+arrivals, missing check-outs and absences, applies configurable deductions,
+and reports a net salary per month.
+
+**Stack:** React (Vite + Tailwind) · Express · MongoDB (Mongoose) · Node 18+
+
+---
+
+## Features
+
+- Multi-tenant: one codebase, isolated companies, each with its own timezone,
+  office schedule, deductions and network rules.
+- Role-based access: `employee`, `admin`, `superadmin`.
+- Email-based onboarding: new users receive a one-time setup link (no
+  passwords sent in plain text).
+- Check-in / check-out with working-hours enforcement and IP enforcement
+  (optional).
+- Automated absent marking: an hourly job flags employees who never checked in.
+- Salary deductions (see [docs/deductions.md](docs/deductions.md)) and a
+  per-month net salary report.
+- JWT sessions with server-side invalidation on password/role changes.
+- Structurally audited for multi-tenant isolation (company scoping on every
+  data access path).
+
+## Quickstart (local development)
+
+Prerequisites: Node 18+, MongoDB running locally (`mongod` on `:27017`).
+
+```bash
+# 1. Configure the API
+cp server/.env.example server/.env
+#    - set MONGO_URL (defaults to localhost)
+#    - set JWT_SECRET to at least 32 random chars:
+#      node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+#    - optionally set EMAIL_USER / EMAIL_PASS for real setup emails
+
+# 2. Install dependencies (root installs the shared dev tooling)
+npm install
+npm install --prefix server
+npm install --prefix client
+
+# 3. Run API + client together (concurrently)
+npm run dev
+#    API    -> http://localhost:5000  (health: /health)
+#    Client -> http://localhost:5173
+```
+
+In dev, the Vite dev server proxies `/auth`, `/admin`, `/attend`, `/byId`,
+`/superadmin` and `/health` to the API on `:5000`, so the client runs without
+CORS. To run each side separately: `npm run dev:server` / `npm run dev:client`.
+
+### First account
+
+Register a company + admin at `/start` (or `POST /auth/register`). The admin
+receives a one-time setup link (emailed, or returned as `setupLink` when the
+email fails / `SKIP_EMAIL=true`). Open the link, set a password, and log in.
+
+### Tests
+
+```bash
+npm test                # runs the server suite (vitest)
+npm test --prefix server
+```
+
+Tests use an in-memory MongoDB (`mongodb-memory-server`) and are fully
+self-contained — no local MongoDB needed to run them:
+
+- `server/test/unit` — pure logic: deductions, validation, passwords, slugs,
+  company helpers, JWT generation.
+- `server/test/integration` — HTTP flows against the real Express app:
+  registration, setup, login, password rotation, check-in/out, records,
+  cross-company authorization.
+
+## Environment variables
+
+All server variables live in `server/.env` (see `server/.env.example`).
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `MONGO_URL` | yes | — | MongoDB connection string |
+| `JWT_SECRET` | yes (≥32 chars) | — | Token signing secret |
+| `CLIENT_ORIGIN` | no | `http://localhost:5173` | Allowed CORS origins (comma-separated) |
+| `FRONTEND_URL` | no | `http://localhost:5173` | Base URL embedded in setup-link emails |
+| `TIMEZONE` | no | `Asia/Karachi` | Default timezone for `/attend/server-time` |
+| `EMAIL_USER` / `EMAIL_PASS` | no | — | SMTP credentials (Gmail app passwords) |
+| `SKIP_EMAIL` | no | `false` | `true` prints setup links instead of emailing |
+| `IP_ENFORCEMENT` | no | off | `strict` blocks check-in/out from non-approved IPs |
+| `CRON_ENABLED` | no | — | Set `true` on exactly **one** worker for the absent sweeper |
+| `RATE_LIMIT_LOGIN` | no | `10` | Login attempts per 15 min per IP |
+| `RATE_LIMIT_AUTH` | no | `100` | Registration attempts per 15 min per IP |
+| `LOG_LEVEL` | no | `info` | `debug` \| `info` \| `warn` \| `error` |
+
+Client variables live in `client/.env`:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VITE_API_URL` | dev: `""` (proxy); build: `http://localhost:5000` | Base API URL |
+
+## Project structure
+
+```
+server/
+  index.js             Express app (exported for tests), env guard, /health
+  config/db.js         Mongoose connection
+  models/              User, Company, Attendance
+  middleware/          auth, role, company, IP validation
+  common/              shared rules: deductions, validation, onboarding, authz
+  controllers/         route handlers (auth, admin, attendance, superadmin)
+  utils/               dayjs (tz), logger, transactions, mail, JWT, sweeper
+  test/                vitest unit + integration suites
+client/
+  src/
+    Pages/             login, setup, landing, home
+    Components/        clocking, profile, admin screens
+    Context/           auth/role/id/company providers
+    lib/               API config, token helpers
+docs/
+  api.md               endpoint reference
+  deductions.md        salary deduction rules
+```
+
+## Deployment notes
+
+- The API is a stateless Express app; scale horizontally behind a reverse
+  proxy (run with `app.set("trust proxy", 1)` — already configured).
+- `CRON_ENABLED=true` on one instance only, or the absent sweeper will write
+  duplicate rows (it upserts, so the effect is benign, but run one worker).
+- `IP_ENFORCEMENT=strict` only works if employees connect from IPs listed in
+  the company's `allowedRouterIPs` (the company's public egress IPs).
+- New database indexes are created in the background and do not require
+  downtime, but the unique partial index on `User.setupToken` should be built
+  once on existing deployments.
+
+## API
+
+See [docs/api.md](docs/api.md) for the full endpoint reference.
+
+## License
+
+Proprietary / internal project.

@@ -1,4 +1,5 @@
 const User = require("../../models/User");
+const logger = require("../../utils/logger");
 
 exports.listSuperAdmins = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.listSuperAdmins = async (req, res) => {
     );
     res.json({ superAdmins });
   } catch (error) {
-    console.error("Error listing superadmins:", error.message);
+    logger.error("Error listing superadmins:", error.message);
     res.status(500).json({ message: "Failed to list superadmins" });
   }
 };

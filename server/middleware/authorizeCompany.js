@@ -1,4 +1,5 @@
 const Company = require("../models/Company");
+const logger = require("../utils/logger");
 
 // Ensures the authenticated user has a valid company context.
 // - Superadmins pass through (they manage tenants via ?companyId=)
@@ -26,7 +27,7 @@ const authorizeCompany = async (req, res, next) => {
     req.company = company;
     next();
   } catch (error) {
-    console.error("Error in authorizeCompany:", error.message);
+    logger.error("Error in authorizeCompany:", error.message);
     return res.status(500).json({ message: "Failed to authorize company." });
   }
 };

@@ -4,6 +4,7 @@ const {
   setupLinkFor,
 } = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
+const logger = require("../../utils/logger");
 
 exports.inviteSuperAdmin = async (req, res) => {
   try {
@@ -42,7 +43,7 @@ exports.inviteSuperAdmin = async (req, res) => {
     try {
       await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
     } catch (error) {
-      console.error("Failed to send setup email:", error.message);
+      logger.error("Failed to send setup email:", error.message);
       emailFailed = true;
     }
 
@@ -60,7 +61,7 @@ exports.inviteSuperAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error inviting superadmin:", error.message);
+    logger.error("Error inviting superadmin:", error.message);
     res.status(500).json({ message: "Failed to invite superadmin" });
   }
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useId } from "../Context/IdProvider";
+import { useUser } from "../hooks/useUser";
 import { API_URL } from "@/lib/config";
 import {
   Card,
@@ -13,8 +14,7 @@ import toast, { Toaster } from "react-hot-toast";
 
 const Clocking = () => {
   const { id } = useId();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const user = useUser(id);
   const [progress, setProgress] = useState(0);
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkedOut, setCheckedOut] = useState(false);
@@ -106,45 +106,20 @@ const Clocking = () => {
     fetchOfficeSchedule();
   }, []);
 
+  // Progress bar while the user profile loads (served from the useUser cache).
   useEffect(() => {
-    setLoading(true);
+    if (user) {
+      setProgress(100);
+      return;
+    }
     setProgress(0);
-
     const interval = setInterval(() => {
       setProgress((prev) => (prev < 95 ? prev + 5 : prev));
     }, 100);
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/byId/getUser/${id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+    return () => clearInterval(interval);
+  }, [user]);
 
-        if (!response.ok) {
-          toast.error("Failed to fetch user data.", { duration: 5000 });
-          return;
-        }
-
-        const data = await response.json();
-        setUser(data.user);
-      } catch (error) {
-        toast.error(`Error fetching user data: ${error.message}`, {
-          duration: 5000,
-        });
-      } finally {
-        clearInterval(interval);
-        setProgress(100);
-        setTimeout(() => setLoading(false), 500);
-      }
-    };
-
-    fetchUser();
-  }, [id]);
+  const loading = !user;
 
   // Handle check-in
   const handleCheckIn = async () => {
@@ -211,8 +186,6 @@ const Clocking = () => {
   };
 
   const isOfficeOpen = currentDaySchedule?.isOpen;
-
-  if (!user) return <p>Loading user data...</p>;
 
   return (
     <>

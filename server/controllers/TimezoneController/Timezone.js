@@ -1,6 +1,7 @@
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
 const { isValidTimezone } = require("../../common/validation");
+const logger = require("../../utils/logger");
 
 /**
  * @desc    Get the current timezone for the requesting company
@@ -15,7 +16,7 @@ exports.getTimezone = async (req, res) => {
     }
     res.status(200).json({ timezone: company.timezone });
   } catch (error) {
-    console.error("Error retrieving timezone:", error.message);
+    logger.error("Error retrieving timezone:", error.message);
     res
       .status(500)
       .json({ message: "Failed to retrieve timezone", error: error.message });
@@ -52,7 +53,7 @@ exports.updateTimezone = async (req, res) => {
       .status(200)
       .json({ message: "Timezone updated successfully.", timezone });
   } catch (error) {
-    console.error("Error updating timezone:", error.message);
+    logger.error("Error updating timezone:", error.message);
     res.status(500).json({ message: "Failed to update timezone" });
   }
 };

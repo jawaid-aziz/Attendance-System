@@ -2,6 +2,8 @@ const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
+const { canAccessUser } = require("../../common/company");
+const logger = require("../../utils/logger");
 
 const getAttendanceStatus = async (req, res) => {
   try {
@@ -13,11 +15,7 @@ const getAttendanceStatus = async (req, res) => {
       return res.status(404).json({ message: "Employee not found" });
     }
     const isSelf = employeeId === req.user.id;
-    const sameCompany =
-      req.user.companyId &&
-      employee.companyId &&
-      req.user.companyId.toString() === employee.companyId.toString();
-    if (!isSelf && !sameCompany) {
+    if (!isSelf && !canAccessUser(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot access this status" });
@@ -48,7 +46,7 @@ const getAttendanceStatus = async (req, res) => {
       checkedOut: !!attendance.checkOut,
     });
   } catch (error) {
-    console.error("Error fetching attendance status:", error);
+    logger.error("Error fetching attendance status:", error);
     res.status(500).json({ message: "Error fetching attendance status", error: error.message });
   }
 };

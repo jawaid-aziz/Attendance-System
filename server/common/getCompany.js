@@ -1,4 +1,6 @@
 const Company = require("../models/Company");
+const { isSameCompany } = require("./company");
+const logger = require("../utils/logger");
 
 // Resolve the requesting user's company (set by the authorizeCompany
 // middleware). Returns the Company document, or null if there is no
@@ -29,9 +31,7 @@ exports.getCompanyBySlug = async (req, res) => {
     }
 
     const isSuperadmin = req.user.role === "superadmin";
-    const isMember =
-      req.user.companyId &&
-      req.user.companyId.toString() === company._id.toString();
+    const isMember = isSameCompany(req.user.companyId, company._id);
 
     if (!isSuperadmin && !isMember) {
       return res.status(403).json({ message: "Forbidden" });
@@ -47,7 +47,7 @@ exports.getCompanyBySlug = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res
       .status(500)
       .json({ message: "Failed to fetch company", error: error.message });

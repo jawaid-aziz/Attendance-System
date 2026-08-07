@@ -8,6 +8,7 @@ const {
 } = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
 const { withTransaction } = require("../../utils/withTransaction");
+const logger = require("../../utils/logger");
 
 exports.createCompany = async (req, res) => {
   try {
@@ -84,7 +85,7 @@ exports.createCompany = async (req, res) => {
           setupLink
         );
       } catch (error) {
-        console.error("Failed to send setup email:", error.message);
+        logger.error("Failed to send setup email:", error.message);
         emailFailed = true;
       }
     }
@@ -111,7 +112,7 @@ exports.createCompany = async (req, res) => {
         : null,
     });
   } catch (error) {
-    console.error("Error creating company:", error.message);
+    logger.error("Error creating company:", error.message);
     res.status(500).json({ message: "Failed to create company" });
   }
 };

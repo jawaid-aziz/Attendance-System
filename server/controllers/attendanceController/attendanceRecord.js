@@ -2,6 +2,8 @@ const Attendance = require("../../models/Attendance");
 const Employee = require("../../models/User");
 const Company = require("../../models/Company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
+const { canAccessUser } = require("../../common/company");
+const logger = require("../../utils/logger");
 
 const attendanceRecord = async (req, res) => {
   try {
@@ -16,11 +18,7 @@ const attendanceRecord = async (req, res) => {
     }
 
     const isSelf = employeeId === req.user.id;
-    const sameCompany =
-      req.user.companyId &&
-      employee.companyId &&
-      req.user.companyId.toString() === employee.companyId.toString();
-    if (!isSelf && !sameCompany) {
+    if (!isSelf && !canAccessUser(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot access these records" });
@@ -120,7 +118,7 @@ const attendanceRecord = async (req, res) => {
       netSalary,
     });
   } catch (error) {
-    console.error("Error fetching attendance records:", error);
+    logger.error("Error fetching attendance records:", error);
     res.status(500).json({ message: "Error fetching attendance records" });
   }
 };

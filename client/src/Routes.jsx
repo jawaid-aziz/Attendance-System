@@ -11,19 +11,11 @@ import { Timezone } from "./Components/Timezone";
 import { Layout } from "./Pages/Layout";
 import { Configuration } from "./Components/Configuration";
 import ProtectedRoute from "./Components/ProtectedRoutes";
+import { PublicOnly } from "./Components/PublicOnly";
 import OfficeTimings from "./Components/OfficeTimings";
 import Companies from "./Components/Superadmin/Companies";
 import CompanyDetail from "./Components/Superadmin/CompanyDetail";
 import InviteSuperAdmin from "./Components/Superadmin/InviteSuperAdmin";
-import { isTokenValid } from "@/lib/isTokenValid";
-import { getHomePath } from "@/lib/getHomePath";
-import { Navigate } from "react-router-dom";
-
-// Evaluated at render time (not module load) so the login/setup guards track
-// the current auth state instead of being frozen at app start.
-const PublicOnly = ({ children }) => {
-  return isTokenValid() ? <Navigate to={getHomePath()} replace /> : children;
-};
 
 export const AllRoutes = [
   {

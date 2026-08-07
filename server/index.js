@@ -1,11 +1,14 @@
 require("dotenv").config();
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 const { startAbsentSweeper } = require("./utils/absentSweeper");
+const logger = require("./utils/logger");
 const authRoutes = require("./Routes/authRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const attendanceRoutes = require("./Routes/attendanceRoutes");
@@ -13,12 +16,22 @@ const commonRoutes = require("./Routes/commonRoutes");
 const superadminRoutes = require("./Routes/superadminRoutes");
 
 // Fail fast if critical secrets are missing or weak.
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  console.error(
-    "JWT_SECRET must be set and at least 32 characters long (generate one with: node -e \"console.log(require('crypto').randomBytes(48).toString('hex'))\")"
-  );
-  process.exit(1);
-}
+const validateEnv = () => {
+  const problems = [];
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    problems.push(
+      "JWT_SECRET must be set and at least 32 characters long (generate one with: node -e \"console.log(require('crypto').randomBytes(48).toString('hex'))\")"
+    );
+  }
+  if (!process.env.MONGO_URL) {
+    problems.push("MONGO_URL must be set (e.g. mongodb://localhost:27017/onTime)");
+  }
+  if (problems.length > 0) {
+    logger.error(problems.join("\n"));
+    process.exit(1);
+  }
+};
+validateEnv();
 
 const app = express();
 
@@ -42,28 +55,41 @@ app.use(
 
 app.use(bodyParser.json({ limit: "1mb" }));
 
-// Minimal request logger
+// Request logger with a per-request id so logs can be correlated.
 app.use((req, res, next) => {
+  req.id = crypto.randomUUID();
+  res.setHeader("X-Request-Id", req.id);
   const started = Date.now();
   res.on("finish", () => {
-    console.log(
-      `${new Date().toISOString()} ${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - started}ms`
+    logger.info(
+      `id=${req.id} ${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - started}ms`
     );
   });
   next();
 });
 
+// Liveness/readiness probe for deployments and load balancers.
+app.get("/health", (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const healthy = dbState === 1;
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? "ok" : "degraded",
+    db: ["disconnected", "connected", "connecting", "disconnecting"][dbState] || "unknown",
+    uptime: Math.round(process.uptime()),
+  });
+});
+
 // Auth endpoints are public and brute-force targets; throttle them.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 100,
+  limit: parseInt(process.env.RATE_LIMIT_AUTH || "100", 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
 });
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: parseInt(process.env.RATE_LIMIT_LOGIN || "10", 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many login attempts, please try again later." },
@@ -87,7 +113,7 @@ app.use((req, res) => {
 // Global error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
+  logger.error(`id=${req.id} Unhandled error:`, err);
   res.status(500).json({ message: "Internal server error" });
 });
 
@@ -98,13 +124,13 @@ const start = async () => {
     startAbsentSweeper();
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      logger.info(`Server running on port ${PORT}`);
     });
 
     const shutdown = (signal) => {
-      console.log(`${signal} received, shutting down gracefully...`);
+      logger.info(`${signal} received, shutting down gracefully...`);
       server.close(() => {
-        console.log("HTTP server closed.");
+        logger.info("HTTP server closed.");
         process.exit(0);
       });
       // Force-exit if connections refuse to drain
@@ -113,9 +139,15 @@ const start = async () => {
     process.on("SIGINT", () => shutdown("SIGINT"));
     process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (err) {
-    console.error("Failed to start server:", err);
+    logger.error("Failed to start server:", err);
     process.exit(1);
   }
 };
 
-start();
+module.exports = { app, start };
+
+// Start only when run directly (tests import `app` without booting).
+if (require.main === module) {
+  start();
+}
+

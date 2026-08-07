@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const dns = require("dns");
 const net = require("net");
 const shared = require("nodemailer/lib/shared");
+const logger = require("./logger");
 
 // nodemailer resolves SMTP hosts over IPv4 only, which fails on networks where
 // the IPv4 route to the mail host is blocked but IPv6 works. Prefer AAAA records.
@@ -48,7 +49,7 @@ const sendWithRetry = async (mailOptions, attempts = 3) => {
       return info;
     } catch (error) {
       const last = attempt === attempts;
-      console.error(
+      logger.error(
         `Mail attempt ${attempt}/${attempts} failed: ${error.code || error.message}`
       );
       if (last) throw error;
@@ -79,14 +80,14 @@ const sendSetupLinkEmail = async (receiver, name, link) => {
   };
 
   if (!shouldSend()) {
-    console.log("SKIP_EMAIL: skipping setup link email to", receiver);
+    logger.info("SKIP_EMAIL: skipping setup link email to", receiver);
     return { ok: false, skipped: true };
   }
 
   // Throws after retries are exhausted so callers can report email failure
   // honestly instead of claiming the link was delivered.
   const info = await sendWithRetry(mailOptions);
-  console.log("Setup email sent: ", info.response);
+  logger.info("Setup email sent: ", info.response);
   return { ok: true };
 };
 

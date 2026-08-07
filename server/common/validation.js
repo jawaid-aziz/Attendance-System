@@ -38,6 +38,8 @@ const isValidOfficeSchedule = (schedule) => {
 
 const isValidTimezone = (tz) => {
   if (!tz || typeof tz !== "string") return false;
+  // Not emitted by Intl.supportedValuesOf() in some engines, but a real zone.
+  if (tz === "UTC") return true;
   try {
     if (typeof Intl.supportedValuesOf === "function") {
       return Intl.supportedValuesOf("timeZone").includes(tz);

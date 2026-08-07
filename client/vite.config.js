@@ -10,4 +10,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/auth": "http://localhost:5000",
+      "/admin": "http://localhost:5000",
+      "/attend": "http://localhost:5000",
+      "/byId": "http://localhost:5000",
+      "/superadmin": "http://localhost:5000",
+      "/health": "http://localhost:5000",
+    },
+  },
 })

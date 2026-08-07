@@ -7,7 +7,8 @@ const { slugify } = require("./slugify");
 const SETUP_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Create a company whose slug is guaranteed unique (appends -2, -3, ...).
-// `session` is optional (transaction).
+// `session` is optional (transaction). Mongoose requires an ARRAY first
+// argument when passing options, so branch on session presence.
 const createCompanyWithUniqueSlug = async (data, session) => {
   const baseSlug = slugify(data.name) || "company";
   let slug = baseSlug;
@@ -15,7 +16,9 @@ const createCompanyWithUniqueSlug = async (data, session) => {
   while (await Company.exists({ slug })) {
     slug = `${baseSlug}-${counter++}`;
   }
-  return Company.create({ ...data, slug }, session ? { session } : {});
+  return session
+    ? Company.create([{ ...data, slug }], { session })
+    : Company.create({ ...data, slug });
 };
 
 // Create a user with a one-time setup token (random bcrypt password they

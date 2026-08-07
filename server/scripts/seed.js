@@ -3,20 +3,21 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Company = require("../models/Company");
+const logger = require("../utils/logger");
 
 const seed = async () => {
   try {
     // Refuse to run in production: the seed promotes users to superadmin and
     // reassigns companyless users, which is destructive to real data.
     if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOWED !== "true") {
-      console.error(
+      logger.error(
         "Refusing to seed: NODE_ENV=production. Set SEED_ALLOWED=true to override."
       );
       process.exit(1);
     }
 
     await mongoose.connect(process.env.MONGO_URL);
-    console.log("Connected:", mongoose.connection.db.databaseName);
+    logger.info("Connected:", mongoose.connection.db.databaseName);
 
     // 1. Default / owner company seeded with current .env config
     let company = await Company.findOne({ slug: "ontime" });
@@ -33,9 +34,9 @@ const seed = async () => {
           .split(",")
           .filter(Boolean),
       });
-      console.log("Created default company:", company.slug);
+      logger.info("Created default company:", company.slug);
     } else {
-      console.log("Default company exists:", company.slug);
+      logger.info("Default company exists:", company.slug);
     }
 
     // 2. Promote the owner to superadmin (platform-level, no company)
@@ -48,9 +49,9 @@ const seed = async () => {
       owner.role = "superadmin";
       owner.companyId = null;
       await owner.save();
-      console.log("Superadmin set:", owner.email);
+      logger.info("Superadmin set:", owner.email);
     } else {
-      console.warn("No owner user found to promote.");
+      logger.warn("No owner user found to promote.");
     }
 
     // 3. Assign any remaining users (without a company) to the default company
@@ -61,7 +62,7 @@ const seed = async () => {
       },
       { $set: { companyId: company._id } }
     );
-    console.log("Users assigned to OnTime:", result.modifiedCount);
+    logger.info("Users assigned to OnTime:", result.modifiedCount);
 
     // 4. Demo users so the tenant flow is testable end to end
     const demoAdmin = await User.findOne({ email: "demo.admin@ontime.com" });
@@ -77,7 +78,7 @@ const seed = async () => {
         role: "admin",
         companyId: company._id,
       });
-      console.log("Created demo admin");
+      logger.info("Created demo admin");
     }
 
     const demoEmployee = await User.findOne({ email: "demo.emp@ontime.com" });
@@ -93,13 +94,13 @@ const seed = async () => {
         role: "employee",
         companyId: company._id,
       });
-      console.log("Created demo employee");
+      logger.info("Created demo employee");
     }
 
     await mongoose.disconnect();
-    console.log("Seed complete.");
+    logger.info("Seed complete.");
   } catch (err) {
-    console.error("Seed error:", err);
+    logger.error("Seed error:", err);
     await mongoose.disconnect();
     process.exit(1);
   }

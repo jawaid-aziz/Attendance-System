@@ -1,5 +1,6 @@
 const Company = require("../../models/Company");
 const User = require("../../models/User");
+const logger = require("../../utils/logger");
 
 exports.listCompanies = async (req, res) => {
   try {
@@ -33,7 +34,7 @@ exports.listCompanies = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error listing companies:", error.message);
+    logger.error("Error listing companies:", error.message);
     res.status(500).json({ message: "Failed to list companies" });
   }
 };

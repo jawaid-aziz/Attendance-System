@@ -3,10 +3,16 @@ const User = require("../../models/User");
 const Company = require("../../models/Company");
 const mongoose = require("mongoose");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
+const logger = require("../../utils/logger");
 const {
   LATE_GRACE_MINUTES,
   lateCheckInDeduction,
 } = require("../../common/deductions");
+const {
+  getTodaySchedule,
+  isOpenToday,
+  canAccessUser,
+} = require("../../common/company");
 
 const checkIn = async (req, res) => {
   try {
@@ -22,12 +28,7 @@ const checkIn = async (req, res) => {
     }
 
     // Only the employee themselves or a same-company admin can check in
-    const isSelf = employeeId === req.user.id;
-    const sameCompany =
-      req.user.companyId &&
-      employee.companyId &&
-      req.user.companyId.toString() === employee.companyId.toString();
-    if (!isSelf && !sameCompany) {
+    if (!canAccessUser(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot check in for this employee" });
@@ -43,11 +44,9 @@ const checkIn = async (req, res) => {
 
     const serverTime = dayjs().tz(getCompanyTimezone(company));
     const unixTime = serverTime.unix();
-    const today = serverTime.format("dddd");
     const dayStart = serverTime.startOf("day").toDate();
 
-    const officeSchedule = company.officeSchedule || {};
-    const todaySchedule = officeSchedule[today];
+    const { schedule: todaySchedule } = getTodaySchedule(company, serverTime);
 
     if (!todaySchedule) {
       return res
@@ -55,7 +54,7 @@ const checkIn = async (req, res) => {
         .json({ message: "Office schedule is not configured for today." });
     }
 
-    if (!todaySchedule.isOpen) {
+    if (!isOpenToday(todaySchedule)) {
       return res.status(400).json({ message: "The office is closed today." });
     }
 
@@ -140,7 +139,7 @@ const checkIn = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error("Error in check-in:", error);
+    logger.error("Error in check-in:", error);
     res
       .status(500)
       .json({ message: "Error in check-in", error: error.message });

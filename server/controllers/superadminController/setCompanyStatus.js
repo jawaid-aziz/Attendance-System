@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Company = require("../../models/Company");
+const logger = require("../../utils/logger");
 
 exports.setCompanyStatus = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ exports.setCompanyStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error updating company status:", error.message);
+    logger.error("Error updating company status:", error.message);
     res.status(500).json({ message: "Failed to update company status" });
   }
 };

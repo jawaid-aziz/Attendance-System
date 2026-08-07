@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -11,25 +10,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Menu, UserCircle, Building2 } from "lucide-react";
 import { useCompany } from "../Context/CompanyProvider";
-import { API_URL } from "@/lib/config";
+import { useUser } from "../hooks/useUser";
 
 export const Header = ({ role, id }) => {
   const navigate = useNavigate();
   const slug = localStorage.getItem("slug") || "";
   const base = slug ? `/${slug}` : "";
   const { company } = useCompany();
-  const [firstName, setFirstName] = useState("");
-
-  useEffect(() => {
-    if (!id) return;
-    const token = localStorage.getItem("token");
-    fetch(`${API_URL}/byId/getUser/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => setFirstName(data.user?.firstName || ""))
-      .catch(() => setFirstName(""));
-  }, [id]);
+  const user = useUser(id);
+  const firstName = user?.firstName || "";
 
   const isSuperadmin = role === "superadmin";
   const roleLabel = isSuperadmin
@@ -44,7 +33,6 @@ export const Header = ({ role, id }) => {
     localStorage.removeItem("id");
     localStorage.removeItem("slug");
     window.dispatchEvent(new Event("auth-changed"));
-    console.log("Token, role, and id removed from localStorage.");
     navigate("/login");
   };
 

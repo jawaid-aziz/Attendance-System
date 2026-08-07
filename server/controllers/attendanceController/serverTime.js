@@ -1,5 +1,10 @@
 const Company = require("../../models/Company");
+const {
+  getTodaySchedule,
+  isOpenToday,
+} = require("../../common/company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
+const logger = require("../../utils/logger");
 
 const getServerTime = async (req, res) => {
   try {
@@ -14,15 +19,14 @@ const getServerTime = async (req, res) => {
       if (company && company.status !== "deleted") {
         timezoneName = getCompanyTimezone(company);
         const serverTime = dayjs().tz(timezoneName);
-        const today = serverTime.format("dddd");
-        const todaySchedule = (company.officeSchedule || {})[today];
-        const [startHour, startMinute] = todaySchedule?.isOpen
-          ? (todaySchedule.startTime || "00:00").split(":").map(Number)
-          : [];
-        const [endHour, endMinute] = todaySchedule?.isOpen
-          ? (todaySchedule.endTime || "23:59").split(":").map(Number)
-          : [];
-        if (todaySchedule?.isOpen) {
+        const { schedule: todaySchedule } = getTodaySchedule(company, serverTime);
+        if (isOpenToday(todaySchedule)) {
+          const [startHour, startMinute] = (todaySchedule.startTime || "00:00")
+            .split(":")
+            .map(Number);
+          const [endHour, endMinute] = (todaySchedule.endTime || "23:59")
+            .split(":")
+            .map(Number);
           const nowMinutes = serverTime.hour() * 60 + serverTime.minute();
           const startMinutes = startHour * 60 + startMinute;
           const endMinutes = endHour * 60 + endMinute;
@@ -45,7 +49,7 @@ const getServerTime = async (req, res) => {
       isAllowedTime,
     });
   } catch (error) {
-    console.error("Error fetching server time:", error.message);
+    logger.error("Error fetching server time:", error.message);
     res.status(500).json({ message: "Error fetching server time." });
   }
 };

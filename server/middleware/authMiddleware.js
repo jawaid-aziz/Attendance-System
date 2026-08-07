@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken"); // For generating tokens
 const User = require("../models/User");
+const logger = require("../utils/logger");
 
 // Authenticate the request and verify the account is still valid:
 // - the user still exists (deleted users lose access immediately)
@@ -47,7 +48,7 @@ const authenticateToken = async (req, res, next) => {
     };
     next();
   } catch (error) {
-    console.error("Error in authenticateToken:", error.message);
+    logger.error("Error in authenticateToken:", error.message);
     return res.status(500).json({ message: "Failed to authenticate" });
   }
 };

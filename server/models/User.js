@@ -29,8 +29,13 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Setup tokens are looked up on every setup-link click; make it unique+sparse.
-UserSchema.index({ setupToken: 1 }, { unique: true, sparse: true });
+// Setup tokens are looked up on every setup-link click; make it unique but
+// only among actual tokens. The default `null` must not collide, so the
+// partial index covers string tokens only.
+UserSchema.index(
+  { setupToken: 1 },
+  { unique: true, partialFilterExpression: { setupToken: { $type: "string" } } }
+);
 // Per-company role filters (admin employee lists, absent sweeper).
 UserSchema.index({ companyId: 1, role: 1 });
 // Superadmin listing.

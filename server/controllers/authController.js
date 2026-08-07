@@ -12,6 +12,7 @@ const {
 const { sendSetupLinkEmail } = require("../utils/sendMail");
 const { withTransaction } = require("../utils/withTransaction");
 const { isValidTimezone } = require("../common/validation");
+const logger = require("../utils/logger");
 
 // User Login
 exports.loginUser = async (req, res) => {
@@ -75,7 +76,7 @@ exports.loginUser = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error("Error logging in:", error.message);
+    logger.error("Error logging in:", error.message);
     res.status(500).json({ message: "Failed to login" });
   }
 };
@@ -151,7 +152,7 @@ exports.registerCompany = async (req, res) => {
     try {
       await sendSetupLinkEmail(adminEmail, `${admin.firstName} ${admin.lastName}`, link);
     } catch (error) {
-      console.error("Failed to send setup email:", error.message);
+      logger.error("Failed to send setup email:", error.message);
       emailFailed = true;
     }
 
@@ -172,7 +173,7 @@ exports.registerCompany = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error registering company:", error.message);
+    logger.error("Error registering company:", error.message);
     res.status(500).json({ message: "Failed to create account" });
   }
 };
@@ -207,7 +208,7 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("Error changing password:", error.message);
+    logger.error("Error changing password:", error.message);
     res.status(500).json({ message: "Failed to update password" });
   }
 };
@@ -256,7 +257,7 @@ exports.completeSetup = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error("Error completing setup:", error.message);
+    logger.error("Error completing setup:", error.message);
     res.status(500).json({ message: "Failed to set password" });
   }
 };

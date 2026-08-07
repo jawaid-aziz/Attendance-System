@@ -1,6 +1,7 @@
 const net = require("net");
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
+const logger = require("../../utils/logger");
 
 const normalizeIP = (ip) => (typeof ip === "string" ? ip.trim() : "");
 
@@ -13,7 +14,7 @@ const getAllowedIPs = async (req, res) => {
     }
     res.json({ allowedIPs: company.allowedRouterIPs });
   } catch (error) {
-    console.error("Error fetching allowed IPs:", error.message);
+    logger.error("Error fetching allowed IPs:", error.message);
     res.status(500).json({ message: "Failed to fetch allowed IPs" });
   }
 };
@@ -47,7 +48,7 @@ const addAllowedIP = async (req, res) => {
 
     res.json({ message: "IP added successfully", allowedIPs: company.allowedRouterIPs });
   } catch (error) {
-    console.error("Error adding allowed IP:", error.message);
+    logger.error("Error adding allowed IP:", error.message);
     res.status(500).json({ message: "Failed to add allowed IP" });
   }
 };
@@ -75,7 +76,7 @@ const removeAllowedIP = async (req, res) => {
 
     res.json({ message: "IP removed successfully", allowedIPs: company.allowedRouterIPs });
   } catch (error) {
-    console.error("Error removing allowed IP:", error.message);
+    logger.error("Error removing allowed IP:", error.message);
     res.status(500).json({ message: "Failed to remove allowed IP" });
   }
 };

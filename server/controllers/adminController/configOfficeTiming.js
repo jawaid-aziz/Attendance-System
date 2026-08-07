@@ -1,6 +1,7 @@
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
 const { isValidOfficeSchedule } = require("../../common/validation");
+const logger = require("../../utils/logger");
 
 // Get office schedule for the requesting company
 const getOfficeSchedule = async (req, res) => {
@@ -14,7 +15,7 @@ const getOfficeSchedule = async (req, res) => {
       timezone: company.timezone || "Asia/Karachi",
     });
   } catch (error) {
-    console.error("Error fetching office schedule:", error.message);
+    logger.error("Error fetching office schedule:", error.message);
     res.status(500).json({ message: "Failed to fetch office schedule." });
   }
 };
@@ -41,7 +42,7 @@ const saveOfficeSchedule = async (req, res) => {
 
     res.json({ message: "Office schedule updated successfully." });
   } catch (error) {
-    console.error("Error saving office schedule:", error);
+    logger.error("Error saving office schedule:", error);
     res.status(500).json({ message: "Failed to save office schedule." });
   }
 };

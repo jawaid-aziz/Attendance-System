@@ -8,17 +8,12 @@ const {
   createUserWithSetupToken,
   setupLinkFor,
 } = require("../../common/onboarding");
+const { isSameCompany, isCompanyActive } = require("../../common/company");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
 const { withTransaction } = require("../../utils/withTransaction");
 
 const mongoose = require("mongoose");
-
-const isSameCompany = (userIdCompanyId, targetCompanyId) =>
-  userIdCompanyId &&
-  targetCompanyId &&
-  userIdCompanyId.toString() === targetCompanyId.toString();
-
-const isCompanyActive = (company) => company && company.status === "active";
+const logger = require("../../utils/logger");
 
 // Get Users Controller
 exports.getUsers = async (req, res) => {
@@ -82,7 +77,7 @@ exports.getUsers = async (req, res) => {
 
     res.status(200).json({ employees });
   } catch (error) {
-    console.error("Error fetching users:", error);
+    logger.error("Error fetching users:", error);
     res.status(500).json({ message: "Error fetching users" });
   }
 };
@@ -156,7 +151,7 @@ exports.addUser = async (req, res) => {
     try {
       await sendSetupLinkEmail(email, `${firstName} ${lastName}`, link);
     } catch (error) {
-      console.error("Failed to send setup email:", error.message);
+      logger.error("Failed to send setup email:", error.message);
       emailFailed = true;
     }
 
@@ -178,7 +173,7 @@ exports.addUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to add user" });
   }
 };
@@ -295,7 +290,7 @@ exports.editUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to update user" });
   }
 };
@@ -376,7 +371,7 @@ exports.deleteUser = async (req, res) => {
       attendanceDeletedCount,
     });
   } catch (error) {
-    console.error("Error deleting user and attendance records:", error);
+    logger.error("Error deleting user and attendance records:", error);
     res.status(500).json({ message: "Failed to delete user and attendance records" });
   }
 };

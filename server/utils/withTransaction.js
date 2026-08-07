@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const logger = require("./logger");
 
 const STANDALONE_MSG = /Transaction numbers are only allowed on a replica set/;
 
@@ -15,7 +16,7 @@ const withTransaction = async (fn) => {
     return result;
   } catch (err) {
     if (STANDALONE_MSG.test(err && err.message)) {
-      console.warn(
+      logger.warn(
         "[tx] Mongo is not a replica set; running without a transaction."
       );
       return fn(null);

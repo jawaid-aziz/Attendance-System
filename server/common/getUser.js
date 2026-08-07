@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const { canAccessUser } = require("./company");
+const logger = require("../utils/logger");
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -14,6 +16,8 @@ const serializeUser = (user) => ({
   companyId: user.companyId || null,
 });
 
+exports.serializeUser = serializeUser;
+
 exports.getUserById = async (req, res) => {
   const userId = req.params.id;
   if (!userId) {
@@ -26,14 +30,7 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const isSelf = user._id.toString() === req.user.id;
-    const sameCompany =
-      req.user.companyId &&
-      user.companyId &&
-      req.user.companyId.toString() === user.companyId.toString();
-    const isSuperadmin = req.user.role === "superadmin";
-
-    if (!isSelf && !sameCompany && !isSuperadmin) {
+    if (!canAccessUser(req, user)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot access this user" });
@@ -43,7 +40,7 @@ exports.getUserById = async (req, res) => {
       user: serializeUser(user),
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to fetch user", error: error.message });
   }
 };
@@ -85,7 +82,7 @@ exports.getUserByName = async (req, res) => {
 
     res.status(200).json({ user: serializeUser(user) });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to fetch user", error: error.message });
   }
 };

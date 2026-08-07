@@ -1,4 +1,5 @@
 const Company = require("../models/Company");
+const logger = require("../utils/logger");
 
 // Resolve the caller's IP, honoring reverse proxies (the app must run with
 // `app.set("trust proxy", 1)` for this to be reliable).
@@ -51,7 +52,7 @@ const validateOfficeIP = async (req, res, next) => {
     }
 
     if (strict && allowed.length === 0) {
-      console.warn(
+      logger.warn(
         `[IP] strict enforcement on but company ${company.slug} has no allowed IPs; denying access.`
       );
       return res
@@ -60,7 +61,7 @@ const validateOfficeIP = async (req, res, next) => {
     }
 
     if (!strict) {
-      console.log(
+      logger.info(
         `[IP] client=${clientIP} allowed=${allowed.join(",")} (enforcement off)`
       );
     }
@@ -68,7 +69,7 @@ const validateOfficeIP = async (req, res, next) => {
     req.clientIP = clientIP;
     next();
   } catch (error) {
-    console.error("Error validating office IP:", error.message);
+    logger.error("Error validating office IP:", error.message);
     return res.status(500).json({ message: "Failed to validate office IP." });
   }
 };

@@ -1,7 +1,9 @@
 const crypto = require("crypto");
 const User = require("../../models/User");
+const { isSameCompany } = require("../../common/company");
 const { setupLinkFor } = require("../../common/onboarding");
 const { sendSetupLinkEmail } = require("../../utils/sendMail");
+const logger = require("../../utils/logger");
 
 // Regenerate and re-email a one-time setup link for a user who never set
 // their password (e.g. the original invite email failed or expired).
@@ -17,9 +19,7 @@ exports.resendInvite = async (req, res) => {
     // Company admins can only resend invites within their own company.
     if (
       req.user.role !== "superadmin" &&
-      req.user.companyId &&
-      user.companyId &&
-      req.user.companyId.toString() !== user.companyId.toString()
+      !isSameCompany(req.user.companyId, user.companyId)
     ) {
       return res
         .status(403)
@@ -36,7 +36,7 @@ exports.resendInvite = async (req, res) => {
     try {
       await sendSetupLinkEmail(user.email, `${user.firstName} ${user.lastName}`, link);
     } catch (error) {
-      console.error("Failed to resend setup email:", error.message);
+      logger.error("Failed to resend setup email:", error.message);
       emailFailed = true;
     }
 
@@ -47,7 +47,7 @@ exports.resendInvite = async (req, res) => {
       emailFailed,
     });
   } catch (error) {
-    console.error("Error resending invite:", error.message);
+    logger.error("Error resending invite:", error.message);
     res.status(500).json({ message: "Failed to resend invite" });
   }
 };

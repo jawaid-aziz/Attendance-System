@@ -1,0 +1,5 @@
+# Root dev tooling (concurrently) — server/client have their own ignores.
+node_modules
+package-lock.json
+*.log
+.env

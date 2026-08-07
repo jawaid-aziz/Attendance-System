@@ -2,7 +2,12 @@ const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 const Company = require("../models/Company");
 const { absentDeduction } = require("../common/deductions");
+const {
+  getTodaySchedule,
+  isOpenToday,
+} = require("../common/company");
 const { dayjs, getCompanyTimezone } = require("./dayjs");
+const logger = require("./logger");
 
 // Mark employees absent once the working day has ended and they never checked
 // in. Runs as an hourly cron. Enable on a SINGLE worker only (set
@@ -12,14 +17,12 @@ const markAbsentForNonCheckIns = async () => {
 
   for (const company of companies) {
     const serverTime = dayjs().tz(getCompanyTimezone(company));
-    const today = serverTime.format("dddd");
     const dayStart = serverTime.startOf("day").toDate();
 
-    const officeSchedule = company.officeSchedule || {};
-    const todaySchedule = officeSchedule[today];
+    const { schedule: todaySchedule } = getTodaySchedule(company, serverTime);
 
-    if (!todaySchedule?.isOpen) {
-      console.log(`Skipping ${company.slug}: office closed on ${today}.`);
+    if (!isOpenToday(todaySchedule)) {
+      logger.info(`Skipping ${company.slug}: office closed today.`);
       continue;
     }
 
@@ -31,7 +34,7 @@ const markAbsentForNonCheckIns = async () => {
 
     // Only mark absent after the working day has ended
     if (nowMinutes <= endMinutes) {
-      console.log(`Skipping ${company.slug}: working day not over yet.`);
+      logger.info(`Skipping ${company.slug}: working day not over yet.`);
       continue;
     }
 
@@ -47,7 +50,7 @@ const markAbsentForNonCheckIns = async () => {
     }).select("_id firstName salary");
 
     if (unattendedEmployees.length === 0) {
-      console.log(`No unattended employees for ${company.slug}.`);
+      logger.info(`No unattended employees for ${company.slug}.`);
       continue;
     }
 
@@ -75,7 +78,7 @@ const markAbsentForNonCheckIns = async () => {
         },
       }))
     );
-    console.log(
+    logger.info(
       `Marked ${unattendedEmployees.length} employees absent for ${company.slug}.`
     );
   }
@@ -83,7 +86,7 @@ const markAbsentForNonCheckIns = async () => {
 
 const startAbsentSweeper = () => {
   if (process.env.CRON_ENABLED !== "true") {
-    console.log(
+    logger.info(
       "Absent sweeper disabled (set CRON_ENABLED=true on a single worker to enable)."
     );
     return;
@@ -96,12 +99,12 @@ const startAbsentSweeper = () => {
       try {
         await markAbsentForNonCheckIns();
       } catch (error) {
-        console.error("Cron job error:", error);
+        logger.error("Cron job error:", error);
       }
     },
     { timezone: "Etc/UTC" }
   );
-  console.log("Absent sweeper enabled.");
+  logger.info("Absent sweeper enabled.");
 };
 
 module.exports = { markAbsentForNonCheckIns, startAbsentSweeper };

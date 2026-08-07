@@ -1,5 +1,6 @@
 const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
+const logger = require("../../utils/logger");
 
 /**
  * @desc    Get the deductions settings for the requesting company
@@ -18,7 +19,7 @@ exports.getDeductions = async (req, res) => {
       deductionRate: company.deductionRate,
     });
   } catch (error) {
-    console.error("Error fetching deductions settings:", error.message);
+    logger.error("Error fetching deductions settings:", error.message);
     res.status(500).json({ message: "Failed to fetch deductions settings" });
   }
 };
@@ -54,7 +55,7 @@ exports.updateDeductions = async (req, res) => {
 
     res.status(200).json({ message: "Deductions settings updated successfully." });
   } catch (error) {
-    console.error("Error updating deductions settings:", error.message);
+    logger.error("Error updating deductions settings:", error.message);
     res.status(500).json({ message: "Failed to update deductions settings" });
   }
 };
