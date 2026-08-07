@@ -44,7 +44,6 @@ const OfficeTimings = () => {
 
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched office schedule:", data);
           const schedule = data.schedule || data; // tolerate legacy shape
 
           const filteredSchedule = daysOfWeek.reduce((acc, day) => {
@@ -109,7 +108,6 @@ const OfficeTimings = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Save schedule response:", data);
         toast.success(data.message || "Office schedule saved successfully.");
       } else {
         const errorData = await response.json();

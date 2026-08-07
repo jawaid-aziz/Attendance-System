@@ -2,9 +2,9 @@
 
 Audit date: 2026-08-07
 Auditor: Senior Application Security Engineer (assisted)
-Scope: Full `server/` codebase (routes, controllers, middleware, models, utils,
-common, config) plus authentication, authorization, rate limiting, CORS,
-logging, and data exposure.
+Scope: Full `server/` and `client/` codebases (routes, controllers, middleware,
+models, utils, common, config) plus authentication, authorization, rate
+limiting, CORS, logging, data exposure, and frontend storage/XSS surface.
 
 Every finding below lists severity, status (fixed in this pass / open), the
 affected file, and remediation. Findings marked **fixed** have a regression test
@@ -31,6 +31,10 @@ in `server/test/`.
 | INFO-7 | Info | Public `registerCompany` abuse potential | Open |
 | I2 | Info | `DELETE /admin/removeAllowedIP` sends a request body | Open |
 | P2 | Info | No max length caps on free-text fields | Open |
+| F1 | Medium | JWT bearer token stored in `localStorage` | Open |
+| S1 | Medium | Bearer token logged to browser console | Fixed |
+| S2 | Low | Debug `console.log` of API payloads | Fixed |
+| A1 | Medium | Client falls back to `http://localhost:5000` in production | Fixed |
 
 CORS configuration and authentication coverage were reviewed and found correct.
 
@@ -170,7 +174,54 @@ GET/POST/PUT/PATCH/DELETE. Non-allowlisted origins get no ACAO header.
 
 ---
 
-## 3. Confirmed positives (no action needed)
+## 3. Findings — Frontend security review
+
+### 3.1 Unsafe user input handling — PASS
+No `dangerouslySetInnerHTML`, `innerHTML`, `document.write`, `eval`, or
+`new Function` anywhere in `client/src`. All user data renders as React text
+nodes (auto-escaped); inputs are controlled components; the server validates
+authoritatively. Login/Setup forms use `type="password"` + `autoComplete`.
+
+### 3.2 Local storage secrets
+#### F1 [Medium] — JWT bearer token in `localStorage` — OPEN
+The session token is persisted in `localStorage` (Pages/Login.jsx:47,
+Pages/Setup.jsx:60); any XSS on the origin can exfiltrate it. No XSS sink
+currently exists, TTL is 5 h, and there is no refresh token. Covered by LOW-5
+(see Section 1). Mitigations in place: the one-time setup token is kept only in
+`sessionStorage` and stripped from the URL (Pages/Setup.jsx:24-35); passwords
+are never persisted; `role`/`id`/`slug` are UI hints only (server re-derives
+authority).
+
+### 3.3 XSS vulnerabilities — PASS
+No DOM/HTML-injection sinks found. React's default escaping plus controlled
+inputs covers names, emails, attendance data, and company names.
+
+### 3.4 Sensitive data exposure
+#### S1 [Medium] — Bearer token logged to browser console — FIXED
+`console.log(localStorage.getItem("token"))` was a debug leftover in
+Components/Timezone.jsx:44, exposing the live session token to anyone at the
+console. Removed.
+#### S2 [Low] — Debug `console.log` of API payloads — FIXED
+`console.log` of fetched/saved office-schedule data in
+Components/OfficeTimings.jsx:47,112. Not sensitive, but removed as leftover
+debugging.
+#### S3 — Salary/address/phone — PASS
+Only rendered for self/admin because the API now returns those fields only to
+self/admin (server MEDIUM-3 / E1 fixes).
+
+### 3.5 Insecure API communication
+#### A1 [Medium] — Production fallback to `http://localhost:5000` — FIXED
+`lib/config.js` resolved to plaintext `http://localhost:5000` when
+`VITE_API_URL` was unset, which would be mixed content on an HTTPS host. The
+build-time guard in `vite.config.js` already fails a production build without
+`VITE_API_URL`; the insecure fallback has now been removed entirely so
+production always uses `VITE_API_URL` and dev uses the same-origin Vite proxy.
+- All requests use `${API_URL}` with `Authorization: Bearer`; no API keys or
+  secrets are baked into the client; transport security is deployment-managed.
+
+---
+
+## 4. Confirmed positives (no action needed)
 
 - Token `version` check invalidates JWTs on password/role change.
 - Middleware re-fetches role/company from the DB; JWT claims are not trusted.
@@ -190,7 +241,7 @@ GET/POST/PUT/PATCH/DELETE. Non-allowlisted origins get no ACAO header.
 
 ---
 
-## 4. Recommended backlog
+## 5. Recommended backlog
 
 1. LOW-4: HTML-escape email template variables; add plain-text alternative.
 2. LOW-5: pin `algorithms: ["HS256"]` on verify; add `issuer`; evaluate
@@ -202,3 +253,5 @@ GET/POST/PUT/PATCH/DELETE. Non-allowlisted origins get no ACAO header.
 5. INFO-7: tighten `registerCompany` (lower limit, captcha, or email
    verification).
 6. I2: move `removeAllowedIP` IP to a query parameter.
+7. F1/LOW-5: migrate from `localStorage` bearer token to an HttpOnly cookie
+   (with CSRF protection) or short-lived + refresh tokens.

@@ -41,7 +41,6 @@ export const Timezone = () => {
         const data = await response.json();
         setCurrentTimezone(data.timezone); // Set the current timezone from the backend
       } catch (error) {
-        console.log(localStorage.getItem("token"));
         console.error("Error fetching current timezone:", error.message);
         toast.error("Failed to load current timezone.", { duration: 5000 });
       }
