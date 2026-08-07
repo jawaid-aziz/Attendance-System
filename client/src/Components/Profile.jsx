@@ -8,7 +8,10 @@ import { API_URL } from "@/lib/config";
 import { Card, CardContent, CardHeader } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
 import { Button } from "@/Components/ui/button";
-import { Progress } from "@/Components/ui/progress";
+import { Label } from "@/Components/ui/label";
+import { Skeleton } from "@/Components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/Components/ui/avatar";
+import { Badge } from "@/Components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,7 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
+import { Loader2, Save, Lock, Pencil } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+
+const initialsFor = (firstName, lastName) =>
+  `${(firstName || "")[0] || ""}${(lastName || "")[0] || ""}`.toUpperCase();
 
 export const Profile = () => {
   const { name } = useParams();
@@ -25,7 +32,7 @@ export const Profile = () => {
   const { id: ownId } = useId();
   const { targetId, status } = useTargetUser();
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const [pwForm, setPwForm] = useState({
     currentPassword: "",
@@ -49,11 +56,6 @@ export const Profile = () => {
 
     const fetchUser = async () => {
       setLoading(true);
-      setProgress(0);
-
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev < 95 ? prev + 5 : prev));
-      }, 100);
 
       try {
         const response = await fetch(
@@ -84,9 +86,7 @@ export const Profile = () => {
       } catch (err) {
         toast.error(err.message, { duration: 5000 });
       } finally {
-        clearInterval(interval);
-        setProgress(100);
-        setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     };
 
@@ -121,6 +121,7 @@ export const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       const sanitizedFormData = {
         ...formData,
@@ -145,6 +146,8 @@ export const Profile = () => {
       toast.success("User data updated successfully!", { duration: 5000 });
     } catch (err) {
       toast.error(err.message, { duration: 5000 });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -185,208 +188,269 @@ export const Profile = () => {
     return <p className="p-6 text-red-600">User not found.</p>;
   }
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-4">
-        <Progress value={progress} className="h-2" />
-        <p className="text-sm text-gray-500 mt-2">Loading...</p>
-      </div>
-    );
-  }
+  const isOwnProfile = targetId === ownId;
+  const readOnly = role !== "admin";
+  const sectionTitle = (icon, text) => (
+    <div className="flex items-center gap-2">
+      {icon}
+      <h2 className="text-lg font-semibold text-slate-900">{text}</h2>
+    </div>
+  );
 
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
-        <CardHeader>
-          <h1 className="text-2xl font-semibold">Profile</h1>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Information Section */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-700">
-                Personal Information
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 font-medium">First Name</label>
-                  <Input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    readOnly={role !== "admin"}
-                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Last Name</label>
-                  <Input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    readOnly={role !== "admin"}
-                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Phone</label>
-                  <Input
-                    type="text"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    readOnly={role !== "admin"}
-                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Email</label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    readOnly={role !== "admin"}
-                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">Address</label>
-                <Input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  readOnly={role !== "admin"}
-                  className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                />
-              </div>
-            </div>
-
-            {/* Professional Information Section */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-700">
-                Professional Information
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 font-medium">Role</label>
-                  {role === "admin" ? (
-                    <Select
-                      value={formData.role}
-                      onValueChange={handleRoleChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="employee">Employee</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      type="text"
-                      name="role"
-                      value={formData.role}
-                      readOnly
-                      className={
-                        role !== "admin" ? "bg-cornflower-blue-100" : ""
-                      }
-                    />
+      <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
+        {loading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-28 rounded-2xl bg-slate-100" />
+            <Skeleton className="h-72 rounded-2xl bg-slate-100" />
+            {isOwnProfile && (
+              <Skeleton className="h-72 rounded-2xl bg-slate-100" />
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-cornflower-blue-100 text-xl font-semibold text-cornflower-blue-700">
+                  {initialsFor(formData.firstName, formData.lastName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-bold tracking-tight text-slate-900">
+                  {formData.firstName} {formData.lastName}
+                </h1>
+                <p className="truncate text-sm text-slate-500">
+                  {formData.email}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className={
+                      formData.role === "admin"
+                        ? "bg-cornflower-blue-50 text-cornflower-blue-700"
+                        : "bg-slate-100 text-slate-600"
+                    }
+                  >
+                    {formData.role}
+                  </Badge>
+                  {readOnly && (
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+                      <Pencil className="h-3 w-3" /> Read-only view
+                    </span>
                   )}
                 </div>
-                <div>
-                  <label className="block mb-1 font-medium">Salary</label>
-                  <Input
-                    type="text"
-                    name="salary"
-                    value={formData.salary}
-                    onChange={handleInputChange}
-                    readOnly={role !== "admin"}
-                    className={role !== "admin" ? "bg-cornflower-blue-100" : ""}
-                  />
-                </div>
               </div>
             </div>
 
-            {role === "admin" && (
-              <Button type="submit" className="w-full">
-                Save Changes
-              </Button>
-            )}
-          </form>
-        </CardContent>
-      </Card>
+            <Card className="rounded-2xl border-slate-100 shadow-sm">
+              <CardHeader className="pb-4">
+                {sectionTitle(<Pencil className="h-5 w-5 text-cornflower-blue-600" />, "Personal Information")}
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        readOnly={readOnly}
+                        className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        readOnly={readOnly}
+                        className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        readOnly={readOnly}
+                        className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        readOnly={readOnly}
+                        className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      readOnly={readOnly}
+                      className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                    />
+                  </div>
 
-      {targetId === ownId && (
-        <Card className="w-full md:w-3/4 lg:w-2/3 mx-auto mt-6">
-          <CardHeader>
-            <h2 className="text-2xl font-semibold">Change Password</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div>
-                <label className="block mb-1 font-medium">
-                  Current Password
-                </label>
-                <Input
-                  type="password"
-                  name="currentPassword"
-                  value={pwForm.currentPassword}
-                  onChange={(e) =>
-                    setPwForm((prev) => ({
-                      ...prev,
-                      currentPassword: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">New Password</label>
-                <Input
-                  type="password"
-                  name="newPassword"
-                  value={pwForm.newPassword}
-                  onChange={(e) =>
-                    setPwForm((prev) => ({
-                      ...prev,
-                      newPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="At least 6 characters"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium">
-                  Confirm New Password
-                </label>
-                <Input
-                  type="password"
-                  name="confirmPassword"
-                  value={pwForm.confirmPassword}
-                  onChange={(e) =>
-                    setPwForm((prev) => ({
-                      ...prev,
-                      confirmPassword: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" disabled={pwSubmitting} className="w-full">
-                {pwSubmitting ? "Updating..." : "Update Password"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role</Label>
+                      {readOnly ? (
+                        <Input
+                          id="role"
+                          type="text"
+                          name="role"
+                          value={formData.role}
+                          readOnly
+                          className="bg-slate-50 text-slate-600"
+                        />
+                      ) : (
+                        <Select
+                          value={formData.role}
+                          onValueChange={handleRoleChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="employee">Employee</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="salary">Salary (Rs.)</Label>
+                      <Input
+                        id="salary"
+                        type="text"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        readOnly={readOnly}
+                        className={readOnly ? "bg-slate-50 text-slate-600" : ""}
+                      />
+                    </div>
+                  </div>
+
+                  {role === "admin" && (
+                    <Button type="submit" className="w-full" disabled={saving}>
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" /> Save Changes
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+
+            {isOwnProfile && (
+              <Card className="rounded-2xl border-slate-100 shadow-sm">
+                <CardHeader className="pb-4">
+                  {sectionTitle(<Lock className="h-5 w-5 text-cornflower-blue-600" />, "Change Password")}
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        name="currentPassword"
+                        value={pwForm.currentPassword}
+                        onChange={(e) =>
+                          setPwForm((prev) => ({
+                            ...prev,
+                            currentPassword: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword">New Password</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          name="newPassword"
+                          value={pwForm.newPassword}
+                          onChange={(e) =>
+                            setPwForm((prev) => ({
+                              ...prev,
+                              newPassword: e.target.value,
+                            }))
+                          }
+                          placeholder="At least 6 characters"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">
+                          Confirm New Password
+                        </Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          name="confirmPassword"
+                          value={pwForm.confirmPassword}
+                          onChange={(e) =>
+                            setPwForm((prev) => ({
+                              ...prev,
+                              confirmPassword: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={pwSubmitting}
+                      className="w-full"
+                    >
+                      {pwSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Updating...
+                        </>
+                      ) : (
+                        "Update Password"
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
     </>
   );
 };

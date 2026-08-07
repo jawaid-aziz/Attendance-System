@@ -16,7 +16,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/Components/ui/select";
-import { Copy } from "lucide-react";
+import { Skeleton } from "@/Components/ui/skeleton";
+import { Copy, Building2, Plus } from "lucide-react";
 import timezoneData from "../../Data/Timezones.json";
 import {
   Table,
@@ -59,20 +60,22 @@ const timezones = [
   ...timezoneData.map((tz) => ({ value: tz.utc[0], text: tz.text })),
 ];
 
+const emptyForm = {
+  name: "",
+  slug: "",
+  totalEmployees: "",
+  timezone: "Asia/Karachi",
+  adminFirstName: "",
+  adminLastName: "",
+  adminEmail: "",
+};
+
 const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [companyToDelete, setCompanyToDelete] = useState(null);
   const [createdLink, setCreatedLink] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    slug: "",
-    totalEmployees: "",
-    timezone: "Asia/Karachi",
-    adminFirstName: "",
-    adminLastName: "",
-    adminEmail: "",
-  });
+  const [form, setForm] = useState(emptyForm);
   const [createOpen, setCreateOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -146,10 +149,7 @@ const Companies = () => {
       if (!res.ok) throw new Error(data.message || "Failed to create company");
       toast.success(data.message || "Company created");
       setCreatedLink(data.admin?.setupLink || "");
-      setForm({
-        name: "", slug: "", totalEmployees: "", timezone: "Asia/Karachi",
-        adminFirstName: "", adminLastName: "", adminEmail: "",
-      });
+      setForm(emptyForm);
       setCreateOpen(false);
       fetchCompanies();
     } catch (e) {
@@ -157,24 +157,47 @@ const Companies = () => {
     }
   };
 
-  if (loading) return <div className="p-6">Loading companies...</div>;
+  const activeCount = companies.filter((c) => c.status === "active").length;
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+        <Skeleton className="h-20 w-64 bg-slate-100" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl bg-slate-100" />
+          ))}
+        </div>
+        <Skeleton className="h-72 rounded-2xl bg-slate-100" />
+      </div>
+    );
+  }
 
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Companies</h1>
+      <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+              Companies
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage workspaces on the platform.
+            </p>
+          </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button>Create Company</Button>
+              <Button>
+                <Plus className="h-4 w-4" /> Create Company
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Company</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreate} className="grid gap-4">
-                <div>
+                <div className="space-y-2">
                   <Label>Company Name</Label>
                   <Input
                     value={form.name}
@@ -182,7 +205,7 @@ const Companies = () => {
                     required
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>Slug (optional)</Label>
                   <Input
                     value={form.slug}
@@ -190,7 +213,7 @@ const Companies = () => {
                     placeholder="auto-generated from name"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>Total Employees</Label>
                   <Input
                     type="number"
@@ -198,7 +221,7 @@ const Companies = () => {
                     onChange={(e) => setForm({ ...form, totalEmployees: e.target.value })}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>Timezone</Label>
                   <Select
                     value={form.timezone}
@@ -207,7 +230,7 @@ const Companies = () => {
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select Timezone" />
                     </SelectTrigger>
-                    <SelectContent className="h-60">
+                    <SelectContent className="max-h-72">
                       {timezones.map((tz, i) => (
                         <SelectItem key={i} value={tz.value}>
                           {tz.text}
@@ -274,73 +297,116 @@ const Companies = () => {
           </div>
         )}
 
-        <Card>
-          <CardHeader>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cornflower-blue-50 text-cornflower-blue-600">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">Total</p>
+              <p className="text-2xl font-bold text-slate-900">{companies.length}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">Active</p>
+              <p className="text-2xl font-bold text-slate-900">{activeCount}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">Suspended</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {companies.length - activeCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Card className="rounded-2xl border-slate-100 shadow-sm">
+          <CardHeader className="pb-2">
             <CardTitle>All Companies</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead>Timezone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {companies.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.slug}</TableCell>
-                    <TableCell>{c.members}</TableCell>
-                    <TableCell>{c.timezone}</TableCell>
-                    <TableCell>
-                      <Badge className={c.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
-                        {c.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c.slug}`)}>
-                          View
-                        </Button>
-                        {c.status === "active" ? (
-                          <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "suspended")}>
-                            Suspend
-                          </Button>
-                        ) : (
-                          <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "active")}>
-                            Activate
-                          </Button>
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" onClick={() => setCompanyToDelete(c)}>
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {companyToDelete?.name}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This permanently removes the company, its users and attendance records.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete}>Yes, Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+            {companies.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <p className="text-sm font-medium text-slate-600">
+                  No companies yet
+                </p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Create your first company to get started.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Name</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>Timezone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {companies.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell>{c.slug}</TableCell>
+                      <TableCell>{c.members}</TableCell>
+                      <TableCell>{c.timezone}</TableCell>
+                      <TableCell>
+                        <Badge className={c.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                          {c.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c.slug}`)}>
+                            View
+                          </Button>
+                          {c.status === "active" ? (
+                            <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "suspended")}>
+                              Suspend
+                            </Button>
+                          ) : (
+                            <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "active")}>
+                              Activate
+                            </Button>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" onClick={() => setCompanyToDelete(c)}>
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete {companyToDelete?.name}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This permanently removes the company, its users and attendance records.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete}>Yes, Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

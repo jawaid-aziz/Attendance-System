@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/Components/ui/card";
 import { Input } from "@/Components/ui/input";
 import { Button } from "@/Components/ui/button";
-import { Progress } from "@/Components/ui/progress";
+import { Label } from "@/Components/ui/label";
 import {
   SelectContent,
   Select,
@@ -10,22 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
+import { Loader2, UserPlus } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { API_URL } from "@/lib/config";
 
-const AddEmployeeForm = () => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    salary: "",
-    address: "",
-    role: "employee",
-  });
+const initialForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  salary: "",
+  address: "",
+  role: "employee",
+};
 
+const AddEmployeeForm = () => {
+  const [formData, setFormData] = useState(initialForm);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0); // Added progress state
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,11 +36,6 @@ const AddEmployeeForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 95 ? prev + 5 : prev));
-    }, 100);
 
     try {
       const response = await fetch(`${API_URL}/admin/add`, {
@@ -51,132 +47,123 @@ const AddEmployeeForm = () => {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to add employee.", { duration: 5000 });
+        toast.error(data.message || "Failed to add employee.", {
+          duration: 5000,
+        });
+        return;
       }
 
-      toast.success("Employee added! A setup link was sent to their email.", { duration: 6000 });
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        salary: "",
-        address: "",
-        role: "employee",
-      });
+      toast.success(
+        "Employee added! A setup link was sent to their email.",
+        { duration: 6000 }
+      );
+      setFormData(initialForm);
     } catch (error) {
-      if (error.message) {
-        toast.error(`Error: ${error.message}`, { duration: 5000 });
-      } else {
-        toast.error("Failed to add employee. Please try again.", { duration: 5000 });
-      }
+      toast.error(
+        error.message || "Failed to add employee. Please try again.",
+        { duration: 5000 }
+      );
     } finally {
-      clearInterval(interval);
-      setProgress(100);
-      setTimeout(() => setLoading(false), 500);
+      setLoading(false);
     }
   };
 
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <div className="flex items-center justify-center">
-        <Card className="w-full max-w-xl">
-          <CardHeader>
-            <h1 className="text-2xl font-bold text-gray-800">Add Employee</h1>
+      <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+            Add Employee
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Create a team member and email them a one-time setup link.
+          </p>
+        </div>
+
+        <Card className="rounded-2xl border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Personal Information
+            </h2>
           </CardHeader>
           <CardContent>
-            {loading && (
-              <div className="mb-4">
-                <Progress value={progress} className="h-2" />
-                <p className="text-sm text-gray-500 mt-2">
-                  {progress}% Adding employee...
-                </p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    First Name
-                  </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
+                    id="firstName"
                     type="text"
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    placeholder="Enter employee first name"
+                    placeholder="Enter first name"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Last Name
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
+                    id="lastName"
                     type="text"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    placeholder="Enter employee last name"
+                    placeholder="Enter last name"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Phone
-                  </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
                   <Input
-                    type="text"
+                    id="phone"
+                    type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    placeholder="Enter employee phone number"
+                    placeholder="Enter phone number"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Email
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <Input
+                    id="email"
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    placeholder="Enter employee email"
+                    placeholder="Enter email"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-medium mb-1">
-                  Address
-                </label>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
                 <Input
+                  id="address"
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   required
-                  placeholder="Enter employee address"
+                  placeholder="Enter address"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Role
-                  </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Role</Label>
                   <Select
                     value={formData.role}
                     onValueChange={(value) =>
@@ -193,24 +180,31 @@ const AddEmployeeForm = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Salary
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="salary">Salary (Rs.)</Label>
                   <Input
+                    id="salary"
                     type="number"
+                    min="0"
                     name="salary"
                     value={formData.salary}
                     onChange={handleChange}
                     required
-                    placeholder="Enter employee salary"
+                    placeholder="Enter monthly salary"
                   />
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <Button type="submit" className="w-full">
-                Add Employee
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Adding...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" /> Add Employee
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
