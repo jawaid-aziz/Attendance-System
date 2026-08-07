@@ -1,13 +1,16 @@
 const Company = require("../models/Company");
 const logger = require("../utils/logger");
 
-// Resolve the caller's IP, honoring reverse proxies (the app must run with
-// `app.set("trust proxy", 1)` for this to be reliable).
+// Resolve the caller's IP. X-Forwarded-For is only honored when the app is
+// configured to sit behind a trusted reverse proxy (TRUST_PROXY=true);
+// otherwise it is client-controlled and must not be trusted.
 const getClientIP = (req) => {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) {
-    const first = String(forwarded).split(",")[0].trim();
-    if (first) return first;
+  if (req.app.get("trust proxy")) {
+    const forwarded = req.headers["x-forwarded-for"];
+    if (forwarded) {
+      const first = String(forwarded).split(",")[0].trim();
+      if (first) return first;
+    }
   }
   const remote = req.socket && req.socket.remoteAddress;
   return remote ? remote.replace("::ffff:", "") : null;

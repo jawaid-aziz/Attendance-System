@@ -4,17 +4,30 @@ const logger = require("../utils/logger");
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const serializeUser = (user) => ({
-  id: user._id,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  email: user.email,
-  phone: user.phone,
-  salary: user.salary,
-  address: user.address,
-  role: user.role,
-  companyId: user.companyId || null,
-});
+// Sensitive profile fields (salary, address, phone) are only exposed to the
+// user themself, company admins, or superadmins — never to ordinary employees
+// browsing their colleagues. `requester` is the authenticated user (req.user);
+// when omitted (e.g. login response) the target is the requester themself.
+const maySeeSensitive = (user, requester) => {
+  if (!requester) return true;
+  if (["admin", "superadmin"].includes(requester.role)) return true;
+  return user._id && requester.id && user._id.toString() === requester.id;
+};
+
+const serializeUser = (user, requester) => {
+  const includeSensitive = maySeeSensitive(user, requester);
+  return {
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    role: user.role,
+    companyId: user.companyId || null,
+    ...(includeSensitive
+      ? { phone: user.phone, salary: user.salary, address: user.address }
+      : {}),
+  };
+};
 
 exports.serializeUser = serializeUser;
 
@@ -37,7 +50,7 @@ exports.getUserById = async (req, res) => {
     }
 
     res.status(200).json({
-      user: serializeUser(user),
+      user: serializeUser(user, req.user),
     });
   } catch (error) {
     logger.error(error);
@@ -80,7 +93,7 @@ exports.getUserByName = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ user: serializeUser(user) });
+    res.status(200).json({ user: serializeUser(user, req.user) });
   } catch (error) {
     logger.error(error);
     res.status(500).json({ message: "Failed to fetch user", error: error.message });

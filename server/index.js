@@ -36,8 +36,12 @@ validateEnv();
 const app = express();
 
 // Trust the first proxy so req.ip / X-Forwarded-For are reliable when the
-// app runs behind a reverse proxy or load balancer.
-app.set("trust proxy", 1);
+// app runs behind a reverse proxy or load balancer. Only enable when actually
+// deployed behind a trusted proxy — otherwise a direct client can spoof
+// X-Forwarded-For to bypass IP-based rate limiting and office-IP checks.
+if (process.env.TRUST_PROXY === "true") {
+  app.set("trust proxy", 1);
+}
 
 // Security headers
 app.use(helmet());

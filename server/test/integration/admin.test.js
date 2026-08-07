@@ -82,6 +82,53 @@ describe("admin authorization", () => {
   });
 });
 
+describe("GET /byId/getUser/:id sensitive-field gating", () => {
+  let colleague;
+  beforeEach(async () => {
+    colleague = await User.create({
+      firstName: "Co",
+      lastName: "Worker",
+      email: "co.worker@admin.io",
+      phone: "03001112222",
+      salary: 75000,
+      address: "Other Street 99",
+      password: await bcrypt.hash("Emp12345", 10),
+      role: "employee",
+      companyId: company._id,
+    });
+  });
+
+  it("omits salary/address/phone for an employee viewing a colleague", async () => {
+    const res = await request(app)
+      .get(`/byId/getUser/${colleague._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.user).not.toHaveProperty("salary");
+    expect(res.body.user).not.toHaveProperty("address");
+    expect(res.body.user).not.toHaveProperty("phone");
+  });
+
+  it("includes salary/address/phone for an admin viewing an employee", async () => {
+    const res = await request(app)
+      .get(`/byId/getUser/${colleague._id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.user.salary).toBe(75000);
+    expect(res.body.user.address).toBe("Other Street 99");
+    expect(res.body.user.phone).toBe("03001112222");
+  });
+
+  it("includes salary/address/phone for an employee viewing themselves", async () => {
+    const res = await request(app)
+      .get(`/byId/getUser/${employee._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.user.salary).toBe(60000);
+    expect(res.body.user.address).toBe("Some Street 12");
+    expect(res.body.user.phone).toBe("03001234567");
+  });
+});
+
 describe("GET /admin/user", () => {
   it("lists only the requester's company employees", async () => {
     const other = await createCompanyWithUniqueSlug({ name: "Other Co" }, null);

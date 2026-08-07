@@ -23,10 +23,11 @@ const makeRes = () => {
   return res;
 };
 
-const makeReq = (companyId, ip) => ({
+const makeReq = (companyId, ip, { trustProxy = true } = {}) => ({
   user: { companyId },
   headers: ip ? { "x-forwarded-for": ip } : {},
   socket: { remoteAddress: "203.0.113.9" },
+  app: { get: (key) => (key === "trust proxy" ? trustProxy : undefined) },
 });
 
 beforeAll(async () => {
@@ -84,6 +85,24 @@ describe("validateOfficeIP", () => {
 
     await validateOfficeIP(req, res, next);
 
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores X-Forwarded-For when not behind a trusted proxy", async () => {
+    process.env.IP_ENFORCEMENT = "strict";
+    const company = await createCompanyWithUniqueSlug(
+      { name: "IP Co", allowedRouterIPs: ["203.0.113.9"] },
+      null
+    );
+    // Spoofs an allowed IP via X-Forwarded-For, but the request is NOT from a
+    // trusted proxy, so the header must be ignored and the socket address used.
+    const req = makeReq(company._id, "203.0.113.7", { trustProxy: false });
+    const res = makeRes();
+    const next = vi.fn();
+
+    await validateOfficeIP(req, res, next);
+
+    expect(req.clientIP).toBe("203.0.113.9");
     expect(next).toHaveBeenCalledTimes(1);
   });
 

@@ -14,6 +14,12 @@ const { withTransaction } = require("../utils/withTransaction");
 const { isValidTimezone } = require("../common/validation");
 const logger = require("../utils/logger");
 
+// Fixed bcrypt hash of a random throwaway password. Compared against when the
+// email is unknown so login responses take the same time for existing and
+// non-existing accounts (prevents timing-based account enumeration).
+const DUMMY_HASH =
+  "$2a$10$yhqAjbwIhjN6MN2QRgfw/e8gzIt6f5ZRafWUppzJnZQasFSbUoe8G";
+
 // User Login
 exports.loginUser = async (req, res) => {
   const { email, password, slug } = req.body;
@@ -34,6 +40,9 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email });
     // Generic message to avoid user enumeration
     if (!user) {
+      // Equalize timing: run bcrypt against a dummy hash so unknown-email
+      // responses take about as long as a real password comparison.
+      await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({ message: "Invalid email or password" });
     }
     // Validate the password
