@@ -292,7 +292,7 @@ const Companies = () => {
               </TableHeader>
               <TableBody>
                 {companies.map((c) => (
-                  <TableRow key={c._id}>
+                  <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.name}</TableCell>
                     <TableCell>{c.slug}</TableCell>
                     <TableCell>{c.members}</TableCell>

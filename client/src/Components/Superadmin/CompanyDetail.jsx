@@ -76,7 +76,7 @@ const CompanyDetail = () => {
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow key={u._id}>
+                  <TableRow key={u.id}>
                     <TableCell>{`${u.firstName} ${u.lastName}`}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.role}</TableCell>
