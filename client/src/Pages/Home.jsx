@@ -1,4 +1,3 @@
-import React from "react";
 import Clocking from "../Components/Clocking";
 import { useId } from "../Context/IdProvider";
 import { useCompany } from "../Context/CompanyProvider";

@@ -74,7 +74,7 @@ export const GetStarted = () => {
       setCreatedSlug(data.company?.slug || "");
       toast.success(data.message || "Account created!", { duration: 6000 });
       setStep(2);
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
@@ -224,7 +224,7 @@ export const GetStarted = () => {
                   />
                 </div>
                 <p className="text-sm text-gray-500">
-                  We'll email you a secure one-time link to set your password.
+                  We&apos;ll email you a secure one-time link to set your password.
                 </p>
                 <div className="flex gap-3">
                   <Button
@@ -254,7 +254,7 @@ export const GetStarted = () => {
                   Your workspace is being set up!
                 </h2>
                 <p className="text-sm text-gray-600">
-                  We've sent a setup link to{" "}
+                  We&apos;ve sent a setup link to{" "}
                   <strong>{admin.email}</strong>. Click it to set your password
                   and access your dashboard.
                   {createdSlug && (

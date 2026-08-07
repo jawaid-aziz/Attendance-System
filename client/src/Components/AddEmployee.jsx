@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ const AddEmployeeForm = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6" autocomplete="off">
+            <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 font-medium mb-1">

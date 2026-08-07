@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
@@ -54,7 +54,7 @@ const Login = () => {
       setId(user.id);
       window.dispatchEvent(new Event("auth-changed"));
       navigate(getHomePath());
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     }
   };

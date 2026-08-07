@@ -1,5 +1,6 @@
 // src/Context/IdProvider.jsx
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
+import PropTypes from 'prop-types';
 
 const IdContext = createContext();
 
@@ -24,6 +25,10 @@ export const IdProvider = ({ children }) => {
       {children}
     </IdContext.Provider>
   );
+};
+
+IdProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useId = () => {

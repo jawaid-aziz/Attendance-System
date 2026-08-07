@@ -1,9 +1,9 @@
 // src/components/ProtectedRoute.jsx
-import React from "react";
 import { Navigate } from "react-router-dom";
 import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider"; // If you have IdProvider
 import { isTokenExpired } from "@/lib/tokenExpire";
+import PropTypes from "prop-types";
 const ProtectedRoute = ({ children, roles }) => {
   const { role, loading: roleLoading } = useRole();
   const { id, loading: idLoading } = useId(); // If using IdProvider
@@ -29,6 +29,11 @@ const ProtectedRoute = ({ children, roles }) => {
 
   // User is authenticated and authorized
   return children;
+};
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  roles: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default ProtectedRoute;

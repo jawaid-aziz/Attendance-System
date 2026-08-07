@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useState } from "react";
 import { useCompany } from "../Context/CompanyProvider";
+import PropTypes from "prop-types";
 
 export function AppSidebar({ role }) {
   const navigate = useNavigate();
@@ -190,3 +191,7 @@ export function AppSidebar({ role }) {
     </Sidebar>
   );
 }
+
+AppSidebar.propTypes = {
+  role: PropTypes.string.isRequired,
+};

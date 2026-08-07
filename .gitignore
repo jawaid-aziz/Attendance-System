@@ -1,5 +1,6 @@
 # Root dev tooling (concurrently) — server/client have their own ignores.
+# Server and client package-lock.json are tracked for reproducible installs.
 node_modules
-package-lock.json
+/package-lock.json
 *.log
 .env

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ const EmployeesData = () => {
         const data = await response.json();
         setEmployees(data.employees);
         setLoading(false);
-      } catch (error) {
+      } catch {
         if (isFirstLoad) {
           toast.error("Failed to fetch employee data", { duration: 5000 });
           setLoading(false);
@@ -130,7 +130,7 @@ const EmployeesData = () => {
           prev.filter((e) => e._id !== employeeToDelete._id)
         );
       }
-    } catch (err) {
+    } catch {
       toast.error("Error deleting employee");
     } finally {
       setDeleting(false);

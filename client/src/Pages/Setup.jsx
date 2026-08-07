@@ -65,7 +65,7 @@ export const Setup = () => {
       setId(data.user.id);
       window.dispatchEvent(new Event("auth-changed"));
       navigate(getHomePath());
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);

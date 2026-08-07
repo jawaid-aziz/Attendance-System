@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -130,7 +130,7 @@ const OfficeTimings = () => {
           Configure Office Timings
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6">
-          {daysOfWeek.slice(0, -1).map((day, index) => (
+          {daysOfWeek.slice(0, -1).map((day) => (
             <Card key={day} className="shadow-lg">
               <CardHeader className="flex justify-between items-center">
                 <CardTitle className="capitalize">{day}</CardTitle>

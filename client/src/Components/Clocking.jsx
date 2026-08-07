@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useId } from "../Context/IdProvider";
 import { useUser } from "../hooks/useUser";
 import { API_URL } from "@/lib/config";
@@ -20,25 +20,6 @@ const Clocking = () => {
   const [checkedOut, setCheckedOut] = useState(false);
 
   const [currentDaySchedule, setCurrentDaySchedule] = useState(null);
-
-  const fetchServerTime = async () => {
-    try {
-      const slug = localStorage.getItem("slug") || "";
-      const query = slug ? `?slug=${encodeURIComponent(slug)}` : "";
-      const response = await fetch(`${API_URL}/attend/server-time${query}`);
-      if (!response.ok) {
-        toast.error("Failed to fetch server time.", { duration: 5000 });
-        return;
-      }
-
-      const data = await response.json();
-      // Server determines allowed time from the company's own schedule.
-    } catch (error) {
-      toast.error(`Error fetching server time: ${error.message}`, {
-        duration: 5000,
-      });
-    }
-  };
 
   const fetchAttendanceStatus = async () => {
     try {
@@ -66,7 +47,6 @@ const Clocking = () => {
   };
 
   useEffect(() => {
-    fetchServerTime();
     fetchAttendanceStatus();
   }, [id]);
 

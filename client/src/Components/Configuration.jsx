@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"

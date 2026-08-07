@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Clock, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { isTokenValid } from "@/lib/isTokenValid";

@@ -1,5 +1,3 @@
-const Company = require("../../models/Company");
-const User = require("../../models/User");
 const { isValidTimezone } = require("../../common/validation");
 const {
   createCompanyWithUniqueSlug,

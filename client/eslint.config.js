@@ -35,4 +35,16 @@ export default [
       ],
     },
   },
+  {
+    files: ['src/Components/ui/**/*.{js,jsx}'],
+    rules: {
+      'react/prop-types': 'off',
+    },
+  },
+  {
+    files: ['tailwind.config.js', 'vite.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ]

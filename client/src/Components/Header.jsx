@@ -11,6 +11,7 @@ import {
 import { LogOut, Menu, UserCircle, Building2 } from "lucide-react";
 import { useCompany } from "../Context/CompanyProvider";
 import { useUser } from "../hooks/useUser";
+import PropTypes from "prop-types";
 
 export const Header = ({ role, id }) => {
   const navigate = useNavigate();
@@ -95,4 +96,9 @@ export const Header = ({ role, id }) => {
       </div>
     </header>
   );
+};
+
+Header.propTypes = {
+  role: PropTypes.string.isRequired,
+  id: PropTypes.string.isRequired,
 };

@@ -1,4 +1,3 @@
-const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
 const { isValidTimezone } = require("../../common/validation");
 const logger = require("../../utils/logger");

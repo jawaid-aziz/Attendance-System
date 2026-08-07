@@ -58,11 +58,13 @@ Register a company + admin at `/start` (or `POST /auth/register`). The admin
 receives a one-time setup link (emailed, or returned as `setupLink` when the
 email fails / `SKIP_EMAIL=true`). Open the link, set a password, and log in.
 
-### Tests
+### Tests & lint
 
 ```bash
 npm test                # runs the server suite (vitest)
 npm test --prefix server
+npm run lint --prefix server   # ESLint (server + tests)
+npm run lint --prefix client   # ESLint (React)
 ```
 
 Tests use an in-memory MongoDB (`mongodb-memory-server`) and are fully
@@ -72,7 +74,11 @@ self-contained — no local MongoDB needed to run them:
   company helpers, JWT generation.
 - `server/test/integration` — HTTP flows against the real Express app:
   registration, setup, login, password rotation, check-in/out, records,
-  cross-company authorization.
+  cross-company authorization, admin CRUD + config, superadmin tenant
+  management, the absent sweeper, and IP validation.
+
+CI (`.github/workflows/ci.yml`) runs server lint + tests and client
+lint + build on every push/PR.
 
 ## Environment variables
 
@@ -97,7 +103,7 @@ Client variables live in `client/.env`:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VITE_API_URL` | dev: `""` (proxy); build: `http://localhost:5000` | Base API URL |
+| `VITE_API_URL` | dev: `""` (proxy) | Base API URL. **Required for production builds** — `npm run build` fails if unset, so a deployed client can never silently call `localhost`. |
 
 ## Project structure
 

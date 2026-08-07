@@ -1,6 +1,7 @@
 // src/Context/CompanyProvider.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { API_URL } from "../lib/config";
+import PropTypes from "prop-types";
 
 const CompanyContext = createContext({
   company: null,
@@ -62,6 +63,10 @@ export const CompanyProvider = ({ children }) => {
       {children}
     </CompanyContext.Provider>
   );
+};
+
+CompanyProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useCompany = () => {

@@ -1,5 +1,4 @@
 const net = require("net");
-const Company = require("../../models/Company");
 const { getCompany } = require("../../common/getCompany");
 const logger = require("../../utils/logger");
 

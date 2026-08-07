@@ -1,5 +1,6 @@
 // src/Context/RoleProvider.jsx
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
+import PropTypes from 'prop-types';
 
 const RoleContext = createContext();
 
@@ -24,6 +25,10 @@ export const RoleProvider = ({ children }) => {
       {children}
     </RoleContext.Provider>
   );
+};
+
+RoleProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useRole = () => {
