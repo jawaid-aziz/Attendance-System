@@ -20,7 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@/Components/ui/sidebar";
 import { useState } from "react";
 import { useCompany } from "../Context/CompanyProvider";
 import PropTypes from "prop-types";

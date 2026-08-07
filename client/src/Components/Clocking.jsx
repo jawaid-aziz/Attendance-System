@@ -7,9 +7,9 @@ import {
   CardHeader,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+} from "@/Components/ui/card";
+import { Progress } from "@/Components/ui/progress";
+import { Button } from "@/Components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 
 const Clocking = () => {

@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/Components/ui/button";
+import { SidebarTrigger } from "@/Components/ui/sidebar";
 import { ModeToggle } from "../Components/mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 import { LogOut, Menu, UserCircle, Building2 } from "lucide-react";
 import { useCompany } from "../Context/CompanyProvider";
 import { useUser } from "../hooks/useUser";

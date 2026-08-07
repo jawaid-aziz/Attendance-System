@@ -3,8 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTargetUser } from "../hooks/useTargetUser";
 import { slugifyName } from "@/lib/slugifyName";
 import { API_URL } from "@/lib/config";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Progress } from "@/Components/ui/progress";
+import { ScrollArea, ScrollBar } from "@/Components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/Components/ui/select";
 import {
   Pagination,
   PaginationContent,
@@ -30,7 +30,7 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
-} from "@/components/ui/pagination";
+} from "@/Components/ui/pagination";
 import toast, { Toaster } from "react-hot-toast";
 
 const AttendanceHistory = () => {

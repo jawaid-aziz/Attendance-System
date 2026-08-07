@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+import { Progress } from "@/Components/ui/progress";
+import { Button } from "@/Components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -20,9 +20,9 @@ import {
   AlertDialogDescription,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+} from "@/Components/ui/alert-dialog";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/Components/ui/badge";
 import toast, { Toaster } from "react-hot-toast";
 import { slugifyName } from "@/lib/slugifyName";
 import { API_URL } from "@/lib/config";

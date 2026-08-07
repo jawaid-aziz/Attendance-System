@@ -5,15 +5,15 @@ import {
   CardHeader,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
+} from "@/Components/ui/card";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+} from "@/Components/ui/select";
+import { Button } from "@/Components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 import { API_URL } from "@/lib/config";
 

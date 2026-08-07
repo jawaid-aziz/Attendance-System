@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { Checkbox } from "@/Components/ui/checkbox"
+import { Input } from "@/Components/ui/input"
+import { Button } from "@/Components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/Components/ui/card"
 import { API_URL } from "@/lib/config"
 
 export const Configuration = () => {

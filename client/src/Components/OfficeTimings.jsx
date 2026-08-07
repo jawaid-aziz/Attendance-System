@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/Components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/Components/ui/card";
+import { Switch } from "@/Components/ui/switch";
+import { Input } from "@/Components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import { API_URL } from "@/lib/config";
 
