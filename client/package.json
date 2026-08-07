@@ -37,10 +37,9 @@
     "react-day-picker": "^9.7.0",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.5.1",
-    "react-router-dom": "^7.0.1",
+    "react-router-dom": "^7.18.2",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7",
-    "tz": "^0.1.1"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

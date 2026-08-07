@@ -35,6 +35,13 @@ in `server/test/`.
 | S1 | Medium | Bearer token logged to browser console | Fixed |
 | S2 | Low | Debug `console.log` of API payloads | Fixed |
 | A1 | Medium | Client falls back to `http://localhost:5000` in production | Fixed |
+| DEP-1 | High | `nodemailer` 7.x SMTP/header injection advisories (runtime) | Fixed |
+| DEP-2 | High | `brace-expansion` DoS (server, dev-only) | Fixed |
+| DEP-3 | Moderate | `uuid` via `node-cron` 3.x (server, not exploitable) | Fixed |
+| DEP-4 | High | `react-router` 7.12–8.2 RSC-mode CSRF (client, not exploitable) | Accepted |
+| DEP-5 | High | `brace-expansion` / `js-yaml` (client, dev-only) | Fixed |
+| DEP-6 | Moderate | `postcss` `sourceMappingURL` (client, build-time) | Fixed |
+| DEP-7 | Info | Unused `tz` dependency (client) | Removed |
 
 CORS configuration and authentication coverage were reviewed and found correct.
 
@@ -221,7 +228,41 @@ production always uses `VITE_API_URL` and dev uses the same-origin Vite proxy.
 
 ---
 
-## 4. Confirmed positives (no action needed)
+## 5. Findings — Dependency security review
+
+### 5.1 Vulnerable libraries — `npm audit`
+**Server (was 4: 2 high, 2 moderate) → 0 remaining**
+| Package | Ver | Sev | Fix applied |
+|---|---|---|---|
+| `nodemailer` | 7.0.13 | High | Upgraded to 9.0.5. SMTP command injection (`envelope.size`), CRLF injection (EHLO/HELO, `List-*`), OAuth2 TLS-validation bypass, SSRF via `raw` option. Not directly reachable in our usage (plain `createTransport`+`sendMail`, env host, no `raw`/`jsonTransport`), but fixed to be safe. |
+| `brace-expansion` | 5.0.7 | High | `npm audit fix` (transitive via eslint→minimatch, dev-only DoS). |
+| `uuid` via `node-cron` | 3.0.3 | Moderate | `node-cron` upgraded to 4.6.0 (drop-in for our `cron.schedule` usage; removes the uuid dependency). |
+
+**Client (was 5: 4 high, 1 moderate) → 2 high remain (accepted)**
+| Package | Ver | Sev | Status |
+|---|---|---|---|
+| `react-router` / `react-router-dom` | 7.18.2 | High | **Accepted.** GHSA-qwww-vcr4-c8h2 is an RSC-mode CSRF bypass; this app is a plain Vite SPA (no RSC/framework mode) so it is unreachable. The only non-breaking "fix" npm offers is a downgrade to 7.11.0, which would lose months of 7.x patches — not worth it. Revisit when migrating to the `react-router` v8 package. |
+| `brace-expansion` | 1.1.16 | High | Fixed (transitive via eslint-plugin-react→minimatch, dev-only). |
+| `js-yaml` | 4.3.0 | High | Fixed (transitive via eslint→@eslint/eslintrc, dev-only, quadratic CPU). |
+| `postcss` | 8.5.20 | Moderate | Fixed to 8.5.26 (build-time `sourceMappingURL`). |
+
+### 5.2 Outdated packages (majors behind — not security-driven)
+- **Server:** express 4→5, mongoose 8→9, bcryptjs 2→3, body-parser 1→2, dotenv 16→17, express-rate-limit 7→8.
+- **Client:** react 18→19, vite 6→8, tailwindcss 3→4, react-day-picker 9→10, tailwind-merge 2→3, lucide-react 0.468→1.30, eslint 9→10, @vitejs/plugin-react 4→6.
+- Treat the framework upgrades (React 19, Vite 8, Express 5, Mongoose 9) as a dedicated project, not incidental changes.
+
+### 5.3 Dangerous dependencies
+- `tz@0.1.1` (client) was declared but never imported — removed (smaller supply-chain surface).
+- No malicious or abandoned install-time packages found. Postinstall scripts only: `esbuild` (platform binary), `mongodb-memory-server` (test binary), `ljharb-monorepo-symlink-test` (test helper) — all standard/benign.
+
+### 5.4 Supply chain risks
+- ✅ Lockfiles committed for server and client → deterministic `npm ci` in CI; integrity hashes detect tampering.
+- ⚠️ No `npm audit` gate in CI. Add `npm audit --audit-level=high` to the CI workflow (and Dependabot) so new vulnerabilities fail the build.
+- Semver `^` ranges allow drift; lockfiles pin actual resolution. Use `overrides` for transitive vulns with no direct fix (none needed today).
+
+---
+
+## 6. Confirmed positives (no action needed)
 
 - Token `version` check invalidates JWTs on password/role change.
 - Middleware re-fetches role/company from the DB; JWT claims are not trusted.
@@ -241,7 +282,7 @@ production always uses `VITE_API_URL` and dev uses the same-origin Vite proxy.
 
 ---
 
-## 5. Recommended backlog
+## 7. Recommended backlog
 
 1. LOW-4: HTML-escape email template variables; add plain-text alternative.
 2. LOW-5: pin `algorithms: ["HS256"]` on verify; add `issuer`; evaluate
@@ -255,3 +296,8 @@ production always uses `VITE_API_URL` and dev uses the same-origin Vite proxy.
 6. I2: move `removeAllowedIP` IP to a query parameter.
 7. F1/LOW-5: migrate from `localStorage` bearer token to an HttpOnly cookie
    (with CSRF protection) or short-lived + refresh tokens.
+8. DEP-4: migrate from `react-router-dom` to the `react-router` v8 package to
+   clear the RSC-mode advisory and pick up ongoing patches.
+9. Add `npm audit --audit-level=high` to CI and enable Dependabot.
+10. Framework-major upgrades (React 19, Vite 8, Express 5, Mongoose 9) as a
+    dedicated effort.
