@@ -17,6 +17,7 @@ const {
 const { getAllowedIPs, addAllowedIP, removeAllowedIP } = require("../controllers/adminController/configRouter");
 const { getOfficeSchedule, saveOfficeSchedule } = require("../controllers/adminController/configOfficeTiming");
 const { resendInvite } = require("../controllers/adminController/resendInvite");
+const { getDashboard } = require("../controllers/adminController/dashboard");
 
 const router = express.Router();
 
@@ -25,6 +26,13 @@ router.post("/resend-invite/:id", authenticateToken, authorizeAdmin, resendInvit
 router.put("/edit/:id", authenticateToken, authorizeAdmin, editUser);
 router.delete("/delete/:id", authenticateToken, authorizeAdmin, deleteUser);
 router.get("/user", authenticateToken, authorizeAdmin, getUsers);
+router.get(
+  "/dashboard",
+  authenticateToken,
+  authorizeAdmin,
+  authorizeCompany,
+  getDashboard
+);
 router.get("/getTime", authenticateToken, authorizeAdmin, authorizeCompany, getTimezone);
 router.post("/updateTime", authenticateToken, authorizeAdmin, authorizeCompany, updateTimezone);
 router.get("/getDeductions", authenticateToken, authorizeAdmin, authorizeCompany, getDeductions);

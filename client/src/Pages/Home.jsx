@@ -1,37 +1,49 @@
-import Clocking from "../Components/Clocking";
+import { Suspense, lazy } from "react";
+import { useRole } from "../Context/RoleProvider";
 import { useId } from "../Context/IdProvider";
-import { useCompany } from "../Context/CompanyProvider";
+
+// Dashboards pull in recharts (~700 kB); lazy-load them so the landing page
+// and the rest of the app stay lean, and charts only load for signed-in users.
+const EmployeeDashboard = lazy(() =>
+  import("../Components/Dashboard/EmployeeDashboard")
+);
+const AdminDashboard = lazy(() =>
+  import("../Components/Dashboard/AdminDashboard")
+);
+
+const DashboardLoading = () => (
+  <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+    <div className="h-20 w-72 animate-pulse rounded-2xl bg-slate-100" />
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+      ))}
+    </div>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
+    </div>
+  </div>
+);
 
 export const Home = () => {
+  const { role } = useRole();
   const { id, loading: idLoading } = useId();
-  const { company } = useCompany();
 
   if (idLoading) {
-    return <div>Loading...</div>;
+    return <DashboardLoading />;
   }
 
   if (!id) {
     return <div>Error: User ID not found. Please log in again.</div>;
   }
 
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const Dashboard = role === "admin" ? AdminDashboard : EmployeeDashboard;
 
   return (
-    <div className="container mx-auto p-4 flex">
-      <div className="flex-1 flex flex-col items-center justify-start ml-4">
-        {company?.name && (
-          <p className="text-sm text-gray-500 mb-1">
-            {company.name} &middot; {today}
-          </p>
-        )}
-        <Clocking id={id} />
-      </div>
-    </div>
+    <Suspense fallback={<DashboardLoading />}>
+      <Dashboard />
+    </Suspense>
   );
 };
 

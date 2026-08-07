@@ -11,6 +11,7 @@ const Attendance = require("../../models/Attendance.js");
 const { createCompanyWithUniqueSlug } = require("../../common/onboarding.js");
 const { generateToken } = require("../../utils/tokenUtils.js");
 const { WEEKDAYS } = require("../../common/validation.js");
+const { dayjs } = require("../../utils/dayjs.js");
 const bcrypt = require("bcryptjs");
 const request = require("supertest");
 
@@ -603,5 +604,143 @@ describe("allowed router IPs", () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ ip: "999.999.999.999" });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /admin/dashboard", () => {
+  it("rejects non-admin access", async () => {
+    const noToken = await request(app).get("/admin/dashboard");
+    expect(noToken.status).toBe(401);
+
+    const asEmployee = await request(app)
+      .get("/admin/dashboard")
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(asEmployee.status).toBe(403);
+  });
+
+  it("returns today's summary, trend, hourly histogram and employee statuses", async () => {
+    // Extra employees so we can cover every status in one snapshot.
+    const lateEmployee = await User.create({
+      firstName: "La",
+      lastName: "Tey",
+      email: "late@admin.io",
+      password: await bcrypt.hash("Emp12345", 10),
+      role: "employee",
+      companyId: company._id,
+    });
+    const outEmployee = await User.create({
+      firstName: "Out",
+      lastName: "Side",
+      email: "out@admin.io",
+      password: await bcrypt.hash("Emp12345", 10),
+      role: "employee",
+      companyId: company._id,
+    });
+
+    const tz = "Asia/Karachi";
+    const todayStart = dayjs().tz(tz).startOf("day").toDate();
+    const nowUnix = dayjs().tz(tz).unix();
+    const today = new Date();
+
+    await Attendance.create([
+      {
+        employee: employee._id,
+        firstName: "Em",
+        day: todayStart,
+        date: today,
+        companyId: company._id,
+        checkIn: nowUnix,
+        checkInstatus: "Present",
+        isActive: true,
+      },
+      {
+        employee: lateEmployee._id,
+        firstName: "La",
+        day: todayStart,
+        date: today,
+        companyId: company._id,
+        checkIn: nowUnix,
+        checkInstatus: "Late Check-In (Half Leave)",
+        isActive: true,
+        deductions: 150,
+      },
+      {
+        employee: outEmployee._id,
+        firstName: "Out",
+        day: todayStart,
+        date: today,
+        companyId: company._id,
+        checkIn: nowUnix,
+        checkOut: nowUnix,
+        checkInstatus: "Present",
+        checkOutstatus: "Checked Out on Time",
+        isActive: false,
+      },
+    ]);
+
+    const res = await request(app)
+      .get("/admin/dashboard")
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+
+    // Admin + 3 employees in the company.
+    expect(res.body.totalEmployees).toBe(4);
+    expect(res.body.today).toEqual({
+      present: 3,
+      late: 1,
+      inOffice: 2,
+      checkedOut: 1,
+      notCheckedIn: 1,
+    });
+    expect(res.body.monthToDateDeductions).toBe(150);
+
+    // One trend entry per elapsed day of the current month.
+    const daysElapsed = dayjs().tz(tz).date();
+    expect(res.body.trend).toHaveLength(daysElapsed);
+    expect(res.body.trend[daysElapsed - 1]).toMatchObject({
+      total: 4,
+      present: 3,
+      late: 1,
+      absent: 1,
+      rate: 75,
+    });
+
+    // Every employee is listed with a derived status.
+    const statuses = res.body.employees.reduce((acc, e) => {
+      acc[e.firstName] = e.status;
+      return acc;
+    }, {});
+    expect(statuses["Ad"]).toBe("not-checked-in");
+    expect(statuses["Em"]).toBe("in-office");
+    expect(statuses["La"]).toBe("late");
+    expect(statuses["Out"]).toBe("checked-out");
+
+    // Hourly histogram covers today's check-ins.
+    const totalCheckedIn = res.body.hourly.reduce((s, h) => s + h.count, 0);
+    expect(totalCheckedIn).toBe(3);
+
+    // Month-to-date deduction rows are bounded to the current month: a row in
+    // the previous month must not leak into the month-to-date total.
+    const previousMonthStart = dayjs()
+      .tz(tz)
+      .subtract(1, "month")
+      .startOf("month")
+      .toDate();
+    await Attendance.create({
+      employee: lateEmployee._id,
+      firstName: "La",
+      day: previousMonthStart,
+      date: previousMonthStart,
+      companyId: company._id,
+      checkIn: nowUnix,
+      checkInstatus: "Present",
+      isActive: true,
+      deductions: 50,
+    });
+    const after = await request(app)
+      .get("/admin/dashboard")
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(after.status).toBe(200);
+    expect(after.body.monthToDateDeductions).toBe(150);
   });
 });
