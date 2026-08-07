@@ -95,6 +95,16 @@ describe("GET /superadmin/companies", () => {
     expect(alpha.members).toBe(2);
   });
 
+  it("returns the primary admin for each company", async () => {
+    const res = await request(app)
+      .get("/superadmin/companies")
+      .set("Authorization", `Bearer ${superToken}`);
+    expect(res.status).toBe(200);
+    const base = res.body.companies.find((c) => c.name === "Base Co");
+    expect(base.adminName).toBe("B A");
+    expect(base.adminEmail).toBe("ba@base.io");
+  });
+
   it("excludes deleted companies", async () => {
     const doomed = await createCompanyWithUniqueSlug({ name: "Doomed Co" }, null);
     await request(app)

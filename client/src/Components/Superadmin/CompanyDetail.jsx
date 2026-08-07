@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import {
   Table,
@@ -17,6 +18,7 @@ import {
   Users,
   Hash,
   ShieldCheck,
+  ArrowLeft,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { API_URL } from "@/lib/config";
@@ -26,6 +28,7 @@ const token = () => localStorage.getItem("token");
 
 const CompanyDetail = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +55,7 @@ const CompanyDetail = () => {
   if (loading) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
+        <Skeleton className="h-8 w-32 bg-slate-100" />
         <Skeleton className="h-20 w-64 bg-slate-100" />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
@@ -75,6 +79,15 @@ const CompanyDetail = () => {
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-slate-500"
+          onClick={() => navigate("/companies")}
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Companies
+        </Button>
+
         <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cornflower-blue-50 text-cornflower-blue-600">
             <Building2 className="h-7 w-7" />

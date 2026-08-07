@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
@@ -17,7 +17,7 @@ import {
   SelectItem,
 } from "@/Components/ui/select";
 import { Skeleton } from "@/Components/ui/skeleton";
-import { Copy, Building2, Plus } from "lucide-react";
+import { Search, Copy, Building2, Plus } from "lucide-react";
 import timezoneData from "../../Data/Timezones.json";
 import {
   Table,
@@ -74,7 +74,10 @@ const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [togglingStatus, setTogglingStatus] = useState(null);
   const [createdLink, setCreatedLink] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState(emptyForm);
   const [createOpen, setCreateOpen] = useState(false);
   const navigate = useNavigate();
@@ -99,6 +102,7 @@ const Companies = () => {
   }, []);
 
   const handleStatus = async (id, status) => {
+    setTogglingStatus(id);
     try {
       const res = await fetch(`${apiUrl}/superadmin/companies/${id}/status`, {
         method: "PATCH",
@@ -110,6 +114,8 @@ const Companies = () => {
       fetchCompanies();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setTogglingStatus(null);
     }
   };
 
@@ -158,6 +164,22 @@ const Companies = () => {
   };
 
   const activeCount = companies.filter((c) => c.status === "active").length;
+
+  const filteredCompanies = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return companies.filter((c) => {
+      const matchesStatus =
+        statusFilter === "all" || c.status === statusFilter;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.slug.toLowerCase().includes(q) ||
+        String(c.adminName || "").toLowerCase().includes(q) ||
+        String(c.adminEmail || "").toLowerCase().includes(q)
+      );
+    });
+  }, [companies, search, statusFilter]);
 
   if (loading) {
     return (
@@ -329,6 +351,29 @@ const Companies = () => {
           </div>
         </div>
 
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, slug or admin…"
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Card className="rounded-2xl border-slate-100 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle>All Companies</CardTitle>
@@ -344,68 +389,129 @@ const Companies = () => {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Name</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>Timezone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {companies.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell>{c.slug}</TableCell>
-                      <TableCell>{c.members}</TableCell>
-                      <TableCell>{c.timezone}</TableCell>
-                      <TableCell>
-                        <Badge className={c.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
-                          {c.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c.slug}`)}>
-                            View
-                          </Button>
-                          {c.status === "active" ? (
-                            <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "suspended")}>
-                              Suspend
-                            </Button>
-                          ) : (
-                            <Button variant="secondary" size="sm" onClick={() => handleStatus(c._id, "active")}>
-                              Activate
-                            </Button>
-                          )}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm" onClick={() => setCompanyToDelete(c)}>
-                                Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {companyToDelete?.name}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This permanently removes the company, its users and attendance records.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>Yes, Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Name</TableHead>
+                      <TableHead>Admin</TableHead>
+                      <TableHead>Members</TableHead>
+                      <TableHead>Timezone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCompanies.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-slate-900">{c.name}</p>
+                            <p className="text-xs text-slate-400">{c.slug}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm text-slate-700">
+                              {c.adminName}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {c.adminEmail}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{c.members}</TableCell>
+                        <TableCell>{c.timezone}</TableCell>
+                        <TableCell>
+                          <Badge className={c.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                            {c.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => navigate(`/company/${c.slug}`)}>
+                              View
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  disabled={togglingStatus === c._id}
+                                >
+                                  {c.status === "active" ? "Suspend" : "Activate"}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    {c.status === "active"
+                                      ? `Suspend ${c.name}?`
+                                      : `Activate ${c.name}?`}
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {c.status === "active"
+                                      ? "Suspended companies cannot be accessed by their members until reactivated."
+                                      : "The company and its members will regain access immediately."}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    disabled={togglingStatus === c._id}
+                                    onClick={() =>
+                                      handleStatus(
+                                        c._id,
+                                        c.status === "active"
+                                          ? "suspended"
+                                          : "active"
+                                      )
+                                    }
+                                  >
+                                    {togglingStatus === c._id
+                                      ? "Saving..."
+                                      : `Yes, ${c.status === "active" ? "Suspend" : "Activate"}`}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm" onClick={() => setCompanyToDelete(c)}>
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete {companyToDelete?.name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This permanently removes the company, its users and attendance records.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleDelete}>Yes, Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {filteredCompanies.length === 0 && (
+                  <div className="px-6 py-16 text-center">
+                    <p className="text-sm font-medium text-slate-600">
+                      No companies match your filters
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Try a different search or status.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
