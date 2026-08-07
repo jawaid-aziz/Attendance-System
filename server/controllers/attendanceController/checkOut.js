@@ -1,7 +1,7 @@
 const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
-const { noCheckOutDeduction } = require("../../common/deductions");
+const { getDeductionConfig, noCheckOutDeduction } = require("../../common/deductions");
 const {
   getTodaySchedule,
   isOpenToday,
@@ -10,7 +10,6 @@ const {
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 const logger = require("../../utils/logger");
 
-const GRACE_PERIOD_HOURS = 2;
 const ON_TIME_TOLERANCE_MINUTES = 30;
 
 const checkOut = async (req, res) => {
@@ -59,11 +58,12 @@ const checkOut = async (req, res) => {
       .split(":")
       .map(Number);
 
+    const { noCheckOutGraceHours, noCheckOutRate } = getDeductionConfig(company);
     const workEndTime = serverTime
       .startOf("day")
       .hour(workEndHour)
       .minute(workEndMinute);
-    const noCheckOutDeadline = workEndTime.add(GRACE_PERIOD_HOURS, "hour");
+    const noCheckOutDeadline = workEndTime.add(noCheckOutGraceHours, "hour");
 
     // Find today's record
     const attendance = await Attendance.findOne({
@@ -90,7 +90,7 @@ const checkOut = async (req, res) => {
     } else if (serverTime.isAfter(noCheckOutDeadline)) {
       checkOutstatus = "No Check-Out";
       if (company.deductionEnabled) {
-        deductions += noCheckOutDeduction(employee.salary);
+        deductions += noCheckOutDeduction(employee.salary, noCheckOutRate);
       }
     } else {
       const lateMinutes = serverTime.diff(workEndTime, "minute");

@@ -29,6 +29,7 @@ exports.getCompanyDetails = async (req, res) => {
         timezone: company.timezone,
         totalEmployees: company.totalEmployees,
         deductionEnabled: company.deductionEnabled,
+        deductionConfig: company.deductionConfig || {},
         allowedRouterIPs: company.allowedRouterIPs || [],
         createdAt: company.createdAt,
       },

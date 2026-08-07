@@ -507,32 +507,94 @@ describe("office timing", () => {
 });
 
 describe("deductions settings", () => {
+  const DEFAULT_CONFIG = {
+    lateCheckInRate: 50,
+    noCheckOutRate: 50,
+    absentRate: 100,
+    lateGraceMinutes: 15,
+    noCheckOutGraceHours: 2,
+  };
+
   it("returns the current settings", async () => {
     const res = await request(app)
       .get("/admin/getDeductions")
       .set("Authorization", `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ deductionsEnabled: false, deductionRate: 0 });
+    expect(res.body).toEqual({
+      deductionsEnabled: false,
+      deductionConfig: DEFAULT_CONFIG,
+    });
   });
 
   it("updates and reflects the new settings", async () => {
     const res = await request(app)
       .post("/admin/updateDeductions")
       .set("Authorization", `Bearer ${adminToken}`)
-      .send({ deductionsEnabled: true, deductionRate: 10 });
+      .send({
+        deductionsEnabled: true,
+        deductionConfig: {
+          lateCheckInRate: 25,
+          noCheckOutRate: 40,
+          absentRate: 90,
+          lateGraceMinutes: 10,
+          noCheckOutGraceHours: 1,
+        },
+      });
     expect(res.status).toBe(200);
 
     const read = await request(app)
       .get("/admin/getDeductions")
       .set("Authorization", `Bearer ${adminToken}`);
-    expect(read.body).toEqual({ deductionsEnabled: true, deductionRate: 10 });
+    expect(read.body).toEqual({
+      deductionsEnabled: true,
+      deductionConfig: {
+        lateCheckInRate: 25,
+        noCheckOutRate: 40,
+        absentRate: 90,
+        lateGraceMinutes: 10,
+        noCheckOutGraceHours: 1,
+      },
+    });
+  });
+
+  it("fills defaults for a partial config", async () => {
+    const res = await request(app)
+      .post("/admin/updateDeductions")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        deductionsEnabled: true,
+        deductionConfig: { absentRate: 80 },
+      });
+    expect(res.status).toBe(200);
+
+    const read = await request(app)
+      .get("/admin/getDeductions")
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(read.body.deductionConfig).toEqual({
+      ...DEFAULT_CONFIG,
+      absentRate: 80,
+    });
   });
 
   it("rejects a rate out of range", async () => {
     const res = await request(app)
       .post("/admin/updateDeductions")
       .set("Authorization", `Bearer ${adminToken}`)
-      .send({ deductionsEnabled: true, deductionRate: 150 });
+      .send({
+        deductionsEnabled: true,
+        deductionConfig: { lateCheckInRate: 150 },
+      });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a negative grace period", async () => {
+    const res = await request(app)
+      .post("/admin/updateDeductions")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        deductionsEnabled: true,
+        deductionConfig: { lateGraceMinutes: -5 },
+      });
     expect(res.status).toBe(400);
   });
 
@@ -660,7 +722,7 @@ describe("GET /admin/dashboard", () => {
         date: today,
         companyId: company._id,
         checkIn: nowUnix,
-        checkInstatus: "Late Check-In (Half Leave)",
+        checkInstatus: "Late Check-In",
         isActive: true,
         deductions: 150,
       },

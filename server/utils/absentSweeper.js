@@ -1,7 +1,7 @@
 const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 const Company = require("../models/Company");
-const { absentDeduction } = require("../common/deductions");
+const { absentDeduction, getDeductionConfig } = require("../common/deductions");
 const {
   getTodaySchedule,
   isOpenToday,
@@ -54,6 +54,8 @@ const markAbsentForNonCheckIns = async () => {
       continue;
     }
 
+    const { absentRate } = getDeductionConfig(company);
+
     // Upsert so repeated runs can never create duplicate absent rows.
     await Attendance.bulkWrite(
       unattendedEmployees.map((employee) => ({
@@ -69,7 +71,7 @@ const markAbsentForNonCheckIns = async () => {
               checkInstatus: "Absent",
               isActive: false,
               deductions: company.deductionEnabled
-                ? absentDeduction(employee.salary)
+                ? absentDeduction(employee.salary, absentRate)
                 : 0,
               companyId: company._id,
             },

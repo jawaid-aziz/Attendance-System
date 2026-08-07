@@ -29,7 +29,14 @@ const seed = async () => {
         timezone: process.env.TIMEZONE || "Asia/Karachi",
         officeSchedule: JSON.parse(process.env.OFFICE_SCHEDULE || "{}"),
         deductionEnabled: process.env.DEDUCTIONS_ENABLED === "true",
-        deductionRate: parseFloat(process.env.DEDUCTION_RATE) || 0,
+        deductionConfig: {
+          lateCheckInRate: parseFloat(process.env.LATE_CHECKIN_RATE) || 50,
+          noCheckOutRate: parseFloat(process.env.NO_CHECKOUT_RATE) || 50,
+          absentRate: parseFloat(process.env.ABSENT_RATE) || 100,
+          lateGraceMinutes: parseInt(process.env.LATE_GRACE_MINUTES, 10) || 15,
+          noCheckOutGraceHours:
+            parseInt(process.env.NO_CHECKOUT_GRACE_HOURS, 10) || 2,
+        },
         allowedRouterIPs: (process.env.ALLOWED_ROUTER_IPS || "")
           .split(",")
           .filter(Boolean),

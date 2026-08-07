@@ -3,7 +3,7 @@ const User = require("../../models/User");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 const logger = require("../../utils/logger");
 
-const LATE_STATUS = "Late Check-In (Half Leave)";
+const LATE_STATUS = "Late Check-In";
 const ABSENT_STATUSES = ["Absent", "No Check-In (Full Leave)"];
 
 // Resolve today's per-employee attendance status from a day's attendance rows.

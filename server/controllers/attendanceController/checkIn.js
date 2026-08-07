@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 const logger = require("../../utils/logger");
 const {
-  LATE_GRACE_MINUTES,
+  getDeductionConfig,
   lateCheckInDeduction,
 } = require("../../common/deductions");
 const {
@@ -80,9 +80,10 @@ const checkIn = async (req, res) => {
     let deductions = 0;
 
     if (company.deductionEnabled) {
-      if (currentMinutes > startTimeMinutes + LATE_GRACE_MINUTES) {
-        checkInstatus = "Late Check-In (Half Leave)";
-        deductions = lateCheckInDeduction(employee.salary);
+      const { lateGraceMinutes, lateCheckInRate } = getDeductionConfig(company);
+      if (currentMinutes > startTimeMinutes + lateGraceMinutes) {
+        checkInstatus = "Late Check-In";
+        deductions = lateCheckInDeduction(employee.salary, lateCheckInRate);
       }
     }
 

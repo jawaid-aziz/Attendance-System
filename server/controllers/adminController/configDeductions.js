@@ -1,4 +1,5 @@
 const { getCompany } = require("../../common/getCompany");
+const { getDeductionConfig, DEFAULT_CONFIG } = require("../../common/deductions");
 const logger = require("../../utils/logger");
 
 /**
@@ -15,7 +16,7 @@ exports.getDeductions = async (req, res) => {
 
     res.status(200).json({
       deductionsEnabled: company.deductionEnabled,
-      deductionRate: company.deductionRate,
+      deductionConfig: getDeductionConfig(company),
     });
   } catch (error) {
     logger.error("Error fetching deductions settings:", error.message);
@@ -23,23 +24,47 @@ exports.getDeductions = async (req, res) => {
   }
 };
 
+const RATE_FIELDS = ["lateCheckInRate", "noCheckOutRate", "absentRate"];
+const GRACE_FIELDS = ["lateGraceMinutes", "noCheckOutGraceHours"];
+
 /**
  * @desc    Update deductions settings for the requesting company
  * @route   POST /admin/updateDeductions
  * @access  Admin
  */
 exports.updateDeductions = async (req, res) => {
-  const { deductionsEnabled, deductionRate } = req.body;
+  const { deductionsEnabled, deductionConfig } = req.body;
 
-  if (typeof deductionsEnabled !== "boolean" || typeof deductionRate !== "number") {
+  if (typeof deductionsEnabled !== "boolean") {
     return res
       .status(400)
-      .json({ message: "Invalid data types for deductionsEnabled or deductionRate." });
+      .json({ message: "deductionsEnabled must be a boolean." });
   }
-  if (deductionRate < 0 || deductionRate > 100) {
-    return res
-      .status(400)
-      .json({ message: "deductionRate must be between 0 and 100." });
+
+  const config = { ...DEFAULT_CONFIG, ...(deductionConfig || {}) };
+
+  for (const field of RATE_FIELDS) {
+    const value = config[field];
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return res.status(400).json({ message: `${field} must be a number.` });
+    }
+    if (value < 0 || value > 100) {
+      return res
+        .status(400)
+        .json({ message: `${field} must be between 0 and 100.` });
+    }
+  }
+
+  for (const field of GRACE_FIELDS) {
+    const value = config[field];
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return res.status(400).json({ message: `${field} must be a number.` });
+    }
+    if (value < 0) {
+      return res
+        .status(400)
+        .json({ message: `${field} must be a non-negative number.` });
+    }
   }
 
   try {
@@ -49,7 +74,7 @@ exports.updateDeductions = async (req, res) => {
     }
 
     company.deductionEnabled = deductionsEnabled;
-    company.deductionRate = deductionRate;
+    company.deductionConfig = config;
     await company.save();
 
     res.status(200).json({ message: "Deductions settings updated successfully." });

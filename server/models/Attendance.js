@@ -18,7 +18,7 @@ const AttendanceSchema = new mongoose.Schema({
     enum: [
       "Present",
       "Absent",
-      "Late Check-In (Half Leave)",
+      "Late Check-In",
       "No Check-In (Full Leave)",
     ],
     default: "Present",
