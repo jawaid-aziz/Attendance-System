@@ -65,8 +65,14 @@ app.use((req, res, next) => {
   res.setHeader("X-Request-Id", req.id);
   const started = Date.now();
   res.on("finish", () => {
+    // Never persist one-time setup tokens (account-takeover credentials) that
+    // arrive in the URL path.
+    const logUrl = req.originalUrl.replace(
+      /\/auth\/setup\/[^/?#]+/i,
+      "/auth/setup/[REDACTED]"
+    );
     logger.info(
-      `id=${req.id} ${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - started}ms`
+      `id=${req.id} ${req.method} ${logUrl} ${res.statusCode} ${Date.now() - started}ms`
     );
   });
   next();
@@ -99,10 +105,26 @@ const loginLimiter = rateLimit({
   message: { message: "Too many login attempts, please try again later." },
 });
 
+// Global per-IP throttle for everything else (prevents endpoint abuse/DoS).
+// /health and the auth endpoints are excluded: the former needs to stay
+// reachable for probes, the latter have their own tighter limiters.
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: parseInt(process.env.RATE_LIMIT_GENERAL || "600", 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) =>
+    req.path === "/health" ||
+    req.path === "/auth/login" ||
+    req.path === "/auth/register",
+  message: { message: "Too many requests, please try again later." },
+});
+
 app.use("/auth/register", authLimiter);
 app.use("/auth/login", loginLimiter);
 
 // Routes
+app.use(generalLimiter);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/attend", attendanceRoutes);

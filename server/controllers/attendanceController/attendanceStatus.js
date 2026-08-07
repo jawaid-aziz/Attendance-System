@@ -2,20 +2,19 @@ const Attendance = require("../../models/Attendance");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
-const { canAccessUser } = require("../../common/company");
+const { canManageAttendance } = require("../../common/company");
 const logger = require("../../utils/logger");
 
 const getAttendanceStatus = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    // Only the employee themselves or their company admin can view status
+    // Only the employee themselves or a same-company admin can view status
     const employee = await User.findById(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    const isSelf = employeeId === req.user.id;
-    if (!isSelf && !canAccessUser(req, employee)) {
+    if (!canManageAttendance(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot access this status" });
@@ -47,7 +46,7 @@ const getAttendanceStatus = async (req, res) => {
     });
   } catch (error) {
     logger.error("Error fetching attendance status:", error);
-    res.status(500).json({ message: "Error fetching attendance status", error: error.message });
+    res.status(500).json({ message: "Error fetching attendance status" });
   }
 };
 

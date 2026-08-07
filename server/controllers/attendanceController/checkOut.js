@@ -5,7 +5,7 @@ const { noCheckOutDeduction } = require("../../common/deductions");
 const {
   getTodaySchedule,
   isOpenToday,
-  canAccessUser,
+  canManageAttendance,
 } = require("../../common/company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
 const logger = require("../../utils/logger");
@@ -23,7 +23,7 @@ const checkOut = async (req, res) => {
     }
 
     // Only the employee themselves or a same-company admin can check out
-    if (!canAccessUser(req, employee)) {
+    if (!canManageAttendance(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot check out for this employee" });
@@ -123,7 +123,7 @@ const checkOut = async (req, res) => {
     logger.error("Error in check-out:", error);
     res
       .status(500)
-      .json({ message: "Error in check-out", error: error.message });
+      .json({ message: "Error in check-out" });
   }
 };
 

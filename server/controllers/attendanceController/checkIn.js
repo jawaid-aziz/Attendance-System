@@ -11,7 +11,7 @@ const {
 const {
   getTodaySchedule,
   isOpenToday,
-  canAccessUser,
+  canManageAttendance,
 } = require("../../common/company");
 
 const checkIn = async (req, res) => {
@@ -28,7 +28,7 @@ const checkIn = async (req, res) => {
     }
 
     // Only the employee themselves or a same-company admin can check in
-    if (!canAccessUser(req, employee)) {
+    if (!canManageAttendance(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot check in for this employee" });
@@ -142,7 +142,7 @@ const checkIn = async (req, res) => {
     logger.error("Error in check-in:", error);
     res
       .status(500)
-      .json({ message: "Error in check-in", error: error.message });
+      .json({ message: "Error in check-in" });
   }
 };
 

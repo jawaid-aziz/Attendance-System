@@ -50,6 +50,6 @@ exports.getCompanyBySlug = async (req, res) => {
     logger.error(error);
     res
       .status(500)
-      .json({ message: "Failed to fetch company", error: error.message });
+      .json({ message: "Failed to fetch company" });
   }
 };

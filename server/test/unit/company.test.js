@@ -3,6 +3,7 @@ import {
   isSameCompany,
   isCompanyActive,
   canAccessUser,
+  canManageAttendance,
   getTodaySchedule,
   isOpenToday,
 } from "../../common/company";
@@ -48,6 +49,35 @@ describe("canAccessUser", () => {
   it("allows superadmins regardless of company", () => {
     const r = req("superadmin", null, "u2");
     expect(canAccessUser(r, { _id: "u1", companyId: "c2" })).toBe(true);
+  });
+});
+
+describe("canManageAttendance", () => {
+  const req = (role, companyId, id) => ({ user: { role, companyId, id } });
+
+  it("allows the user themself", () => {
+    const r = req("employee", "c1", "u1");
+    expect(canManageAttendance(r, { _id: "u1", companyId: "c1" })).toBe(true);
+  });
+
+  it("allows a same-company admin", () => {
+    const r = req("admin", "c1", "u2");
+    expect(canManageAttendance(r, { _id: "u1", companyId: "c1" })).toBe(true);
+  });
+
+  it("blocks a same-company plain employee", () => {
+    const r = req("employee", "c1", "u2");
+    expect(canManageAttendance(r, { _id: "u1", companyId: "c1" })).toBe(false);
+  });
+
+  it("blocks cross-company admins", () => {
+    const r = req("admin", "c1", "u2");
+    expect(canManageAttendance(r, { _id: "u1", companyId: "c2" })).toBe(false);
+  });
+
+  it("allows superadmins regardless of company", () => {
+    const r = req("superadmin", null, "u2");
+    expect(canManageAttendance(r, { _id: "u1", companyId: "c2" })).toBe(true);
   });
 });
 

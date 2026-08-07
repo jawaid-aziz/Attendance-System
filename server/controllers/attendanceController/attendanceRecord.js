@@ -2,7 +2,7 @@ const Attendance = require("../../models/Attendance");
 const Employee = require("../../models/User");
 const Company = require("../../models/Company");
 const { dayjs, getCompanyTimezone } = require("../../utils/dayjs");
-const { canAccessUser } = require("../../common/company");
+const { canManageAttendance } = require("../../common/company");
 const logger = require("../../utils/logger");
 
 const attendanceRecord = async (req, res) => {
@@ -11,14 +11,14 @@ const attendanceRecord = async (req, res) => {
     const year = parseInt(req.query.year, 10);
     const month = parseInt(req.query.month, 10); // 1-12
 
-    // Only the employee themselves or their company admin can view records
+    // Only the employee themselves or a same-company admin can view records
+    // (records include salary-based deductions and net pay).
     const employee = await Employee.findById(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    const isSelf = employeeId === req.user.id;
-    if (!isSelf && !canAccessUser(req, employee)) {
+    if (!canManageAttendance(req, employee)) {
       return res
         .status(403)
         .json({ message: "Forbidden: Cannot access these records" });

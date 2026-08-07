@@ -155,6 +155,60 @@ describe("attendance check-in / check-out flow", () => {
   });
 });
 
+describe("attendance role enforcement", () => {
+  let colleague;
+  beforeEach(async () => {
+    colleague = await User.create({
+      firstName: "Co",
+      lastName: "Worker",
+      email: "co.worker@att.io",
+      password: await bcrypt.hash("Emp12345", 10),
+      role: "employee",
+      companyId: company._id,
+      salary: 90000,
+    });
+  });
+
+  it("blocks an employee from checking in a colleague", async () => {
+    const res = await request(app)
+      .post(`/attend/check-in/${colleague._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("blocks an employee from checking out a colleague", async () => {
+    await request(app)
+      .post(`/attend/check-in/${colleague._id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    const res = await request(app)
+      .post(`/attend/check-out/${colleague._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("blocks an employee from reading a colleague's records (salary leak)", async () => {
+    const res = await request(app)
+      .get(`/attend/records/${colleague._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("blocks an employee from reading a colleague's status", async () => {
+    const res = await request(app)
+      .get(`/attend/status/${colleague._id}`)
+      .set("Authorization", `Bearer ${employeeToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("lets a same-company admin read an employee's records", async () => {
+    const res = await request(app)
+      .get(`/attend/records/${colleague._id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.monthlySalary).toBe(90000);
+  });
+});
+
 describe("cross-company authorization", () => {
   it("blocks a foreign admin from checking in a different company's employee", async () => {
     const other = await createCompanyWithUniqueSlug({ name: "Other Co" }, null);

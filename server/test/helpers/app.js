@@ -8,6 +8,7 @@ process.env.JWT_SECRET =
 process.env.MONGO_URL = process.env.MONGO_URL || "mongodb://localhost:27017/test";
 process.env.RATE_LIMIT_LOGIN = process.env.RATE_LIMIT_LOGIN || "1000";
 process.env.RATE_LIMIT_AUTH = process.env.RATE_LIMIT_AUTH || "1000";
+process.env.RATE_LIMIT_GENERAL = process.env.RATE_LIMIT_GENERAL || "1000";
 process.env.SKIP_EMAIL = "true";
 process.env.IP_ENFORCEMENT = "off";
 process.env.FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";

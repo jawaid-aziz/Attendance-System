@@ -54,7 +54,7 @@ exports.getUserById = async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ message: "Failed to fetch user", error: error.message });
+    res.status(500).json({ message: "Failed to fetch user" });
   }
 };
 
@@ -96,6 +96,6 @@ exports.getUserByName = async (req, res) => {
     res.status(200).json({ user: serializeUser(user, req.user) });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ message: "Failed to fetch user", error: error.message });
+    res.status(500).json({ message: "Failed to fetch user" });
   }
 };

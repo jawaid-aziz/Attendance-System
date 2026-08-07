@@ -14,6 +14,19 @@ const canAccessUser = (req, target) => {
   return isSelf || isSuperadmin || isSameCompany(req.user.companyId, target.companyId);
 };
 
+// Whether a requester may perform attendance actions for (check-in/out) or
+// read the attendance/salary data of a target user. More restrictive than
+// canAccessUser: only the user themself, a superadmin, or a same-company
+// admin — a plain employee must not check in on behalf of colleagues or read
+// their salary-bearing records.
+const canManageAttendance = (req, target) => {
+  const isSelf = target._id && req.user.id && target._id.toString() === req.user.id;
+  const isSuperadmin = req.user.role === "superadmin";
+  const isSameCompanyAdmin =
+    req.user.role === "admin" && isSameCompany(req.user.companyId, target.companyId);
+  return isSelf || isSuperadmin || isSameCompanyAdmin;
+};
+
 // Resolve the current working-day schedule for a company given a time already
 // expressed in the company's timezone. Returns the schedule entry (or
 // undefined) plus the weekday name.
@@ -29,6 +42,7 @@ module.exports = {
   isSameCompany,
   isCompanyActive,
   canAccessUser,
+  canManageAttendance,
   getTodaySchedule,
   isOpenToday,
 };
