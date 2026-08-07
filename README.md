@@ -19,11 +19,15 @@ and reports a net salary per month.
 - Check-in / check-out with working-hours enforcement and IP enforcement
   (optional).
 - Automated absent marking: an hourly job flags employees who never checked in.
-- Salary deductions (see [docs/deductions.md](docs/deductions.md)) and a
-  per-month net salary report.
+- **Fully configurable salary deductions** (per company, via admin UI or API):
+  late check-in rate, no check-out rate, absent rate, late grace minutes,
+  no-check-out grace hours — all as percentages of daily salary.
+- Per-month net salary report with deduction breakdown.
 - JWT sessions with server-side invalidation on password/role changes.
 - Structurally audited for multi-tenant isolation (company scoping on every
   data access path).
+- **Superadmin console**: company CRUD, status toggles with confirm, search,
+  primary admin listing, company detail with back navigation.
 
 ## Quickstart (local development)
 
@@ -93,6 +97,12 @@ All server variables live in `server/.env` (see `server/.env.example`).
 | `TIMEZONE` | no | `Asia/Karachi` | Default timezone for `/attend/server-time` |
 | `EMAIL_USER` / `EMAIL_PASS` | no | — | SMTP credentials (Gmail app passwords) |
 | `SKIP_EMAIL` | no | `false` | `true` prints setup links instead of emailing |
+| `DEDUCTIONS_ENABLED` | no | `false` | Seed default: enable deductions for new companies |
+| `LATE_CHECKIN_RATE` | no | `50` | Seed default: late check-in deduction % of daily salary |
+| `NO_CHECKOUT_RATE` | no | `50` | Seed default: no check-out deduction % of daily salary |
+| `ABSENT_RATE` | no | `100` | Seed default: absent deduction % of daily salary |
+| `LATE_GRACE_MINUTES` | no | `15` | Seed default: minutes after start before late flag |
+| `NO_CHECKOUT_GRACE_HOURS` | no | `2` | Seed default: hours after end before no-checkout deduction |
 | `IP_ENFORCEMENT` | no | off | `strict` blocks check-in/out from non-approved IPs |
 | `CRON_ENABLED` | no | — | Set `true` on exactly **one** worker for the absent sweeper |
 | `RATE_LIMIT_LOGIN` | no | `10` | Login attempts per 15 min per IP |
@@ -120,12 +130,18 @@ server/
 client/
   src/
     Pages/             login, setup, landing, home
-    Components/        clocking, profile, admin screens
+    Components/
+      Dashboard/       StatCard, DashboardHeader, AttendanceHeatmap,
+                       CheckInChart, SalaryDonut, TrendChart, HourlyHistogram
+      Superadmin/      Companies, CompanyDetail, InviteSuperAdmin
+      UI/              clocking, profile, admin screens, configuration,
+                       employees, attendance history, timezone, office timing
     Context/           auth/role/id/company providers
     lib/               API config, token helpers
 docs/
   api.md               endpoint reference
   deductions.md        salary deduction rules
+  security-audit.md    multi-tenant isolation notes
 ```
 
 ## Deployment notes
