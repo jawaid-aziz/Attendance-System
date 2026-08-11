@@ -31,7 +31,8 @@ import {
   PaginationNext,
 } from "@/Components/ui/pagination";
 import { Badge } from "@/Components/ui/badge";
-import { Coins, Wallet, TrendingUp } from "lucide-react";
+import { Button } from "@/Components/ui/button";
+import { Coins, Wallet, TrendingUp, Printer } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 const statusBadge = {
@@ -186,6 +187,10 @@ const AttendanceHistory = () => {
     return new Date(dateString).toLocaleString(undefined, options);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const generateYearOptions = () => {
     if (!availableYears.length) return [];
     const currentYear = new Date().getFullYear();
@@ -244,6 +249,14 @@ const AttendanceHistory = () => {
           </div>
 
           <div className="flex gap-3">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              size="sm"
+              title="Print this month's attendance as PDF"
+            >
+              <Printer className="h-4 w-4" /> Print / PDF
+            </Button>
             <Select
               onValueChange={(value) => setSelectedYear(Number(value))}
               value={selectedYear.toString()}
@@ -428,6 +441,109 @@ const AttendanceHistory = () => {
             )}
           </>
         )}
+      </div>
+
+      <div id="print-area" className="hidden print:block">
+        <div className="space-y-6 p-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Attendance Record
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {firstName.replace(/^for /, "")} {lastName}
+              </p>
+            </div>
+            <div className="text-right text-sm text-slate-600">
+              <p className="font-medium">
+                {new Date(0, selectedMonth - 1).toLocaleString(undefined, {
+                  month: "long",
+                })}{" "}
+                {selectedYear}
+              </p>
+              <p>
+                Generated:{" "}
+                {new Date().toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b-2 border-slate-400 text-left">
+                <th className="py-2 pr-4">Date</th>
+                <th className="py-2 pr-4">Check-In</th>
+                <th className="py-2 pr-4">Check-Out</th>
+                <th className="py-2 pr-4">Status</th>
+                <th className="py-2 pr-4 text-right">Deductions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.length > 0 ? (
+                records.map((record, index) => (
+                  <tr key={index} className="border-b border-slate-300">
+                    <td className="py-2 pr-4">
+                      {formatDate(record.date || record.checkIn, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {formatDate(record.checkIn, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {formatDate(record.checkOut, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="py-2 pr-4">{record.checkInstatus || "—"}</td>
+                    <td className="py-2 pr-4 text-right">
+                      {record.deductions ? `Rs. ${record.deductions}` : "—"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="py-6 text-center text-slate-500"
+                  >
+                    No attendance records found for this month.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          <div className="mt-8 space-y-1 border-t-2 border-slate-400 pt-4 text-sm">
+            <div className="flex justify-between">
+              <span className="font-medium">Monthly Salary</span>
+              <span>
+                Rs. {(Number(summary.monthlySalary) || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium">Total Deductions</span>
+              <span>
+                Rs. {(Number(summary.totalDeductions) || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between text-base font-bold">
+              <span>Net Payable</span>
+              <span>Rs. {(Number(summary.netSalary) || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
