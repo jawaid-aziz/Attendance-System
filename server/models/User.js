@@ -23,6 +23,8 @@ const UserSchema = new mongoose.Schema(
     },
     setupToken: { type: String, default: null },
     setupTokenExpires: { type: Date, default: null },
+    resetToken: { type: String, default: null },
+    resetTokenExpires: { type: Date, default: null },
     // Bumped on role/password changes so previously issued JWTs are invalidated.
     version: { type: Number, default: 0 },
   },
@@ -35,6 +37,11 @@ const UserSchema = new mongoose.Schema(
 UserSchema.index(
   { setupToken: 1 },
   { unique: true, partialFilterExpression: { setupToken: { $type: "string" } } }
+);
+// Password-reset tokens (same uniqueness constraint as setup tokens).
+UserSchema.index(
+  { resetToken: 1 },
+  { unique: true, partialFilterExpression: { resetToken: { $type: "string" } } }
 );
 // Per-company role filters (admin employee lists, absent sweeper).
 UserSchema.index({ companyId: 1, role: 1 });

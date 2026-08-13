@@ -306,3 +306,102 @@ describe("POST /auth/change-password", () => {
     expect(replay.status).toBe(401);
   });
 });
+
+describe("POST /auth/forgot-password", () => {
+  it("creates a reset token and replies identically for unknown emails", async () => {
+    await createUserWithSetupToken(
+      {
+        firstName: "F",
+        lastName: "P",
+        email: "forgot@x.io",
+        phone: "",
+        salary: 0,
+        address: "",
+        role: "employee",
+        companyId: null,
+      },
+      null
+    );
+
+    const existing = await request(app)
+      .post("/auth/forgot-password")
+      .send({ email: "forgot@x.io" });
+    const unknown = await request(app)
+      .post("/auth/forgot-password")
+      .send({ email: "ghost@x.io" });
+
+    expect(existing.status).toBe(200);
+    expect(unknown.status).toBe(200);
+    expect(existing.body.message).toBe(unknown.body.message);
+
+    const user = await User.findOne({ email: "forgot@x.io" });
+    expect(user.resetToken).toBeTruthy();
+    expect(user.resetTokenExpires).toBeTruthy();
+  });
+
+  it("rejects a malformed email", async () => {
+    const res = await request(app)
+      .post("/auth/forgot-password")
+      .send({ email: "not-an-email" });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /auth/reset-password/:token", () => {
+  const makeUserWithReset = async (email) => {
+    const user = await User.create({
+      firstName: "R",
+      lastName: "S",
+      email,
+      password: await bcrypt.hash("OldPass123", 10),
+      role: "employee",
+      companyId: null,
+      resetToken: "reset-token-123",
+      resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    return user;
+  };
+
+  it("resets the password, clears the token, and lets the user log in", async () => {
+    await makeUserWithReset("resetok@x.io");
+
+    const res = await request(app)
+      .post("/auth/reset-password/reset-token-123")
+      .send({ password: "BrandNew456" });
+    expect(res.status).toBe(200);
+
+    const user = await User.findOne({ email: "resetok@x.io" });
+    expect(user.resetToken).toBeNull();
+    expect(user.resetTokenExpires).toBeNull();
+
+    const login = await request(app)
+      .post("/auth/login")
+      .send({ email: "resetok@x.io", password: "BrandNew456" });
+    expect(login.status).toBe(200);
+  });
+
+  it("rejects an unknown token", async () => {
+    const res = await request(app)
+      .post("/auth/reset-password/nope")
+      .send({ password: "BrandNew456" });
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an expired token", async () => {
+    await User.create({
+      firstName: "E",
+      lastName: "X",
+      email: "resetexp@x.io",
+      password: await bcrypt.hash("OldPass123", 10),
+      role: "employee",
+      companyId: null,
+      resetToken: "reset-token-expired",
+      resetTokenExpires: new Date(Date.now() - 1000),
+    });
+
+    const res = await request(app)
+      .post("/auth/reset-password/reset-token-expired")
+      .send({ password: "BrandNew456" });
+    expect(res.status).toBe(400);
+  });
+});

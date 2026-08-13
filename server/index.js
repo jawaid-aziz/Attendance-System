@@ -65,11 +65,11 @@ app.use((req, res, next) => {
   res.setHeader("X-Request-Id", req.id);
   const started = Date.now();
   res.on("finish", () => {
-    // Never persist one-time setup tokens (account-takeover credentials) that
-    // arrive in the URL path.
+    // Never persist one-time setup or reset tokens (account-takeover
+    // credentials) that arrive in the URL path.
     const logUrl = req.originalUrl.replace(
-      /\/auth\/setup\/[^/?#]+/i,
-      "/auth/setup/[REDACTED]"
+      /\/(?:auth\/setup|auth\/reset-password)\/[^/?#]+/i,
+      (m) => m.replace(/[^/?#]+$/, "[REDACTED]")
     );
     logger.info(
       `id=${req.id} ${req.method} ${logUrl} ${res.statusCode} ${Date.now() - started}ms`
@@ -104,6 +104,14 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many login attempts, please try again later." },
 });
+// Forgot-password emails can be used to spam a mailbox; throttle tightly.
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: parseInt(process.env.RATE_LIMIT_FORGOT_PASSWORD || "5", 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many reset requests, please try again later." },
+});
 
 // Global per-IP throttle for everything else (prevents endpoint abuse/DoS).
 // /health and the auth endpoints are excluded: the former needs to stay
@@ -122,6 +130,7 @@ const generalLimiter = rateLimit({
 
 app.use("/auth/register", authLimiter);
 app.use("/auth/login", loginLimiter);
+app.use("/auth/forgot-password", forgotPasswordLimiter);
 
 // Routes
 app.use(generalLimiter);

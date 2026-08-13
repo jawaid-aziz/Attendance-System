@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Company = require("../models/Company");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { generateToken } = require("../utils/tokenUtils");
 const { serializeUser } = require("../common/getUser");
 const { isStrongPassword } = require("../common/password");
@@ -9,10 +10,13 @@ const {
   createUserWithSetupToken,
   setupLinkFor,
 } = require("../common/onboarding");
-const { sendSetupLinkEmail } = require("../utils/sendMail");
+const { sendSetupLinkEmail, sendPasswordResetEmail } = require("../utils/sendMail");
 const { withTransaction } = require("../utils/withTransaction");
 const { isValidTimezone } = require("../common/validation");
 const logger = require("../utils/logger");
+
+// Reset links must be single-use; an hour is enough for a password reset.
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 // Fixed bcrypt hash of a random throwaway password. Compared against when the
 // email is unknown so login responses take the same time for existing and
@@ -268,5 +272,81 @@ exports.completeSetup = async (req, res) => {
   } catch (error) {
     logger.error("Error completing setup:", error.message);
     res.status(500).json({ message: "Failed to set password" });
+  }
+};
+
+// Request a one-time password-reset link by email. Always responds the same
+// way whether or not the email exists so the endpoint cannot be used to
+// enumerate registered accounts.
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email address" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      user.resetToken = resetToken;
+      user.resetTokenExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await user.save();
+
+      const link = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset/${resetToken}`;
+      try {
+        await sendPasswordResetEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`.trim(),
+          link
+        );
+      } catch (error) {
+        logger.error("Failed to send password reset email:", error.message);
+      }
+    }
+
+    res.status(200).json({
+      message: "If an account exists with that email, a reset link has been sent.",
+    });
+  } catch (error) {
+    logger.error("Error requesting password reset:", error.message);
+    res.status(500).json({ message: "Failed to request password reset" });
+  }
+};
+
+// Complete a password reset using the one-time emailed link.
+exports.resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: "Reset token is required" });
+  }
+  if (!isStrongPassword(password)) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters with a letter and a number" });
+  }
+
+  try {
+    const user = await User.findOne({ resetToken: token });
+    if (!user) {
+      return res.status(404).json({ message: "Invalid or expired reset link" });
+    }
+    if (user.resetTokenExpires && user.resetTokenExpires < new Date()) {
+      return res.status(400).json({ message: "Reset link has expired" });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetToken = null;
+    user.resetTokenExpires = null;
+    user.version = (user.version || 0) + 1;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully. You can now log in." });
+  } catch (error) {
+    logger.error("Error resetting password:", error.message);
+    res.status(500).json({ message: "Failed to reset password" });
   }
 };

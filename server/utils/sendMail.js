@@ -1,33 +1,5 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns");
-const net = require("net");
-const shared = require("nodemailer/lib/shared");
 const logger = require("./logger");
-
-// nodemailer resolves SMTP hosts over IPv4 only, which fails on networks where
-// the IPv4 route to the mail host is blocked but IPv6 works. Prefer AAAA records.
-const ipv6Cache = new Map();
-const originalResolveHostname = shared.resolveHostname;
-shared.resolveHostname = (options, callback) => {
-  if (!options.host || net.isIP(options.host)) {
-    return originalResolveHostname(options, callback);
-  }
-  const host = options.host;
-  if (ipv6Cache.has(host)) {
-    return callback(null, ipv6Cache.get(host));
-  }
-  new dns.Resolver().resolve6(host, (err, addresses) => {
-    if (!err && addresses && addresses.length) {
-      const value = {
-        host: addresses[0],
-        servername: options.servername || host,
-      };
-      ipv6Cache.set(host, value);
-      return callback(null, value);
-    }
-    return originalResolveHostname(options, callback);
-  });
-};
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -91,4 +63,28 @@ const sendSetupLinkEmail = async (receiver, name, link) => {
   return { ok: true };
 };
 
-module.exports = { sendSetupLinkEmail };
+const sendPasswordResetEmail = async (receiver, name, link) => {
+  const mailOptions = {
+    from: mailFrom,
+    to: receiver,
+    subject: "Reset your onTime password",
+    html: `
+            <h2>Hi ${name}!</h2>
+            <p>We received a request to reset your onTime account password.</p>
+            <p>Click the link below to choose a new password:</p>
+            <p><a href="${link}">${link}</a></p>
+            <p>This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>
+        `,
+  };
+
+  if (!shouldSend()) {
+    logger.info("SKIP_EMAIL: skipping password reset email to", receiver);
+    return { ok: false, skipped: true };
+  }
+
+  const info = await sendWithRetry(mailOptions);
+  logger.info("Password reset email sent: ", info.response);
+  return { ok: true };
+};
+
+module.exports = { sendSetupLinkEmail, sendPasswordResetEmail };

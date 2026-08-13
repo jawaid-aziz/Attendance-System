@@ -16,9 +16,10 @@ const createCompanyWithUniqueSlug = async (data, session) => {
   while (await Company.exists({ slug })) {
     slug = `${baseSlug}-${counter++}`;
   }
-  return session
-    ? Company.create([{ ...data, slug }], { session })
-    : Company.create({ ...data, slug });
+  const created = session
+    ? await Company.create([{ ...data, slug }], { session })
+    : await Company.create({ ...data, slug });
+  return Array.isArray(created) ? created[0] : created;
 };
 
 // Create a user with a one-time setup token (random bcrypt password they

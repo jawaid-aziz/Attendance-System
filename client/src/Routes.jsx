@@ -2,6 +2,8 @@ import Login from "./Pages/Login";
 import { Landing } from "./Pages/Landing";
 import { GetStarted } from "./Pages/GetStarted";
 import { Setup } from "./Pages/Setup";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
 import AttendanceHistory from "./Components/AttendanceHistory";
 import AddEmployee from "./Components/AddEmployee";
 import EmployeesData from "./Components/EmployeesData";
@@ -35,6 +37,30 @@ export const AllRoutes = [
     element: (
       <PublicOnly>
         <Login />
+      </PublicOnly>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicOnly>
+        <ForgotPassword />
+      </PublicOnly>
+    ),
+  },
+  {
+    path: "/reset/:token",
+    element: (
+      <PublicOnly>
+        <ResetPassword />
+      </PublicOnly>
+    ),
+  },
+  {
+    path: "/reset",
+    element: (
+      <PublicOnly>
+        <ResetPassword />
       </PublicOnly>
     ),
   },

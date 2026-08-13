@@ -112,6 +112,15 @@ const Login = () => {
                   autoComplete="current-password"
                   required
                 />
+                <div className="mt-1 text-right text-sm">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/forgot-password")}
+                    className="text-blue-600 underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
               <Button type="submit" className="w-full">
                 Login
