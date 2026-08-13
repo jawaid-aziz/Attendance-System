@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback: serve index.html for every path so
+# client-side routing (/:slug, /setup/:token, /reset/:token, ...) works.
+/* /index.html 200

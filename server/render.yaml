@@ -1,0 +1,79 @@
+# Render Blueprint for the onTime API.
+# Deploy from the repo root; the service runs inside the server/ directory.
+#
+#   render.yaml
+#   services:
+#     - type: web
+#       name: ontime-api
+#       runtime: node
+#       rootDir: server
+#       plan: free
+#       buildCommand: npm install
+#       startCommand: npm start
+#       healthCheckPath: /health
+#       autoDeploy: true
+#       envVars:
+#         # Set these in the Render dashboard (never commit secrets):
+#         - key: MONGO_URL
+#           sync: false
+#         - key: JWT_SECRET
+#           sync: false
+#         - key: EMAIL_USER
+#           sync: false
+#         - key: EMAIL_PASS
+#           sync: false
+#         # Public origin of the deployed SPA (used in emailed setup/reset links
+#         # and CORS). Replace with your Cloudflare Pages URL.
+#         - key: FRONTEND_URL
+#           value: https://your-app.pages.dev
+#         - key: CLIENT_ORIGIN
+#           value: https://your-app.pages.dev
+#         - key: NODE_ENV
+#           value: production
+#         - key: PORT
+#           value: 5000
+#         # Behind Render's proxy, honour X-Forwarded-For for real client IPs.
+#         - key: TRUST_PROXY
+#           value: "true"
+#         # Cloud deployment: staff connect through public/NAT IPs, so don't
+#         # hard-block check-ins by office IP.
+#         - key: IP_ENFORCEMENT
+#           value: "off"
+#         # Enable the hourly absent-marking cron. Render free runs ONE instance,
+#         # so there is no duplicate-write risk. NOTE: free instances spin down
+#         # after ~15 min idle, so keep the service awake (see keep-alive below).
+#         - key: CRON_ENABLED
+#           value: "true"
+services:
+  - type: web
+    name: ontime-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: FRONTEND_URL
+        value: https://your-app.pages.dev
+      - key: CLIENT_ORIGIN
+        value: https://your-app.pages.dev
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: TRUST_PROXY
+        value: "true"
+      - key: IP_ENFORCEMENT
+        value: "off"
+      - key: CRON_ENABLED
+        value: "true"
