@@ -44,6 +44,7 @@ See `server/.env.example` for all options. Key variables:
 | `SKIP_EMAIL` | no | `false` | Print setup links instead of emailing |
 | `IP_ENFORCEMENT` | no | off | `strict` blocks non-approved IPs |
 | `CRON_ENABLED` | no | — | Enable absent sweeper on one worker |
+| `RATE_LIMIT_FORGOT_PASSWORD` | no | `5` | Password-reset emails per hour per IP |
 
 ## Architecture highlights
 
@@ -55,6 +56,9 @@ See `server/.env.example` for all options. Key variables:
   - `validation.js` — timezone, schedule, IP validators.
   - `onboarding.js` — company/user creation with setup tokens.
 - **Controllers** organized by domain: `auth`, `admin`, `attendance`, `superadmin`.
+- **Auth flows**: `POST /auth/register` (company + admin setup link),
+  `POST /auth/forgot-password` + `POST /auth/reset-password/:token` (email
+  password recovery), `POST /auth/change-password` (authenticated rotation).
 - **Absent sweeper** in `utils/absentSweeper.js` — cron job, runs on one worker.
 
 ## Tests

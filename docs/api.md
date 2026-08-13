@@ -58,6 +58,18 @@ Complete onboarding from the emailed one-time link. Body: `{ "password": "..." }
 Auth. Body: `{ "currentPassword", "newPassword" }`. Bumps the token `version`,
 invalidating all previously issued JWTs.
 
+### `POST /auth/forgot-password`
+Public. Body: `{ "email": "ada@acme.test" }`. Emails a one-time password-reset
+link (`FRONTEND_URL/reset/<token>`, 1-hour expiry). Always returns
+`200 { "message": "If an account exists with that email, a reset link has been
+sent." }` whether or not the email exists, so the endpoint cannot enumerate
+accounts. Rate-limited per IP (see `RATE_LIMIT_FORGOT_PASSWORD`).
+
+### `POST /auth/reset-password/:token`
+Public. Body: `{ "password": "..." }` (≥8 chars with a letter and a number).
+Sets the new password, clears the token, and bumps the token `version` (revokes
+existing sessions). Invalid/expired tokens → `404`/`400`.
+
 ## Attendance
 
 ### `GET /attend/server-time`

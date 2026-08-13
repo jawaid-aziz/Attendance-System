@@ -16,6 +16,8 @@ and reports a net salary per month.
 - Role-based access: `employee`, `admin`, `superadmin`.
 - Email-based onboarding: new users receive a one-time setup link (no
   passwords sent in plain text).
+- Email-based password recovery: `forgot-password` sends a one-time reset
+  link; `reset-password/:token` rotates the password and revokes old tokens.
 - Check-in / check-out with working-hours enforcement and IP enforcement
   (optional).
 - Automated absent marking: an hourly job flags employees who never checked in.
@@ -62,6 +64,14 @@ Register a company + admin at `/start` (or `POST /auth/register`). The admin
 receives a one-time setup link (emailed, or returned as `setupLink` when the
 email fails / `SKIP_EMAIL=true`). Open the link, set a password, and log in.
 
+### Forgot password
+
+Forgot the password? `POST /auth/forgot-password` with the account email sends a
+one-time reset link to the inbox (the endpoint answers identically for unknown
+emails so it cannot be used to enumerate accounts). Open the link and choose a
+new password — existing sessions are revoked. Rate-limited per IP
+(`RATE_LIMIT_FORGOT_PASSWORD`).
+
 ### Tests & lint
 
 ```bash
@@ -93,7 +103,7 @@ All server variables live in `server/.env` (see `server/.env.example`).
 | `MONGO_URL` | yes | — | MongoDB connection string |
 | `JWT_SECRET` | yes (≥32 chars) | — | Token signing secret |
 | `CLIENT_ORIGIN` | no | `http://localhost:5173` | Allowed CORS origins (comma-separated) |
-| `FRONTEND_URL` | no | `http://localhost:5173` | Base URL embedded in setup-link emails |
+| `FRONTEND_URL` | no | `http://localhost:5173` | Base URL embedded in setup/reset link emails |
 | `TIMEZONE` | no | `Asia/Karachi` | Default timezone for `/attend/server-time` |
 | `EMAIL_USER` / `EMAIL_PASS` | no | — | SMTP credentials (Gmail app passwords) |
 | `SKIP_EMAIL` | no | `false` | `true` prints setup links instead of emailing |
@@ -107,6 +117,7 @@ All server variables live in `server/.env` (see `server/.env.example`).
 | `CRON_ENABLED` | no | — | Set `true` on exactly **one** worker for the absent sweeper |
 | `RATE_LIMIT_LOGIN` | no | `10` | Login attempts per 15 min per IP |
 | `RATE_LIMIT_AUTH` | no | `100` | Registration attempts per 15 min per IP |
+| `RATE_LIMIT_FORGOT_PASSWORD` | no | `5` | Password-reset emails per hour per IP |
 | `LOG_LEVEL` | no | `info` | `debug` \| `info` \| `warn` \| `error` |
 
 Client variables live in `client/.env`:
@@ -129,7 +140,7 @@ server/
   test/                vitest unit + integration suites
 client/
   src/
-    Pages/             login, setup, landing, home
+    Pages/             login, setup, forgot-password, reset, landing, home
     Components/
       Dashboard/       StatCard, DashboardHeader, AttendanceHeatmap,
                        CheckInChart, SalaryDonut, TrendChart, HourlyHistogram
@@ -138,10 +149,12 @@ client/
                        employees, attendance history, timezone, office timing
     Context/           auth/role/id/company providers
     lib/               API config, token helpers
+  public/_redirects    Cloudflare Pages SPA fallback
 docs/
   api.md               endpoint reference
   deductions.md        salary deduction rules
   security-audit.md    multi-tenant isolation notes
+  deploy.md            Cloudflare Pages + Render deployment guide
 ```
 
 ## Deployment notes
@@ -153,8 +166,11 @@ docs/
 - `IP_ENFORCEMENT=strict` only works if employees connect from IPs listed in
   the company's `allowedRouterIPs` (the company's public egress IPs).
 - New database indexes are created in the background and do not require
-  downtime, but the unique partial index on `User.setupToken` should be built
-  once on existing deployments.
+  downtime, but the unique partial indexes on `User.setupToken` and
+  `User.resetToken` should be built once on existing deployments.
+- Cloud hosting config lives in `server/render.yaml` (Render blueprint) and
+  `client/public/_redirects` (Cloudflare Pages SPA fallback); see
+  `docs/deploy.md`.
 
 ## API
 

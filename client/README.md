@@ -45,7 +45,9 @@ Create `client/.env` (or `client/.env.local`):
 src/
   Pages/
     Landing.jsx        Public marketing page
-    Login.jsx          Email/password login
+    Login.jsx          Email/password login (with "Forgot password?" link)
+    ForgotPassword.jsx Request a password-reset link by email
+    ResetPassword.jsx  Set a new password from the emailed reset link
     Setup.jsx          One-time password setup via emailed link
     Home.jsx           Role-split dashboard (admin vs employee)
   Components/

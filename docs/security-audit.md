@@ -79,8 +79,8 @@ CORS configuration and authentication coverage were reviewed and found correct.
 
 ### LOW-4 — Email HTML injection via user-controlled name — OPEN
 - `server/utils/sendMail.js` interpolates `firstName`/`lastName` into the setup
-  email HTML without escaping. A name containing HTML (set via admin-created
-  users) could inject markup/phishing into company emails.
+  and password-reset email HTML without escaping. A name containing HTML (set
+  via admin-created users) could inject markup/phishing into company emails.
 - Remediation: HTML-escape template variables and add a plain-text alternative.
 
 ### LOW-5 — JWT algorithm not pinned; token in localStorage — OPEN
@@ -113,7 +113,8 @@ CORS configuration and authentication coverage were reviewed and found correct.
 Every private route is behind `authenticateToken`, which re-validates the JWT
 signature, checks the user still exists, checks the token `version`, and
 re-fetches role/company from the DB (never trusts JWT claims). Public endpoints
-are only the intended ones: login, register, setup, server-time, health.
+are only the intended ones: login, register, setup, forgot-password,
+reset-password, server-time, health.
 - Note: `GET /attend/server-time?slug=` publicly discloses a company's slug,
   timezone and open/closed state — low sensitivity, treat as public.
 
@@ -140,14 +141,15 @@ tenant users via the API. Remediation: remove the dead branches or expose proper
 superadmin user-management routes.
 
 ### 2.4 Insecure endpoints
-#### I1 [Medium] — Setup token (account-takeover credential) logged in plaintext — FIXED
-`/auth/setup/:token` carries a one-time credential in the URL, and the request
-logger wrote `req.originalUrl` verbatim, persisting the token in server logs
-(24 h TTL, one-time use). Anyone with log access could take over the account.
-- Fix: the logger redacts the setup-token segment
+#### I1 [Medium] — Setup/reset tokens (account-takeover credentials) logged in plaintext — FIXED
+`/auth/setup/:token` and `/auth/reset-password/:token` carry a one-time
+credential in the URL, and the request logger wrote `req.originalUrl` verbatim,
+persisting the token in server logs (24 h / 1 h TTL, one-time use). Anyone with
+log access could take over the account.
+- Fix: the logger redacts the token segment of both paths
   (server/index.js, `logUrl`).
-- Note: the token is 32 random bytes, so it is not brute-forceable; the exposure
-  was purely the logging.
+- Note: the tokens are 32 random bytes, so they are not brute-forceable; the
+  exposure was purely the logging.
 
 #### I2 [Info] — `DELETE /admin/removeAllowedIP` sends a request body — OPEN
 Some proxies/LBs strip DELETE bodies. Prefer passing the IP via query param.
@@ -194,8 +196,9 @@ authoritatively. Login/Setup forms use `type="password"` + `autoComplete`.
 The session token is persisted in `localStorage` (Pages/Login.jsx:47,
 Pages/Setup.jsx:60); any XSS on the origin can exfiltrate it. No XSS sink
 currently exists, TTL is 5 h, and there is no refresh token. Covered by LOW-5
-(see Section 1). Mitigations in place: the one-time setup token is kept only in
-`sessionStorage` and stripped from the URL (Pages/Setup.jsx:24-35); passwords
+(see Section 1). Mitigations in place: the one-time setup/reset tokens are kept
+only in `sessionStorage` and stripped from the URL (Pages/Setup.jsx:24-35,
+Pages/ResetPassword.jsx); passwords
 are never persisted; `role`/`id`/`slug` are UI hints only (server re-derives
 authority).
 
